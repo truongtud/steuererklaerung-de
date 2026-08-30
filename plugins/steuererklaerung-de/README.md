@@ -1,13 +1,63 @@
 # Steuererklärung Deutschland
 
-Claude-Plugin für die deutsche Einkommensteuererklärung. Es baut aus Einkommens-, Krypto-
-und Kapitalertragsdaten einen TaxReport über alle Anlagen (N, KAP, SO, V, S, G,
-Vorsorgeaufwand, Sonderausgaben, außergewöhnliche Belastungen, Kind), rechnet Krypto nach
-FIFO/§ 23 EStG, schätzt Einkommensteuer, Solidaritätszuschlag, Kirchensteuer und
-Abgeltungsteuer und exportiert HTML, PDF sowie ein ELSTER-Feld-Mapping zur manuellen
-Eingabe.
+Claude-Plugin für die deutsche Einkommensteuererklärung.
 
-Veranlagungszeiträume 2022–2026. Nur deutsches Steuerrecht.
+## Worum es geht
+
+Wer Krypto handelt oder ein Depot bei einem ausländischen Broker hat, sitzt vor der
+Steuererklärung mit einem Stapel PDFs und CSVs, aus denen am Ende ein paar Dutzend Zahlen
+in ELSTER-Felder wandern müssen. Dazwischen liegt die Arbeit: FIFO über die gesamte
+Anschaffungshistorie, taggenaue Haltefristen, Freigrenzen, die pro Person und nicht pro
+Broker gelten, Verlusttöpfe mit unterschiedlichen Regeln, Verlustvorträge aus Vorjahren.
+
+Das Plugin liest die Broker-Reports, rechnet Krypto nach FIFO/§ 23 EStG und die
+Kapitalerträge nach § 20/§ 32d, setzt daraus einen TaxReport über alle Anlagen zusammen
+(N, KAP, SO, V, S, G, Vorsorgeaufwand, Sonderausgaben, außergewöhnliche Belastungen, Kind),
+schätzt Einkommensteuer, Solidaritätszuschlag, Kirchensteuer und Abgeltungsteuer samt
+Nachzahlung oder Erstattung — und gibt ein Feld-für-Feld-Mapping aus, das in „Mein ELSTER"
+abgetippt wird.
+
+Es reicht **nicht** bei ELSTER ein und schickt keine Daten fort: alles läuft lokal, Ausgabe
+sind Dateien. Veranlagungszeiträume 2022–2026, nur deutsches Steuerrecht.
+
+## Eingabeformate
+
+| Format | Woher | Verarbeitung |
+|---|---|---|
+| PDF-Steuerreport | Koinly, eToro | Profil erkennt den Anbieter, liest Tabellen und Summenausweis |
+| PDF, unbekannter Anbieter | jeder Broker, auch **gescannt** | generische Tabellenerkennung mit OCR, Ergebnis zur Sichtprüfung markiert |
+| Exchange-CSV | Kraken, Coinbase, Bitpanda, Binance | Profil bildet Spalten auf das kanonische Transaktionsschema ab |
+| CSV, beliebige Spalten | jede Börse | freies Spalten-Mapping über `mapping.json` |
+| `transactions.json` | selbst gepflegt | kanonisches Schema, direkt in die FIFO-Engine |
+| `steuerdaten.json` | von Hand, Vorlage liegt bei | Lohn, Werbungskosten, Vorsorge, Kapitalerträge, Kinder, Verlustvorträge |
+
+Ein neuer Broker ist **eine JSON-Profildatei**, kein neues Skript; `profile_wizard.py`
+erzeugt den Entwurf aus einem echten Report.
+
+## Ausgabeformate
+
+| Datei | Wofür |
+|---|---|
+| `elster_mapping_<jahr>.csv` | das Arbeitsergebnis: Anlage, Zeile, Bezeichnung, Wert — von oben nach unten abtippen. Semikolon, Dezimalkomma, BOM |
+| `elster_mapping_<jahr>.json` | dasselbe maschinenlesbar, mit Quellenangabe je Zeile |
+| `taxreport_<jahr>.html` | Dashboard: Kennzahlen, Einkünfte je Anlage, alle Veräußerungen, Hinweise; self-contained, mit Druck-Stylesheet |
+| `taxreport_<jahr>.pdf` | druckfertig für Ablage oder Steuerberater |
+| `taxreport.json` | vollständiger Report als Struktur |
+
+In der ELSTER-CSV steht pro Formularzeile **genau eine** einzutragende Zahl; Belege je
+Quelle stehen unterhalb einer Trennzeile und werden ausdrücklich nicht eingetragen.
+
+## Wie es funktioniert
+
+```
+Broker-PDF / CSV ─▶ parse_broker.py ─┐
+(Profil, Summenabgleich)             ├─▶ build_taxreport.py ─▶ export_report.py
+fremdes PDF ─▶ parse_pdf.py ─────────┤   Freigrenzen einmal    HTML · PDF · ELSTER
+steuerdaten.json ────────────────────┘   Verlusttöpfe, § 32a
+```
+
+Freigrenzen und Verlusttöpfe werden **einmal auf die Summe aller Quellen** angewandt, nicht
+je Report — § 23, § 22 Nr. 3 und § 20 Abs. 6 gelten personenbezogen über alle Broker.
 
 ## Wichtig
 
@@ -25,28 +75,7 @@ Endkontrolle gehört zu einem Steuerberater.
   werden. Der Report weist die Annahme aus.
 
 Ebenfalls nicht gerechnet: zumutbare Belastung bei agB, Günstigerprüfung,
-Progressionsvorbehalt, Gewerbesteueranrechnung, Vorauszahlungen. Eine automatische
-ELSTER-Einreichung findet nicht statt.
-
-Das Plugin liest und schreibt ausschließlich lokale Dateien; nichts wird hochgeladen. Nur
-das optionale PDF-Backend `docling` lädt beim ersten Lauf Modelle aus dem Netz.
-
-## Enthalten
-
-- **Krypto § 23 EStG** — FIFO per Asset über die volle Historie, taggenaue Jahresfrist nach
-  § 108 AO / § 188 BGB (der Jahrestag selbst ist noch steuerpflichtig), Freigrenze einmal
-  über alle Broker, Verlustvortrag über Jahre
-- **Krypto § 22 Nr. 3** — Staking und Lending zum Zuflusswert, 256-€-Freigrenze auf die
-  Gesamtsumme aller sonstigen Leistungen
-- **Anlage KAP** — Abgeltungsteuer inkl. Soli und Kirchensteuer, Aktien-Verlusttopf,
-  Termingeschäfte nach dem Stand des Jahressteuergesetzes 2024, Verlustvorträge,
-  ausländische und fiktive Quellensteuer
-- **Tarif § 32a** für 2022–2026, Soli mit Milderungszone, Grund- und Splittingtarif,
-  Nachzahlung/Erstattung
-- **Import über Profildateien** — Koinly und eToro (PDF), Kraken, Coinbase, Bitpanda,
-  Binance (CSV); ein neuer Broker ist eine JSON-Datei, `profile_wizard.py` erzeugt den
-  Entwurf. Dazu generische Broker-PDFs mit OCR und freies Spalten-Mapping.
-- **Export** — HTML-Dashboard, PDF, ELSTER-CSV/JSON
+Progressionsvorbehalt, Gewerbesteueranrechnung, Vorauszahlungen.
 
 ## Voraussetzungen
 

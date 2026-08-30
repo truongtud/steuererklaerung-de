@@ -33,6 +33,30 @@ scripts/profiles/*.json   ── ein Broker = eine Profildatei
 Wer einen Wert ändert, ändert ihn dort (und in `references/steuerwerte.md`). Grundregel des
 Codes: **bei unlesbarer Eingabe wird abgebrochen, nie still 0 angenommen.**
 
+## Was rein geht, was raus kommt
+
+| Eingabe | Weg |
+|---|---|
+| PDF von Koinly oder eToro | `parse_broker.py` (Profil, erkennt automatisch) |
+| PDF eines Brokers ohne Profil, auch gescannt | `parse_pdf.py` (Tabellenerkennung + OCR), Ergebnis prüfen |
+| CSV von Kraken, Coinbase, Bitpanda, Binance | `parse_broker.py --profil <id>` |
+| CSV mit beliebigen Spalten | `parse_inputs.py --format map --map mapping.json` |
+| `transactions.json` (kanonisch) | direkt in `krypto_fifo.py` / `build_taxreport.py --transactions` |
+| `steuerdaten.json` | Hand-Eingabe, Vorlage in `assets/` |
+| Lohnsteuerbescheinigung (PDF) | lesen, Nr. 3/4/5/6 nach `steuerdaten.json` übertragen |
+
+| Ausgabe | Inhalt |
+|---|---|
+| `elster_mapping_<jahr>.csv` | **das Arbeitsergebnis** — Anlage, Zeile, Bezeichnung, Wert; pro Formularzeile genau eine einzutragende Zahl, Belege unterhalb einer Trennzeile. Semikolon, Dezimalkomma, BOM |
+| `elster_mapping_<jahr>.json` | dasselbe maschinenlesbar, mit `quelle` und `art` je Zeile |
+| `taxreport_<jahr>.html` | Dashboard, self-contained, mit Druck-Stylesheet |
+| `taxreport_<jahr>.pdf` | druckfertige Fassung |
+| `taxreport.json` | vollständiger Report als Struktur, Grundlage der Exporte |
+
+Zwischenstände zum Prüfen und Korrigieren: `<name>.krypto_result.json`,
+`<name>.kap_result.json`, `<name>.transactions.json`, `<name>.extracted.json`,
+`<name>.tables.csv`.
+
 Setup (einmalig):
 ```bash
 pip install fpdf2 pdfplumber pymupdf pytesseract pdf2image --break-system-packages

@@ -1,14 +1,104 @@
 # steuererklaerung-de
 
-Ein Claude-Plugin für die **deutsche Einkommensteuererklärung**: es baut aus Einkommens-,
-Krypto- und Kapitalertragsdaten einen strukturierten TaxReport über alle Anlagen, rechnet
-Krypto nach FIFO/§ 23 EStG, schätzt Einkommensteuer, Soli, Kirchensteuer und
-Abgeltungsteuer und exportiert HTML, PDF und ein **ELSTER-Feld-Mapping** zum manuellen
-Abtippen.
+Ein Claude-Plugin für die **deutsche Einkommensteuererklärung**.
+
+[![tests](https://github.com/DEIN-GITHUB-USER/steuererklaerung-de/actions/workflows/tests.yml/badge.svg)](https://github.com/DEIN-GITHUB-USER/steuererklaerung-de/actions/workflows/tests.yml)
+
+## Worum es geht
+
+Wer Krypto handelt oder ein Depot bei einem ausländischen Broker hat, sitzt vor der
+Steuererklärung mit einem Stapel PDFs und CSVs, aus denen am Ende ein paar Dutzend Zahlen
+in ELSTER-Felder wandern müssen. Dazwischen liegt die eigentliche Arbeit: FIFO über die
+gesamte Anschaffungshistorie, taggenaue Haltefristen, Freigrenzen, die pro Person und nicht
+pro Broker gelten, Verlusttöpfe mit unterschiedlichen Regeln, Verlustvorträge aus Vorjahren.
+
+Genau das macht dieses Plugin. Es liest die Broker-Reports, rechnet Krypto nach
+FIFO/§ 23 EStG und die Kapitalerträge nach § 20/§ 32d, setzt daraus einen TaxReport über
+alle Anlagen zusammen, schätzt Einkommensteuer, Solidaritätszuschlag, Kirchensteuer und
+Abgeltungsteuer samt Nachzahlung oder Erstattung — und gibt am Ende ein **Feld-für-Feld-
+Mapping** aus, das man in „Mein ELSTER" abtippt.
+
+Was es **nicht** tut: bei ELSTER einreichen, und deine Daten irgendwohin schicken. Alles
+läuft lokal, Ausgabe sind Dateien auf deiner Platte.
 
 Veranlagungszeiträume **2022 bis 2026**. Nur deutsches Steuerrecht.
 
-[![tests](https://github.com/DEIN-GITHUB-USER/steuererklaerung-de/actions/workflows/tests.yml/badge.svg)](https://github.com/DEIN-GITHUB-USER/steuererklaerung-de/actions/workflows/tests.yml)
+## Was hineingeht
+
+| Format | Woher typischerweise | Verarbeitung |
+|---|---|---|
+| **PDF-Steuerreport** | Koinly, eToro | Profil erkennt den Anbieter automatisch, liest Tabellen und Summenausweis |
+| **PDF, unbekannter Anbieter** | jeder Broker, auch **gescannt** | generische Tabellenerkennung mit OCR (Tesseract), Ergebnis wird zur Sichtprüfung markiert |
+| **Exchange-CSV** | Kraken (`ledgers.csv`), Coinbase, Bitpanda, Binance | Profil bildet die Spalten auf das kanonische Transaktionsschema ab |
+| **CSV, beliebige Spalten** | jede Börse | freies Spalten-Mapping über eine `mapping.json` |
+| **`transactions.json`** | selbst gepflegt oder aus einem der Wege oben | kanonisches Schema, geht direkt in die FIFO-Engine |
+| **`steuerdaten.json`** | von Hand, Vorlage liegt bei | Lohn, Werbungskosten, Vorsorge, Kapitalerträge, Kinder, Verlustvorträge |
+| **Lohnsteuerbescheinigung** | Arbeitgeber (PDF) | wird gelesen, die vier Kennziffern werden nach `steuerdaten.json` übertragen |
+
+Neue Broker sind **eine JSON-Datei**, kein neues Skript — siehe „Wie es funktioniert".
+
+## Was herauskommt
+
+| Datei | Wofür |
+|---|---|
+| `elster_mapping_<jahr>.csv` | **das Arbeitsergebnis**: Anlage, Zeile, Bezeichnung, Wert — von oben nach unten in ELSTER abtippen. Semikolon, Dezimalkomma, BOM, also direkt Excel-tauglich |
+| `elster_mapping_<jahr>.json` | dasselbe maschinenlesbar, mit Quellenangabe je Zeile und dem vollständigen Protokoll |
+| `taxreport_<jahr>.html` | Dashboard zum Draufschauen: Kennzahlen, Einkünfte je Anlage, alle Krypto-Veräußerungen, Hinweise. Self-contained, mit Druck-Stylesheet |
+| `taxreport_<jahr>.pdf` | druckfertige Fassung für die Ablage oder den Steuerberater |
+| `taxreport.json` | der vollständige Report als Struktur — Grundlage für alles andere, gut für eigene Auswertungen |
+
+Zwischenergebnisse, die man ansehen oder korrigieren kann: `<name>.krypto_result.json`,
+`<name>.kap_result.json`, `<name>.transactions.json`, sowie `<name>.extracted.json` und
+`<name>.tables.csv` beim generischen PDF-Weg.
+
+In der ELSTER-CSV steht **pro Formularzeile genau eine einzutragende Zahl**. Darunter
+trennt eine Zeile die Belege je Quelle ab, die ausdrücklich *nicht* eingetragen werden —
+sonst tippt man denselben Betrag zweimal.
+
+## Wie es funktioniert
+
+```
+   Broker-PDF ─┐
+   Exchange-CSV ├─▶ parse_broker.py ─┐
+   (Profil)     │   Summenabgleich   │
+                │                    ├─▶ build_taxreport.py ─▶ export_report.py
+   fremdes PDF ─┴─▶ parse_pdf.py ────┤   Freigrenzen einmal     HTML · PDF · ELSTER
+   CSV ────────────▶ parse_inputs.py │   Verlusttöpfe
+                                     │   Tarif § 32a
+   steuerdaten.json ─────────────────┘   Nachzahlung
+```
+
+**Schritt 1 — einlesen.** `parse_broker.py` erkennt anhand der Profile in
+`scripts/profiles/`, welcher Report vorliegt, und wendet das passende an. Jeder Lauf
+vergleicht das Geparste mit den Summen, die der Report **selbst ausweist**, und bricht bei
+Abweichung ab.
+
+**Schritt 2 — rechnen.** `krypto_fifo.py` rechnet FIFO per Asset über die *gesamte*
+Historie, weist aber nur das Steuerjahr aus. Vorberechnete Reports (Koinly & Co.) gehen
+diesen Schritt nicht noch einmal — deren FIFO ist bereits wallet-übergreifend gerechnet.
+
+**Schritt 3 — zusammensetzen.** `build_taxreport.py` führt alle Quellen zusammen. Hier —
+und nur hier — werden die Freigrenzen angewandt und die Verlusttöpfe verrechnet, weil § 23,
+§ 22 Nr. 3 und § 20 Abs. 6 **personenbezogen über alle Broker** gelten. Zwei Reports mit je
+800 € sind zusammen 1.600 € und damit voll steuerpflichtig; würde jeder Parser für sich
+prüfen, bliebe beides „steuerfrei".
+
+**Schritt 4 — ausgeben.** `export_report.py` schreibt HTML, PDF und das ELSTER-Mapping.
+
+### Einen neuen Broker anbinden
+
+Ein **Profil** beschreibt deklarativ, wie ein Report gelesen wird — Erkennungsmuster,
+Tabellen, Spaltenzuordnung und der Abgleich gegen die ausgewiesene Summe:
+
+```bash
+python3 scripts/parse_broker.py --list                        # vorhandene Profile
+python3 scripts/profile_wizard.py neu.pdf --id mein-broker    # Entwurf aus einem echten Report
+```
+
+Die Engine **lehnt** ein Profil ab, das keine Erkennung, keine Pflichtfelder oder keinen
+funktionierenden Summenabgleich hat — und ebenso eines, in dem noch ein `TODO` steht. Der
+Wizard erzeugt bewusst nur einen Entwurf voller `TODO`s: er darf raten, er soll aber nicht
+so tun, als sei die Anbindung fertig. Details: `references/broker-profile.md`.
 
 ---
 
@@ -39,7 +129,7 @@ Punkte, die du kennen solltest, bevor du einer Zahl aus diesem Plugin glaubst:
 Ebenfalls nicht gerechnet: zumutbare Belastung bei außergewöhnlichen Belastungen,
 Günstigerprüfung (KAP/Kind), Progressionsvorbehalt, Gewerbesteueranrechnung,
 Vorauszahlungen, wallet-bezogenes FIFO. Eine automatische ELSTER-Einreichung findet
-**nicht** statt — ausgegeben wird ein Feld-Mapping zur manuellen Eingabe.
+**nicht** statt.
 
 **Deine Daten bleiben, wo sie sind.** Das Plugin liest lokale Dateien und schreibt lokale
 Dateien; es lädt nichts hoch und ruft keinen Steuerdienst auf. Die einzige Ausnahme ist
@@ -61,7 +151,7 @@ Voraussetzung ist eine Python-3.10-Umgebung mit aktivierter Code-Ausführung. F�
 PDF-Export zusätzlich `fpdf2`, für PDF-Import `pdfplumber`/`pymupdf`, für gescannte PDFs
 Tesseract mit deutschem Sprachpaket — die SKILL.md nennt die genauen Kommandos.
 
-## Was es kann
+## Was es rechnet
 
 | | |
 |---|---|
@@ -70,26 +160,6 @@ Tesseract mit deutschem Sprachpaket — die SKILL.md nennt die genauen Kommandos
 | **Krypto § 22 Nr. 3** | Staking und Lending zum Zuflusswert, 256-€-Freigrenze auf die Gesamtsumme |
 | **Kapitalerträge** | Abgeltungsteuer inkl. Soli und Kirchensteuer (`(e−4q)/(4+k)`), Aktien-Verlusttopf, Termingeschäfte nach dem JStG 2024, Verlustvorträge, ausländische und fiktive Quellensteuer |
 | **Tarif** | § 32a für 2022–2026, Soli mit Milderungszone, Grund- und Splittingtarif, Nachzahlung/Erstattung |
-| **Import** | Broker- und Börsen-Reports über **Profildateien**: Koinly, eToro (PDF), Kraken, Coinbase, Bitpanda, Binance (CSV) — dazu generische Broker-PDFs mit OCR und freies Spalten-Mapping für alles andere |
-| **Export** | HTML-Dashboard (mit Druck-Stylesheet), PDF, ELSTER-CSV/JSON |
-
-## Ein neuer Broker ist eine JSON-Datei
-
-Das ist der Kern des Plugins. Statt für jeden Anbieter ein Skript zu schreiben, beschreibt
-ein **Profil** deklarativ, wie ein Report gelesen wird — Erkennungsmuster, Tabellen,
-Spaltenzuordnung und, entscheidend, der Abgleich gegen die Summe, die der Report selbst
-ausweist.
-
-```bash
-python3 scripts/parse_broker.py --list          # vorhandene Profile
-python3 scripts/parse_broker.py report.pdf      # Profil automatisch erkennen
-python3 scripts/profile_wizard.py neu.pdf --id mein-broker   # Entwurf aus einem echten Report
-```
-
-Die Engine **lehnt** ein Profil ab, das keine Erkennung, keine Pflichtfelder oder keinen
-funktionierenden Summenabgleich hat — und ebenso eines, in dem noch ein `TODO` steht. Der
-Wizard erzeugt bewusst nur einen Entwurf voller `TODO`s: er kann raten, er soll aber nicht
-so tun, als sei die Anbindung fertig. Details: `references/broker-profile.md`.
 
 ## Wie es aufgebaut ist
 
