@@ -223,6 +223,13 @@ Danach löst das Skill automatisch aus, sobald es um Steuererklärung, Einkommen
 Krypto-Steuer, ELSTER, Anlage N/KAP/SO/V, Freigrenze, Termingeschäfte oder Verlustvortrag
 geht.
 
+Zum Ausprobieren oder Weiterentwickeln geht es auch ohne GitHub — geklont oder entpackt:
+
+```
+/plugin marketplace add ./pfad/zu/steuererklaerung-de
+/plugin install steuer-de@steuer-de
+```
+
 Voraussetzung ist eine Python-3.10-Umgebung mit aktivierter Code-Ausführung. Für den
 PDF-Export zusätzlich `fpdf2`, für PDF-Import `pdfplumber`/`pymupdf`, für gescannte PDFs
 Tesseract mit deutschem Sprachpaket — die SKILL.md nennt die genauen Kommandos.
@@ -238,6 +245,27 @@ Tesseract mit deutschem Sprachpaket — die SKILL.md nennt die genauen Kommandos
 | **Tarif** | § 32a für 2022–2026, Soli mit Milderungszone, Grund- und Splittingtarif, Nachzahlung/Erstattung |
 
 ## Wie es aufgebaut ist
+
+Das Repository ist ein **Marketplace** mit einem Plugin darin. Das Plugin bündelt fünf
+Skills: das Hauptskill mit der ganzen Logik und vier schlanke Einstiege, die es aufrufen.
+
+```
+steuererklaerung-de/                        das Repository (= der Marketplace)
+├── .claude-plugin/marketplace.json         Katalog: welche Plugins liegen hier
+├── .github/workflows/tests.yml             CI auf Python 3.10–3.12
+└── plugins/steuer-de/                      das Plugin
+    ├── .claude-plugin/plugin.json          Name, Version, Autor, Lizenz
+    └── skills/
+        ├── steuererklaerung/               ← das Hauptskill, alles Weitere unten
+        ├── krypto-check/                   Einzelfrage ohne kompletten Report
+        ├── broker-profil/                  neuen Broker anbinden
+        └── steuer-pruefen/                 fertigen Report gegenprüfen
+```
+
+Die vier Einstiege sind bewusst dünn: sie laden das Hauptskill und ergänzen nur ihre eigene
+Schrittfolge. Zwei Beschreibungen desselben Ablaufs würden auseinanderlaufen.
+
+Das Hauptskill:
 
 ```
 skills/steuererklaerung/
