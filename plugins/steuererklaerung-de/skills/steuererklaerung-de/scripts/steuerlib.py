@@ -377,20 +377,51 @@ def normiere_kirchensteuersatz(wert) -> Optional[Decimal]:
 
 @dataclass
 class Abgleich:
+    """Eine geparste Summe gegen die vom Report selbst ausgewiesene.
+
+    `ausgewiesen is None` heißt: der Report gab den Vergleichswert nicht her.
+    Das ist **kein** Erfolg — die geparste Zahl ist dann durch nichts gedeckt.
+    Nur ein ausdrücklich als `optional=True` gekennzeichneter Abgleich darf ohne
+    Vergleichswert durchgehen (Reports, die eine solche Summe wirklich nicht
+    drucken); auch der bleibt im Bericht als ungeprüft sichtbar.
+    """
     label: str
     geparst: Decimal
     ausgewiesen: Optional[Decimal]
     toleranz: Decimal = D("0.01")
+    optional: bool = False
+
+    @property
+    def fehlend(self) -> bool:
+        """Der Report lieferte keinen Vergleichswert — nichts wurde gegengeprüft."""
+        return self.ausgewiesen is None
 
     @property
     def ok(self) -> bool:
-        return self.ausgewiesen is None or abs(self.geparst - self.ausgewiesen) <= self.toleranz
+        if self.ausgewiesen is None:
+            return bool(self.optional)
+        return abs(self.geparst - self.ausgewiesen) <= self.toleranz
+
+    def _fehlend_text(self) -> str:
+        if self.optional:
+            return (f"{self.label}: geparst {fmt_eur(self.geparst)} — OHNE GEGENPRÜFUNG "
+                    f"(im Profil als 'optional' gekennzeichnet: dieser Report weist "
+                    f"keine solche Summe aus). Zahl ist NICHT verifiziert.")
+        return (f"{self.label}: geparst {fmt_eur(self.geparst)} — NICHT GEGENGEPRÜFT: "
+                f"die im Report ausgewiesene Vergleichssumme wurde nicht gefunden.")
 
     def __str__(self) -> str:
         if self.ausgewiesen is None:
-            return f"{self.label}: geparst {fmt_eur(self.geparst)} (kein Vergleichswert im Report gefunden)"
+            return self._fehlend_text()
         return (f"{self.label}: geparst {fmt_eur(self.geparst)} vs. Report "
                 f"{fmt_eur(self.ausgewiesen)} — Abweichung {fmt_eur(self.geparst - self.ausgewiesen)}")
+
+
+_FEHLT_HINWEIS = (
+    "→ Muster im Profil gegen das Original prüfen. Enthält dieser Report "
+    "tatsächlich keine solche Summe, den betreffenden summen-Eintrag ausdrücklich "
+    "mit \"optional\": true kennzeichnen — dann bleibt der Lauf möglich, das "
+    "Ergebnis aber ausgewiesen ungeprüft.")
 
 
 def pruefe_summen(abgleiche: Iterable[Abgleich], *, strikt: bool = True) -> list[str]:
@@ -398,14 +429,31 @@ def pruefe_summen(abgleiche: Iterable[Abgleich], *, strikt: bool = True) -> list
 
     Das ist das Sicherheitsnetz gegen stille Zeilenverluste: ein Parser, der die
     Hälfte der Tabelle verliert, fällt hier auf — nicht erst im Steuerbescheid.
+
+    Ein **fehlender** Vergleichswert ist dabei genauso ein Abbruchgrund wie eine
+    Abweichung: findet das Muster nichts, hat die Prüfung nicht stattgefunden und
+    das Ergebnis ist unbestätigt. Nur `Abgleich.optional` erlaubt den Durchlauf.
     """
-    probleme, hinweise = [], []
+    probleme, fehlend, hinweise = [], [], []
     for a in abgleiche:
-        (hinweise if a.ok else probleme).append(str(a))
-    if probleme and strikt:
-        raise PlausibilityError(
-            "Geparste Summen stimmen nicht mit dem Report überein — Zeilen gingen "
-            "vermutlich verloren:\n  " + "\n  ".join(probleme)
-            + "\n→ Report-Layout prüfen; NICHT ungeprüft weiterverwenden."
-        )
-    return hinweise + probleme
+        if a.fehlend and not a.optional:
+            fehlend.append(str(a))
+        elif a.ok:
+            hinweise.append(str(a))
+        else:
+            probleme.append(str(a))
+    if strikt and (probleme or fehlend):
+        teile = []
+        if fehlend:
+            teile.append(
+                "Die im Report selbst ausgewiesene Vergleichssumme konnte NICHT "
+                "gefunden werden — das Ergebnis ist damit UNGEPRÜFT und darf nicht "
+                "in eine Steuererklärung übernommen werden:\n  "
+                + "\n  ".join(fehlend) + "\n" + _FEHLT_HINWEIS)
+        if probleme:
+            teile.append(
+                "Geparste Summen stimmen nicht mit dem Report überein — Zeilen gingen "
+                "vermutlich verloren:\n  " + "\n  ".join(probleme)
+                + "\n→ Report-Layout prüfen; NICHT ungeprüft weiterverwenden.")
+        raise PlausibilityError("\n".join(teile))
+    return hinweise + fehlend + probleme

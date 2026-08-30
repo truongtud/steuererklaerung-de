@@ -22,8 +22,11 @@ im Report ausgewiesenen Gesamtsummen.
 Ausgabe: <pdf-name>.kap_result.json (kap_zeilen/kennzahlen + paragraph_23 /
 paragraph_22_nr3 + 'etoro_kap' und 'elster_extra' für build_taxreport.py).
 
-WICHTIG: Termingeschäfte (§ 20 Abs. 2) unterliegen einer beschränkten
-Verlustverrechnung. Mehrere Broker/Tools für dasselbe Jahr zusammenführen.
+WICHTIG: Der eigene Verrechnungskreis und der 20.000-€-Deckel für Termingeschäfte
+(§ 20 Abs. 6 Sätze 5 und 6 EStG) sind durch das Jahressteuergesetz 2024 aufgehoben —
+anwendbar in allen offenen Fällen. Verluste aus Termingeschäften sind seither mit
+sämtlichen Kapitalerträgen verrechenbar; beschränkt bleibt nur der Aktien-Verlusttopf
+(§ 20 Abs. 6 Satz 4). Mehrere Broker/Tools für dasselbe Jahr zusammenführen.
 KEINE Steuerberatung — gegen Original und Steuerbescheinigung prüfen.
 """
 

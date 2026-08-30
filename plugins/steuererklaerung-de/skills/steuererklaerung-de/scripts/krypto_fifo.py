@@ -24,6 +24,14 @@ Grundregeln dieser Engine (siehe auch scripts/steuerlib.py):
   * Unlesbare Pflichtfelder werfen einen Fehler — sie werden nie still zu 0.
   * Verworfene Zeilen erscheinen in `warnungen`, nie stillschweigend.
   * Summen werden ungerundet aufaddiert; gerundet wird erst bei der Ausgabe.
+  * Eine 0, die niemand angegeben hat, erreicht keine Steuerzahl:
+      - `_needs_fmv` ohne nachgetragenen Wert -> Abbruch (der Marktwert FEHLT,
+        er ist nicht 0),
+      - Erlös bzw. Kostenbasis von genau 0 ohne Beleg -> Warnung in `warnungen`
+        und `nullwert_ungeklaert: true` an der betroffenen Veräußerung.
+    Eine tatsächlich nachgewiesene Null (wertloser Airdrop, Hard Fork) wird im
+    Datensatz mit `"nullwert_bestaetigt": true` festgehalten und läuft dann still
+    durch.
 
 Hinweis: Per-Asset-FIFO ist die gängige Vereinfachung. Das BMF lässt
 wallet-/depotbezogenes FIFO ebenfalls zu (BMF-Schreiben vom 10.05.2022 /
@@ -118,6 +126,39 @@ def _pflichttext(wert, feld: str, bez: str) -> str:
     return s
 
 
+# Eine 0 im EUR-Wert ist nur dann eine Angabe, wenn jemand sie bewusst gemacht
+# hat (Airdrop ohne Marktwert, Hard Fork, Schenkung mit dokumentierten AK 0).
+# Diese Felder sind die ausdrückliche Bestätigung dafür.
+_NULLWERT_FELDER = ("nullwert_bestaetigt", "nullwert_dokumentiert",
+                    "_nullwert_bestaetigt", "_nullwert_dokumentiert")
+
+
+def _nullwert_bestaetigt(t: dict) -> bool:
+    return any(bool(t.get(f)) for f in _NULLWERT_FELDER)
+
+
+def _pruefe_offener_marktwert(t: dict, eur: Decimal, bez: str) -> None:
+    """`_needs_fmv` + kein Wert -> Abbruch. Der Marktwert fehlt, er ist nicht 0.
+
+    parse_inputs.py / brokerprofile.py setzen `_needs_fmv`, wenn der Export für
+    einen Vorgang keinen Euro-Wert liefert (Staking-Zufluss, Krypto-Tausch,
+    Ein-/Auslieferung). Läuft eine solche Zeile ungefüllt in die Berechnung, wird
+    aus der fehlenden Angabe ein Erlös von 0 € bzw. eine Kostenbasis von 0 € —
+    und damit ein Gewinn, den es nie gab. Wurde der Wert nachgetragen (eur > 0),
+    ist die Markierung erledigt und der Datensatz in Ordnung.
+    """
+    if not t.get("_needs_fmv") or eur > 0 or _nullwert_bestaetigt(t):
+        return
+    raise ParseError(
+        f"{bez}: der EUR-Marktwert fehlt (Feld '_needs_fmv' gesetzt, eur_value="
+        f"{t.get('eur_value')!r}). Der Wert wird NICHT als 0 angenommen — eine 0 "
+        f"wäre hier ein erfundener Erlös bzw. eine erfundene Kostenbasis und "
+        f"verfälscht § 23 und § 22 Nr. 3.\n"
+        f"→ Historischen Kurs zum Zeitpunkt in 'eur_value' eintragen. Ist der Wert "
+        f"tatsächlich 0 (z. B. wertloser Airdrop), das im Datensatz mit "
+        f"\"nullwert_bestaetigt\": true festhalten.")
+
+
 def _normalisieren(transactions, warnungen: list) -> list:
     """Prüft, vereinheitlicht und zerlegt die Rohtransaktionen.
 
@@ -160,6 +201,8 @@ def _normalisieren(transactions, warnungen: list) -> list:
         amount = abs(_pflichtzahl(t.get("amount"), "amount", bez))
         eur = abs(_pflichtzahl(t.get("eur_value"), "eur_value", bez))
         fee = abs(_optzahl(t.get("fee_eur"), "fee_eur", bez))
+        _pruefe_offener_marktwert(t, eur, bez)
+        null_bestaetigt = _nullwert_bestaetigt(t)
 
         if amount <= 0:
             warnungen.append(
@@ -168,24 +211,54 @@ def _normalisieren(transactions, warnungen: list) -> list:
             )
             continue
 
+        # Eine glatte 0 im EUR-Wert stammt fast immer aus einem Export ohne
+        # Euro-Spalte, nicht aus einem Vorgang ohne Wert. Sie darf keine Steuerzahl
+        # erreichen, ohne dass ein Signal davon im Ergebnis bleibt.
+        nullwert = (eur == 0 and not null_bestaetigt)
+
         if ttype == "buy":
             # Anschaffungskosten = EUR-Wert + Gebühr
+            if nullwert and eur + fee == 0:
+                warnungen.append(
+                    f"{bez}: Anschaffung mit Anschaffungskosten 0,00 € übernommen "
+                    f"(eur_value={t.get('eur_value')!r}). Bei der späteren "
+                    f"Veräußerung dieses Bestands wird der GESAMTE Erlös als Gewinn "
+                    f"versteuert. Kaufpreis nachtragen oder — wenn er wirklich 0 war "
+                    f"— mit \"nullwert_bestaetigt\": true festhalten.")
             records.append({"art": "buy", "dt": dt, "asset": asset,
-                            "amount": amount, "kosten": eur + fee, "bez": bez})
+                            "amount": amount, "kosten": eur + fee, "bez": bez,
+                            "nullkosten_ungeklaert": bool(nullwert and eur + fee == 0)})
 
         elif ttype == "sell":
+            if nullwert:
+                warnungen.append(
+                    f"{bez}: Veräußerung mit einem Erlös von genau 0,00 € "
+                    f"(eur_value={t.get('eur_value')!r}). Die Anschaffungskosten "
+                    f"laufen dadurch in voller Höhe als § 23-VERLUST ins Ergebnis. "
+                    f"Erlös nachtragen oder — wenn er wirklich 0 war — mit "
+                    f"\"nullwert_bestaetigt\": true festhalten.")
             records.append({"art": "sell", "dt": dt, "asset": asset,
                             "amount": amount, "erloes": eur, "gebuehr": fee,
-                            "note": "Verkauf/Ausgabe", "bez": bez})
+                            "note": "Verkauf/Ausgabe", "bez": bez,
+                            "nullwert_ungeklaert": bool(nullwert)})
 
         elif ttype == "swap":
             # Sell-Leg: Veräußerung des abgegebenen Coins zum EUR-Marktwert.
             # Gebühr = 0, weil sie unten in die Anschaffungskosten des erhaltenen
             # Assets wandert (sonst würde dieselbe Gebühr zweimal abgezogen).
+            if nullwert:
+                warnungen.append(
+                    f"{bez}: Tausch ohne EUR-Marktwert (eur_value="
+                    f"{t.get('eur_value')!r}). So gerechnet wäre der Tausch eine "
+                    f"Veräußerung zum Erlös 0 € — ein Scheinverlust in Höhe der "
+                    f"Anschaffungskosten — und das erhaltene Asset bekäme eine "
+                    f"Kostenbasis von 0 €, sodass bei dessen Verkauf der volle Erlös "
+                    f"als Gewinn erscheint. Marktwert zum Tauschzeitpunkt nachtragen.")
             records.append({"art": "sell", "dt": dt, "asset": asset,
                             "amount": amount, "erloes": eur, "gebuehr": D("0"),
                             "note": "Tausch (Gebühr in Anschaffungskosten des "
-                                    "erhaltenen Assets aktiviert)", "bez": bez})
+                                    "erhaltenen Assets aktiviert)", "bez": bez,
+                            "nullwert_ungeklaert": bool(nullwert)})
             gegen_asset = str(t.get("counter_asset") or "").strip()
             try:
                 gegen_menge = abs(_pflichtzahl(t.get("counter_amount"),
@@ -201,12 +274,21 @@ def _normalisieren(transactions, warnungen: list) -> list:
             else:
                 records.append({"art": "buy", "dt": dt, "asset": gegen_asset,
                                 "amount": gegen_menge, "kosten": eur + fee,
-                                "bez": bez})
+                                "bez": bez,
+                                "nullkosten_ungeklaert": bool(nullwert and eur + fee == 0)})
 
         elif ttype == "reward":
             kind = str(t.get("reward_kind") or "staking").strip() or "staking"
+            if nullwert:
+                warnungen.append(
+                    f"{bez}: Zufluss ({kind}) ohne EUR-Marktwert (eur_value="
+                    f"{t.get('eur_value')!r}). Er geht mit 0,00 € in § 22 Nr. 3 ein "
+                    f"und das zugeflossene Asset bekommt eine Kostenbasis von 0 €, "
+                    f"sodass bei dessen Verkauf der volle Erlös als § 23-Gewinn "
+                    f"erscheint. Marktwert bei Zufluss nachtragen.")
             records.append({"art": "reward", "dt": dt, "asset": asset,
-                            "amount": amount, "eur": eur, "kind": kind, "bez": bez})
+                            "amount": amount, "eur": eur, "kind": kind, "bez": bez,
+                            "nullkosten_ungeklaert": bool(nullwert)})
 
     if transfers:
         warnungen.append(
@@ -234,6 +316,10 @@ class Lot:
     date: datetime
     amount: Decimal           # noch verfügbare Menge
     cost_per_unit: Decimal    # Anschaffungskosten pro Einheit in EUR (inkl. anteiliger Gebühr)
+    # Kostenbasis 0, ohne dass sie jemand so angegeben hat (fehlender Marktwert):
+    # der Verbrauch dieses Los muss beim Verkauf gemeldet werden.
+    nullkosten_ungeklaert: bool = False
+    herkunft: str = ""        # Bezeichner des Datensatzes, aus dem das Los stammt
 
 
 @dataclass
@@ -255,6 +341,10 @@ class Disposal:
     held_days: int
     holding_period_met: bool   # Jahresfrist abgelaufen -> steuerfrei
     note: str = ""
+    # True, wenn Erlös oder Kostenbasis nur deshalb 0 sind, weil im Quell-Export
+    # kein EUR-Wert stand. Die Kennzeichnung wandert mit in die Ausgabe, damit die
+    # Zahl nicht als bestätigt gelesen wird.
+    nullwert_ungeklaert: bool = False
 
     @property
     def taxable(self) -> bool:
@@ -277,6 +367,7 @@ class Disposal:
             "steuerjahr": self.disposal_dt.year,
             "im_steuerjahr": self.disposal_dt.year == steuerjahr,
             "note": self.note,
+            "nullwert_ungeklaert": bool(self.nullwert_ungeklaert),
         }
 
 
@@ -352,16 +443,25 @@ def compute_crypto_tax(transactions, tax_year: int) -> dict:
     disposals: list[Disposal] = []
     staking: list[StakingIncome] = []
 
-    def add_lot(asset, dt, amount, total_cost_eur):
+    gemeldete_nulllose: set = set()
+
+    def add_lot(asset, dt, amount, total_cost_eur, *, ungeklaert=False, herkunft=""):
         if amount <= 0:
             return
         lots[asset].append(Lot(date=dt, amount=amount,
-                               cost_per_unit=total_cost_eur / amount))
+                               cost_per_unit=total_cost_eur / amount,
+                               nullkosten_ungeklaert=bool(ungeklaert and
+                                                          total_cost_eur == 0),
+                               herkunft=herkunft))
 
-    def dispose(asset, dt, amount, proceeds_eur, fee_eur, note, bez):
+    def dispose(asset, dt, amount, proceeds_eur, fee_eur, note, bez,
+                nullwert_ungeklaert=False):
         """Verbraucht FIFO-Lose und erzeugt Disposal-Einträge (ein Eintrag je Teil-Los)."""
         remaining = amount
         queue = lots[asset]
+        if nullwert_ungeklaert:
+            note = (note + " | " if note else "") + (
+                "WARNUNG: Erlös 0,00 € — kein EUR-Wert im Quell-Export")
         while remaining > 0 and queue:
             lot = queue[0]
             take = min(lot.amount, remaining)
@@ -370,6 +470,22 @@ def compute_crypto_tax(transactions, tax_year: int) -> dict:
             part_fee = fee_eur * frac
             part_cost = lot.cost_per_unit * take
             met = haltefrist_erfuellt(lot.date, dt)
+            los_note = note
+            if lot.nullkosten_ungeklaert:
+                los_note = (los_note + " | " if los_note else "") + (
+                    "WARNUNG: Anschaffungskosten 0,00 € — im Quell-Export war für die "
+                    "Anschaffung kein EUR-Wert angegeben")
+                schluessel = (asset, lot.date, lot.herkunft)
+                if schluessel not in gemeldete_nulllose:
+                    gemeldete_nulllose.add(schluessel)
+                    warnungen.append(
+                        f"{bez}: die Veräußerung am {dt.date().isoformat()} verbraucht "
+                        f"ein {asset}-Los vom {lot.date.date().isoformat()} mit einer "
+                        f"Kostenbasis von genau 0,00 € — diese Null stammt aus einem "
+                        f"Zugang ohne EUR-Wert ({lot.herkunft or 'Herkunft unbekannt'}), "
+                        f"nicht aus einer Angabe. Der ausgewiesene Gewinn ist damit zu "
+                        f"hoch. Anschaffungskosten nachtragen oder die Null mit "
+                        f"\"nullwert_bestaetigt\": true belegen.")
             disposals.append(Disposal(
                 asset=asset,
                 disposal_dt=dt,
@@ -381,7 +497,9 @@ def compute_crypto_tax(transactions, tax_year: int) -> dict:
                 gain=part_proceeds - part_cost - part_fee,
                 held_days=(dt.date() - lot.date.date()).days,
                 holding_period_met=met,
-                note=note,
+                note=los_note,
+                nullwert_ungeklaert=bool(nullwert_ungeklaert
+                                         or lot.nullkosten_ungeklaert),
             ))
             lot.amount -= take
             remaining -= take
@@ -399,6 +517,7 @@ def compute_crypto_tax(transactions, tax_year: int) -> dict:
                 fee=part_fee, gain=part_proceeds - part_fee,
                 held_days=-1, holding_period_met=False,
                 note="WARNUNG: keine Anschaffungshistorie gefunden, Cost Basis = 0",
+                nullwert_ungeklaert=True,
             ))
             warnungen.append(
                 f"{bez}: für {remaining} {asset} (Veräußerung am "
@@ -409,16 +528,19 @@ def compute_crypto_tax(transactions, tax_year: int) -> dict:
 
     for r in records:
         if r["art"] == "buy":
-            add_lot(r["asset"], r["dt"], r["amount"], r["kosten"])
+            add_lot(r["asset"], r["dt"], r["amount"], r["kosten"],
+                    ungeklaert=r.get("nullkosten_ungeklaert"), herkunft=r["bez"])
         elif r["art"] == "sell":
             dispose(r["asset"], r["dt"], r["amount"], r["erloes"], r["gebuehr"],
-                    r["note"], r["bez"])
+                    r["note"], r["bez"],
+                    nullwert_ungeklaert=bool(r.get("nullwert_ungeklaert")))
         elif r["art"] == "reward":
             # § 22 Nr. 3: Einkommen bei Zufluss; neues Los mit Cost Basis = Marktwert
             staking.append(StakingIncome(asset=r["asset"], dt=r["dt"],
                                          amount=r["amount"], eur=r["eur"],
                                          kind=r["kind"]))
-            add_lot(r["asset"], r["dt"], r["amount"], r["eur"])
+            add_lot(r["asset"], r["dt"], r["amount"], r["eur"],
+                    ungeklaert=r.get("nullkosten_ungeklaert"), herkunft=r["bez"])
 
     # ---- Aggregation § 23 — ausschließlich Veräußerungen des Steuerjahres ----
     jahr_disposals = [d for d in disposals if d.disposal_dt.year == tax_year]

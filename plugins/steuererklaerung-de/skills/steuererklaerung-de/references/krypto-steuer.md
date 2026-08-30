@@ -60,10 +60,14 @@ nicht enthalten.
 - Unter der Freigrenze: komplett steuerfrei. Erreicht oder überschritten: der **gesamte**
   Gewinn ist steuerpflichtig, nicht nur der übersteigende Teil.
 
-Deshalb wenden die Broker-Parser (`parse_koinly.py`, `parse_etoro.py`) die Freigrenze
-**nicht** an, sondern liefern Roh-Nettobeträge; `build_taxreport.py` wendet sie **einmal
-auf die Summe aller Quellen** an. Zwei Reports mit je 800 € sind zusammen 1.600 € und damit
-voll steuerpflichtig — würde jeder Parser für sich prüfen, bliebe beides „steuerfrei".
+Deshalb wendet die **Profil-Engine** (`brokerprofile.py`, für jedes Profil gleichermaßen)
+die Freigrenze **nicht** an, sondern liefert Roh-Nettobeträge mit
+`"freigrenze_angewendet": false`; `build_taxreport.py` wendet sie **einmal auf die Summe
+aller Quellen** an. `parse_koinly.py` und `parse_etoro.py` sind nur noch dünne Aufsätze auf
+dieselbe Engine und haben dazu keine eigene Logik mehr — die Regel gilt damit auch für
+jedes neu geschriebene Profil, ohne dass jemand daran denken muss. Zwei Reports mit je
+800 € sind zusammen 1.600 € und damit voll steuerpflichtig — würde jede Quelle für sich
+prüfen, bliebe beides „steuerfrei".
 
 ### Verlustverrechnung und Verlustvortrag
 
@@ -118,8 +122,40 @@ Zufluss**.
 | `counter_amount` | bei swap | erhaltene Menge |
 
 \* Für `reward` und `swap` muss der **historische EUR-Marktwert** ergänzt werden, wenn die
-Börse ihn nicht liefert (`parse_inputs.py` markiert `_needs_fmv`). Unlesbare Beträge und
-Daten führen zu einem Abbruch mit Nennung des Datensatzes — nicht zu einer stillen 0.
+Börse ihn nicht liefert. Unlesbare Beträge und Daten führen zu einem Abbruch mit Nennung
+des Datensatzes — nicht zu einer stillen 0.
+
+### Ein fehlender Marktwert ist keine 0 — er bricht ab
+
+Liefert ein Export für einen `swap`, einen `reward` oder eine Ein-/Auslieferung keinen
+Euro-Wert, schreiben `parse_inputs.py` und die Profil-Engine `"eur_value": null` und setzen
+zusätzlich das Feld `_needs_fmv`. **`krypto_fifo.py` verweigert dann die Rechnung**, nennt
+den Datensatz und sagt, was zu tun ist.
+
+Früher lief so eine Zeile mit 0 € durch. Das ist die teuerste Sorte Fehler, die dieses
+Skill kennt, weil sie in beide Richtungen wirkt: als Erlös eines Tauschs erzeugt die 0 ein
+Ergebnis, das es nie gab; als Anschaffungskosten des erhaltenen Coins macht sie später den
+**gesamten** Verkaufserlös zum Gewinn. Eine 0 ist eine Aussage über den Markt — die hat
+hier niemand getroffen.
+
+Also den historischen Kurs zum Zeitpunkt in `eur_value` eintragen. `_needs_fmv` darf
+stehenbleiben oder entfernt werden, beides ist zulässig; sobald ein Wert > 0 dasteht, ist
+die Markierung erledigt.
+
+War der Wert **tatsächlich** null — wertloser Airdrop, Hard Fork, dokumentierte
+Anschaffungskosten 0 —, wird das im Datensatz festgehalten:
+
+```json
+{ "timestamp": "2024-03-01", "type": "reward", "asset": "XYZ", "amount": "1000",
+  "eur_value": "0", "nullwert_bestaetigt": true }
+```
+
+Damit läuft die Zeile still durch. Der Unterschied zwischen „ich habe nachgesehen, es war
+nichts wert" und „ich habe nicht nachgesehen" bleibt so im Datensatz erhalten, statt im
+Ergebnis zu verschwinden. Ohne diese Bestätigung erzeugt eine glatte 0 bei Erlös oder
+Kostenbasis eine Warnung und ein `nullwert_ungeklaert` bzw. `nullkosten_ungeklaert` an der
+betroffenen Position — auch dann, wenn die Zeile gar nicht `_needs_fmv` trug und deshalb
+nicht abgebrochen wurde.
 
 ## 5. Typische Fehler, auf die zu achten ist
 

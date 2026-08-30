@@ -228,13 +228,95 @@ def test_summenabweichung_wirft():
     assert any("Abweichung" in z for z in r["abgleich"])
 
 
+def _ohne_summenzeile():
+    return "\n".join(l for l in MINI_TEXT.splitlines() if not l.startswith("Summe"))
+
+
 @case
-def test_summenmuster_ohne_treffer_ist_warnung_kein_stiller_erfolg():
-    ohne_summe = "\n".join(l for l in MINI_TEXT.splitlines()
-                           if not l.startswith("Summe"))
-    r = bp.wende_an(mini_profil(), ohne_summe)
+def test_summenmuster_ohne_treffer_bricht_ab():
+    """Findet das Muster die Report-Summe nicht, hat die Prüfung NICHT stattgefunden.
+
+    Früher galt `ausgewiesen is None` als 'ok': der Lauf ging grün durch und die
+    einzige Garantie des Entwurfs war versehentlich abschaltbar.
+    """
+    wirft(sl.PlausibilityError, bp.wende_an, mini_profil(), _ohne_summenzeile(),
+          label="fehlender Vergleichswert")
+    try:
+        bp.wende_an(mini_profil(), _ohne_summenzeile())
+    except sl.PlausibilityError as e:
+        assert "UNGEPRÜFT" in str(e), f"Meldung nennt den Grund nicht: {e}"
+        assert "optional" in str(e), f"Meldung nennt den Ausweg nicht: {e}"
+
+
+@case
+def test_summenmuster_ohne_treffer_bleibt_im_diagnosemodus_sichtbar():
+    """strikt=False läuft weiter — aber niemals grün."""
+    r = bp.wende_an(mini_profil(), _ohne_summenzeile(), strikt=False)
     assert any("NICHT gegengeprüft" in w for w in r["warnungen"]), r["warnungen"]
-    assert any("kein Vergleichswert" in z for z in r["abgleich"]), r["abgleich"]
+    assert any("NICHT GEGENGEPRÜFT" in z for z in r["abgleich"]), r["abgleich"]
+
+
+@case
+def test_summen_abgleich_ohne_vergleichswert_ist_nicht_ok():
+    """Die Eigenschaft selbst, unabhängig von der Engine."""
+    a = sl.Abgleich("§ 23", D("3200.00"), None)
+    assert a.fehlend and not a.ok, "fehlender Vergleichswert ist kein Erfolg"
+    wirft(sl.PlausibilityError, sl.pruefe_summen, [a], label="Abgleich ohne Wert")
+    b = sl.Abgleich("§ 23", D("3200.00"), None, D("0.01"), True)
+    assert b.fehlend and b.ok, "ausdrücklich optional darf durchgehen"
+    sl.pruefe_summen([b])
+    assert "OHNE GEGENPRÜFUNG" in str(b), str(b)
+
+
+@case
+def test_optional_erlaubt_den_lauf_und_bleibt_deutlich_sichtbar():
+    p = mini_profil(summen=[
+        {"label": "Summe", "muster": r"(?im)^Summe{VOR}({NUM})",
+         "vergleich": "summen_basis.veraeusserungen_gewinn_gesamt",
+         "toleranz": "0.01"},
+        {"label": "Gibt es hier nie", "muster": r"(?im)^Nirgends{VOR}({NUM})",
+         "vergleich": "paragraph_23.netto_ergebnis_eur", "toleranz": "0.01",
+         "optional": True, "begruendung": "dieser Report druckt so etwas nicht"},
+    ])
+    eq(bp.pruefe_profil(p), [], "optional mit Begründung ist gültig")
+    r = bp.wende_an(p, MINI_TEXT)            # darf NICHT werfen
+    assert any("OHNE GEGENPRÜFUNG" in z for z in r["abgleich"]), r["abgleich"]
+    assert any("nicht gegengeprüft" in w.lower() for w in r["warnungen"]), r["warnungen"]
+
+
+@case
+def test_optional_ohne_begruendung_und_ohne_pflichtabgleich_wird_abgelehnt():
+    nur_optional = [{"label": "Summe", "muster": r"(?im)^Summe{VOR}({NUM})",
+                     "vergleich": "summen_basis.veraeusserungen_gewinn_gesamt",
+                     "toleranz": "0.01", "optional": True,
+                     "begruendung": "weil ich keine Lust habe"}]
+    probleme = bp.pruefe_profil(mini_profil(summen=nur_optional))
+    assert any("Sicherheitsnetz" in x for x in probleme), probleme
+
+    ohne_grund = json.loads(json.dumps(nur_optional))
+    ohne_grund[0].pop("begruendung")
+    ohne_grund.append({"label": "Pflicht", "muster": r"(?im)^Summe{VOR}({NUM})",
+                       "vergleich": "summen_basis.veraeusserungen_gewinn_gesamt",
+                       "toleranz": "0.01"})
+    probleme = bp.pruefe_profil(mini_profil(summen=ohne_grund))
+    assert any("begruendung" in x for x in probleme), probleme
+
+
+@case
+def test_cli_bricht_ohne_vergleichswert_mit_exitcode_ab():
+    """Der Abbruch muss bis zum Exit-Code durchschlagen, nicht nur bis zur Warnung."""
+    with tempfile.TemporaryDirectory() as tmp:
+        pfad = os.path.join(tmp, "koinly.txt")
+        text = fixture("koinly-de").replace("Kapitalgewinne 3.550,00",
+                                            "Nettoergebnis der Periode 3.550,00")
+        with open(pfad, "w", encoding="utf-8") as f:
+            f.write(text)
+        ziel = os.path.join(tmp, "out.json")
+        p = _cli(pfad, "-o", ziel)
+        assert p.returncode != 0, \
+            f"nicht auffindbare Report-Summe muss abbrechen (stdout={p.stdout})"
+        assert "UNGEPRÜFT" in p.stderr, p.stderr
+        assert not os.path.exists(ziel), "ohne Gegenprüfung darf nichts geschrieben werden"
 
 
 # ── Notation ─────────────────────────────────────────────────────────────────
@@ -785,6 +867,144 @@ def test_cli_bricht_bei_summenabweichung_ab():
         p = _cli(pfad, "-o", os.path.join(tmp, "out.json"))
         assert p.returncode != 0, "Summenabweichung muss abbrechen"
         assert "ABBRUCH" in p.stderr, p.stderr
+
+
+# ── --profil erzwingt die Wahl, nicht die Passgenauigkeit ────────────────────
+@case
+def test_cli_erzwungenes_falsches_profil_bricht_ab():
+    """--profil überging bp.erkenne komplett: das Ergebnis war vollständig,
+    wohlgeformt, durchweg 0 — und der Exit-Code 0."""
+    with tempfile.TemporaryDirectory() as tmp:
+        pfad = os.path.join(tmp, "koinly.txt")
+        with open(pfad, "w", encoding="utf-8") as f:
+            f.write(fixture("koinly-de"))
+        ziel = os.path.join(tmp, "out.json")
+        p = _cli(pfad, "--profil", "etoro-de", "-o", ziel)
+        assert p.returncode != 0, f"falsches Profil muss abbrechen (stdout={p.stdout})"
+        assert "passt NICHT" in p.stderr, p.stderr
+        assert not os.path.exists(ziel), "es darf keine Ergebnisdatei entstehen"
+
+
+@case
+def test_cli_erzwungenes_passendes_profil_laeuft_weiter():
+    with tempfile.TemporaryDirectory() as tmp:
+        pfad = os.path.join(tmp, "koinly.txt")
+        with open(pfad, "w", encoding="utf-8") as f:
+            f.write(fixture("koinly-de"))
+        ziel = os.path.join(tmp, "out.json")
+        p = _cli(pfad, "--profil", "koinly-de", "-o", ziel, "--year", "2024")
+        eq(p.returncode, 0, p.stderr)
+        assert os.path.exists(ziel)
+
+
+@case
+def test_cli_notausgang_erzwingt_und_markiert_das_ergebnis():
+    with tempfile.TemporaryDirectory() as tmp:
+        pfad = os.path.join(tmp, "koinly.txt")
+        with open(pfad, "w", encoding="utf-8") as f:
+            f.write(fixture("koinly-de"))
+        ziel = os.path.join(tmp, "out.json")
+        p = _cli(pfad, "--profil", "koinly-de", "--profil-trotzdem", "-o", ziel,
+                 "--year", "2024")
+        eq(p.returncode, 0, p.stderr)
+        # Passt das Profil ohnehin, bleibt der Notausgang folgenlos.
+        with open(ziel, encoding="utf-8") as f:
+            r = json.load(f)
+        assert not any("trotzdem" in w for w in r["warnungen"]), r["warnungen"]
+
+
+# ── Tabellen ohne eine einzige Zeile sind ein Lesefehler, kein Ergebnis ───────
+@case
+def test_tabelle_ohne_treffer_wirft_statt_leerem_ergebnis():
+    ohne_zeilen = "\n".join(
+        l for l in MINI_TEXT.splitlines()
+        if not (l[:2].isdigit() and "." in l[:10]))
+    wirft(sl.ParseError, bp.wende_an, mini_profil(), ohne_zeilen, strikt=False,
+          label="Tabelle liefert null Zeilen")
+    try:
+        bp.wende_an(mini_profil(), ohne_zeilen, strikt=False)
+    except sl.ParseError as e:
+        assert "KEINE einzige Zeile" in str(e), e
+
+
+@case
+def test_tabelle_darf_ausdruecklich_leer_sein():
+    tab = json.loads(json.dumps(mini_profil().tabellen))
+    tab[0]["darf_leer_sein"] = True
+    ohne_zeilen = "\n".join(
+        l for l in MINI_TEXT.splitlines()
+        if not (l[:2].isdigit() and "." in l[:10]))
+    ohne_zeilen = ohne_zeilen.replace("Summe 800,00", "Summe 0,00")
+    r = bp.wende_an(mini_profil(tabellen=tab), ohne_zeilen)
+    eq(r["paragraph_23"]["anzahl_veraeusserungen"], 0)
+
+
+@case
+def test_csv_ohne_uebernommene_zeile_wirft():
+    kopf = fixture("coinbase").splitlines()[0]
+    wirft(sl.ParseError, bp.wende_an, bp.profil_nach_id("coinbase"),
+          kopf + "\n", strikt=False, label="CSV nur mit Kopfzeile")
+
+
+# ── Robustheit des Profilverzeichnisses ──────────────────────────────────────
+@case
+def test_cli_meldet_kaputtes_profil_json_statt_traceback():
+    with tempfile.TemporaryDirectory() as tmp:
+        pdir = os.path.join(tmp, "profiles")
+        os.makedirs(pdir)
+        with open(os.path.join(pdir, "kaputt.json"), "w", encoding="utf-8") as f:
+            f.write("{ das ist kein JSON ")
+        pfad = os.path.join(tmp, "koinly.txt")
+        with open(pfad, "w", encoding="utf-8") as f:
+            f.write(fixture("koinly-de"))
+        p = _cli(pfad, "--profile-verzeichnis", pdir)
+        assert p.returncode == 1, f"rc={p.returncode}"
+        assert "ABBRUCH" in p.stderr, p.stderr
+        assert "Traceback" not in p.stderr, p.stderr
+        p2 = _cli("--list", "--profile-verzeichnis", pdir)
+        assert p2.returncode == 1 and "Traceback" not in p2.stderr, p2.stderr
+
+
+@case
+def test_kaputtes_erkennungsmuster_legt_nicht_die_ganze_erkennung_lahm():
+    """Ein unkompilierbares erkennung.muss warf re.error aus bp.erkenne heraus —
+    an `except sl.ParseError` vorbei, für JEDEN Report."""
+    kaputt = mini_profil(erkennung={"muss": ["Mini(Broker"], "punkte": 9})
+    kaputt.id = "kaputt"
+    gut = bp.profil_nach_id("koinly-de")
+    profile = [kaputt, gut]
+    eq(bp.passt(kaputt, MINI_TEXT), False, "defektes Profil passt auf nichts")
+    eq(bp.erkenne(fixture("koinly-de"), profile), gut,
+       "das intakte Profil wird weiterhin erkannt")
+    assert bp.erkennung_defekt(kaputt), "der Defekt muss abfragbar bleiben"
+    eq([pid for pid, _ in bp.defekte_profile(profile)], ["kaputt"])
+    assert any("ungültigen regulären Ausdruck" in z
+               for z in bp.erkennungs_bericht(MINI_TEXT, profile)), \
+        bp.erkennungs_bericht(MINI_TEXT, profile)
+
+
+@case
+def test_cli_meldet_kaputtes_erkennungsmuster_und_arbeitet_weiter():
+    with tempfile.TemporaryDirectory() as tmp:
+        pdir = os.path.join(tmp, "profiles")
+        os.makedirs(pdir)
+        for pid in ("koinly-de",):
+            with open(os.path.join(SCRIPTS, "profiles", pid + ".json"),
+                      encoding="utf-8") as f:
+                roh = f.read()
+            with open(os.path.join(pdir, pid + ".json"), "w", encoding="utf-8") as f:
+                f.write(roh)
+        with open(os.path.join(pdir, "kaputt.json"), "w", encoding="utf-8") as f:
+            json.dump({"id": "kaputt", "label": "Kaputt", "eingabe": "pdf",
+                       "ergebnis": "kap", "erkennung": {"muss": ["Mini(Broker"]},
+                       "summen": []}, f)
+        pfad = os.path.join(tmp, "koinly.txt")
+        with open(pfad, "w", encoding="utf-8") as f:
+            f.write(fixture("koinly-de"))
+        p = _cli(pfad, "--profile-verzeichnis", pdir, "-o",
+                 os.path.join(tmp, "out.json"), "--year", "2024")
+        eq(p.returncode, 0, p.stderr)
+        assert "kaputt" in p.stderr and "Erkennungsmuster" in p.stderr, p.stderr
 
 
 if __name__ == "__main__":

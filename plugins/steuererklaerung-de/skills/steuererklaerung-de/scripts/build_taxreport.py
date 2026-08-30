@@ -108,6 +108,7 @@ KAP_STEUER_KENNZAHLEN = ("anrechenbare_kest", "einbehaltener_soli",
 KAP_ZEILEN_LABEL = {
     "7": "Kapitalerträge (ohne Steuerabzug bzw. lt. Steuerbescheinigung)",
     "19": "Ausländische Kapitalerträge ohne inländischen Steuerabzug",
+    "20": "Gewinne aus Aktienveräußerungen (§ 20 Abs. 2 Satz 1 Nr. 1 EStG)",
     "21": "Gewinne aus Termingeschäften und Stillhalterprämien",
     "22": "Verluste aus Kapitalvermögen ohne Verluste aus Aktienveräußerungen",
     "23": "Verluste aus Aktienveräußerungen (§ 20 Abs. 6 Satz 4 EStG)",
@@ -117,6 +118,43 @@ KAP_ZEILEN_LABEL = {
     "41": "Anrechenbare ausländische Quellensteuer",
     "42": "Fiktive ausländische Quellensteuer (Anrechnung nach DBA)",
 }
+
+# Anlage-KAP-Zeilen, die den BETRAG eines Verlustes aufnehmen. ELSTER erwartet dort
+# eine positive Zahl (die Zeilenbeschriftung lautet „Verluste …", das Minus steckt
+# schon im Wort). Eine Quelle, die ihre Verluste negativ druckt, darf deshalb nicht
+# unverändert ins Mapping durchgereicht werden: der Steuerpflichtige tippt sonst
+# „−450,00" in ein Feld, das die 450 € als Betrag will.
+KAP_ZEILEN_VERLUST = {"22", "23", "24", "25"}
+
+KAP_VERLUST_POSITIV_HINWEIS = (
+    "Anlage KAP: In die Verlustzeilen 22–25 gehört der BETRAG des Verlustes — ELSTER "
+    "erwartet dort eine positive Zahl ohne Minuszeichen (die Zeile heißt bereits "
+    "„Verluste …“). Rohzeilen aus Bescheinigungen, die den Verlust mit negativem "
+    "Vorzeichen ausweisen, sind für das ELSTER-Mapping auf den positiven Betrag "
+    "umgestellt worden. Die wörtliche Abschrift der Bescheinigung steht unverändert "
+    "unter anlagen.KAP.kap_zeilen.")
+
+# Die zentrale, bewusst getroffene Auslegung dieses Skripts. Sie steht im Report,
+# nicht nur im Code: sie entscheidet bei nennenswerten Verlusten über tausende Euro
+# Abgeltungsteuer, und nur der Steuerpflichtige kann sie an seiner Bescheinigung
+# verifizieren.
+KAP_DAVON_ANNAHME_HINWEIS = (
+    "ANNAHME zur Anlage KAP — bitte gegen die eigene Steuerbescheinigung prüfen: Die "
+    "Zeilen 20 bis 25 stehen im Formular unter EINER gemeinsamen Überschrift — "
+    "„In den Zeilen 18 und 19 enthaltene …“ (bzw. „In Zeile 7 enthaltene …“). "
+    "Dieser Report behandelt deshalb alle sechs Zeilen gleich: 'kapitalertraege' "
+    "(Z. 7 bzw. Z. 18/19) wird als der SALDO genommen, der die Verluste der Zeilen "
+    "22–25 BEREITS ENTHÄLT. Die Verlustzeilen mindern die Bemessungsgrundlage daher "
+    "KEIN ZWEITES MAL; sie dienen allein der Zuordnung zu den Verrechnungskreisen. "
+    "Einzige Ausnahme ist der Aktienverlust (Z. 23): soweit er die Aktiengewinne "
+    "(Z. 20) übersteigt, darf er nach § 20 Abs. 6 Satz 4 EStG nicht mit anderen "
+    "Kapitalerträgen verrechnet werden — dieser Überhang wird der "
+    "Bemessungsgrundlage wieder HINZUGERECHNET und in den Aktien-Verlustvortrag "
+    "gestellt. WENN Ihre Bescheinigung ihre „Höhe der Kapitalerträge“ dagegen "
+    "BRUTTO ausweist, also OHNE die Verluste der Zeilen 22–25, ist die hier "
+    "ausgewiesene Bemessungsgrundlage zu hoch: dann sind die Verluste von "
+    "'kapitalertraege' abzuziehen, bevor der Report gebaut wird. Diese Auslegung ist "
+    "die folgenreichste Annahme der gesamten KAP-Rechnung.")
 
 AUSFALLVERLUST_HINWEIS = (
     "Verluste aus dem wertlosen Ausfall bzw. der Ausbuchung von Kapitalanlagen "
@@ -1090,10 +1128,16 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     # nicht gerechnet — die Abgeltungsteuer bliebe falsch.
     futures_netto = _betrag((kd.get("koinly_extra") or {}).get("futures_nettoergebnis_eur"),
                             "koinly_extra.futures_nettoergebnis_eur")
+    # Beide Vorzeichen wandern in 'kap_ertraege': die Verlustzeilen 22–25 sind
+    # davon-Zeilen zum Saldo (siehe KAP_DAVON_ANNAHME_HINWEIS) und mindern die
+    # Bemessungsgrundlage nicht mehr selbst. Ein Futures-Verlust nur in
+    # 'verlust_termin' zu buchen hieße deshalb: erklärt, ausgewiesen — und nirgends
+    # abgezogen.
     if futures_netto > 0:
         kap_ertraege += futures_netto
         gewinn_termin += futures_netto
     elif futures_netto < 0:
+        kap_ertraege += futures_netto          # negativ: mindert den Saldo
         verlust_termin += abs(futures_netto)
     if futures_netto != 0:
         hinweise.append(
@@ -1166,27 +1210,64 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     if verluste_ausfall > 0:
         hinweise.append(AUSFALLVERLUST_HINWEIS)
 
-    # § 20 Abs. 6 Satz 4: Aktienverluste nur gegen Aktiengewinne — und nur bis zur
-    # Höhe der tatsächlich erklärten Kapitalerträge. Ohne den zweiten Deckel
-    # verwandelt ein zu hoch angegebener (oder frei erfundener) 'gewinn_aktien' den
-    # ringfenced Aktienverlust in einen allgemeinen, frei verrechenbaren Verlust:
-    # kapitalertraege 0 + gewinn_aktien 10.000 + verlust_aktien −10.000 ergäbe sonst
-    # 0 € im Aktientopf und 10.000 € im allgemeinen Topf — § 20 Abs. 6 Satz 4 wäre
-    # umgangen. Die Warnung oben zeigt die unstimmige Eingabe zusätzlich an.
-    aktien_verrechnet = min(verlust_aktien, max(gewinn_aktien, NULL),
-                            max(kap_ertraege, NULL))
+    # Die Auslegung der Zeilen 20–25 entscheidet über die Bemessungsgrundlage und
+    # damit über tausende Euro Abgeltungsteuer. Sie gehört deshalb an den ANFANG der
+    # Hinweise, nicht ans Ende — und in den Disclaimer, den der Export prominent
+    # rendert. Sobald eine Verlustzeile belegt ist, ist sie entscheidungsrelevant.
+    if (verlust_aktien > 0 or verlust_termin > 0 or verluste_ohne_aktien > 0
+            or verluste_ausfall > 0):
+        hinweise.insert(0, KAP_DAVON_ANNAHME_HINWEIS)
+
+    # ── § 20 Abs. 6 EStG ─────────────────────────────────────────────────────
+    # GRUNDANNAHME (siehe KAP_DAVON_ANNAHME_HINWEIS, steht auch im Report):
+    # 'kapitalertraege' ist der SALDO der Anlage-KAP-Zeile 7 bzw. 18/19 und enthält
+    # die Verluste der Zeilen 22–25 BEREITS. Die Zeilen 20–25 stehen im Formular
+    # unter derselben Überschrift „In den Zeilen 18 und 19 enthaltene …"; sie werden
+    # deshalb ALLE gleich behandelt — als davon-Zeilen, die nur den Verrechnungskreis
+    # bestimmen und die Bemessungsgrundlage nicht ein zweites Mal mindern.
+    #
+    # Folge: ein Verlust wird hier nicht ABGEZOGEN, sondern höchstens wieder
+    # HINZUGERECHNET — nämlich dann, wenn der Saldo ihn verrechnet hat, obwohl er
+    # das nicht durfte. Das trifft allein den Aktienverlust (§ 20 Abs. 6 Satz 4:
+    # nur gegen Aktienveräußerungsgewinne). Für die Zeilen 22, 24 und 25 gibt es
+    # seit dem JStG 2024 keinen eigenen Verrechnungskreis mehr — was der Saldo
+    # verrechnet hat, durfte er verrechnen.
+    #
+    # Verrechnet werden darf der Aktienverlust genau bis zur Höhe der
+    # Aktienveräußerungsgewinne — mehr sagt § 20 Abs. 6 Satz 4 nicht, und mehr lässt
+    # sich hier auch nicht prüfen. Ein zusätzlicher Deckel auf 'kapitalertraege'
+    # (frühere Fassung) wäre unter der davon-Zeilen-Lesart schlicht falsch: der
+    # Saldo ist bereits um sämtliche Verluste gemindert, Aktiengewinne dürfen ihn
+    # deshalb legitim übersteigen (Saldo 5.000 = 30.000 Gewinne − 25.000 Verluste).
+    # Gegen einen frei erfundenen 'gewinn_aktien' schützt die Warnung oben, nicht
+    # eine Deckelung, die bei ehrlichen Zahlen falsch rechnet.
+    aktien_verrechnet = min(verlust_aktien, max(gewinn_aktien, NULL))
+    # Der Teil des Aktienverlusts, den der Saldo nicht verrechnen durfte: er wird der
+    # Bemessungsgrundlage wieder zugeschlagen und in den Aktien-Verlustvortrag
+    # gestellt. Genau hier — und nur hier — bewegen die Verlustzeilen die Steuer.
+    aktien_ueberhang = verlust_aktien - aktien_verrechnet
+    kap_basis = kap_ertraege + aktien_ueberhang
     # Festgestellter Aktien-Verlustvortrag der Vorjahre: erst nach den laufenden
-    # Verlusten des Jahres und ebenfalls nur gegen Aktiengewinne. Zusätzlich auf
-    # die tatsächlich erklärten Kapitalerträge gedeckelt — sonst würde ein zu hoch
-    # angegebener 'gewinn_aktien' den Aktienvortrag in einen allgemeinen Verlust
-    # umwandeln (falscher Verrechnungskreis). Der Deckel nutzt bewusst
-    # 'kap_ertraege' (Z. 7) und NICHT 'kap_basis': Aktienveräußerungsgewinne
-    # stecken in Zeile 7, nicht in den Termingeschäftsgewinnen der Zeile 21.
+    # Verlusten des Jahres und ebenfalls nur gegen Aktiengewinne. Er steckt — anders
+    # als die Verluste dieses Jahres — NICHT im Saldo, ist also ein echter Abzug.
+    # Gedeckelt auf die noch freien Aktiengewinne und auf die Bemessungsgrundlage:
+    # ein Altvortrag darf keine negativen Kapitalerträge erzeugen.
     aktien_gewinn_rest = max(gewinn_aktien, NULL) - aktien_verrechnet
     vv_aktien_verbraucht = min(vv_aktien_vorjahr, aktien_gewinn_rest,
-                               max(kap_ertraege - aktien_verrechnet, NULL))
+                               max(kap_basis, NULL))
     vv_aktien_rest = vv_aktien_vorjahr - vv_aktien_verbraucht
-    vortrag_aktien = verlust_aktien - aktien_verrechnet + vv_aktien_rest
+    vortrag_aktien = aktien_ueberhang + vv_aktien_rest
+    if aktien_ueberhang > 0:
+        hinweise.append(
+            f"Aktienverluste (Anlage KAP Z. 23, {fmt_eur(verlust_aktien)}) übersteigen "
+            f"die Aktienveräußerungsgewinne (Z. 20, {fmt_eur(max(gewinn_aktien, NULL))}) "
+            f"um {fmt_eur(aktien_ueberhang)}. Dieser Überhang darf nach § 20 Abs. 6 "
+            f"Satz 4 EStG nicht mit den übrigen Kapitalerträgen verrechnet werden: er "
+            f"wurde den Kapitalerträgen wieder hinzugerechnet "
+            f"({fmt_eur(kap_ertraege)} + {fmt_eur(aktien_ueberhang)} = "
+            f"{fmt_eur(kap_basis)}) und in den Aktien-Verlustvortrag gestellt. "
+            f"Grundlage ist die Annahme, dass die Verluste im Saldo der "
+            f"Kapitalerträge bereits enthalten sind — siehe den ANNAHME-Hinweis.")
     if vv_aktien_vorjahr > 0:
         hinweise.append(
             f"Aktien-Verlustvortrag aus Vorjahren ({fmt_eur(vv_aktien_vorjahr)}): "
@@ -1198,24 +1279,35 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
             "Aktienverluste können nur mit Aktienveräußerungsgewinnen verrechnet werden "
             "(§ 20 Abs. 6 Satz 4 EStG). Ohne Angabe von 'anlage_kap.gewinn_aktien' wurde der "
             "gesamte Aktienverlust in den Verlustvortrag gestellt.")
-    nach_aktien = kap_ertraege - aktien_verrechnet - vv_aktien_verbraucht
-    # Seit JStG 2024: Termingeschäftsverluste gegen alle Kapitalerträge, ohne 20.000-€-Deckel.
-    termin_verrechnet = min(verlust_termin, max(nach_aktien, NULL))
+    # Die Bemessungsgrundlage steht damit fest: Saldo + ringfenced Aktienüberhang
+    # − Aktien-Altvortrag. Die Verluste der Zeilen 22, 24 und 25 kommen hier NICHT
+    # noch einmal ab — sie stecken im Saldo (siehe KAP_DAVON_ANNAHME_HINWEIS).
+    netto_kap = kap_basis - vv_aktien_verbraucht        # vorzeichenbehaftet
+
+    # Ausweis der Verrechnung für die Zeilen 24, 22 und 25 (§ 20 Abs. 6 Sätze 5/6
+    # sind seit dem JStG 2024 aufgehoben: kein eigener Verrechnungskreis, kein
+    # Deckel). Das ist eine DARSTELLUNG, keine zweite Rechnung: gefragt ist, wie
+    # viel dieser Verluste der Saldo tatsächlich aufgezehrt hat. Bezugsgröße ist
+    # deshalb der rechnerische Betrag vor diesen Verlusten; die Reihenfolge
+    # (Termin → übrige → Ausfall) bestimmt nur, welchem Topf ein nicht verrechneter
+    # Rest zugeordnet wird — vorgetragen werden sie ohnehin gemeinsam.
+    verluste_uebrige = verlust_termin + verluste_ohne_aktien + verluste_ausfall
+    vor_uebrigen_verlusten = netto_kap + verluste_uebrige
+    termin_verrechnet = min(verlust_termin, max(vor_uebrigen_verlusten, NULL))
+    rest_uebrige = vor_uebrigen_verlusten - termin_verrechnet
     vortrag_termin = verlust_termin - termin_verrechnet
-    nach_termin = nach_aktien - termin_verrechnet
+    ohne_aktien_verrechnet = min(verluste_ohne_aktien, max(rest_uebrige, NULL))
+    rest_uebrige -= ohne_aktien_verrechnet
+    ausfall_verrechnet = min(verluste_ausfall, max(rest_uebrige, NULL))
+    vortrag_uebrige = (verluste_uebrige - termin_verrechnet - ohne_aktien_verrechnet
+                       - ausfall_verrechnet)
 
-    # Übrige Verluste (Z. 22) und Ausfallverluste (Z. 25): beide ohne eigenen
-    # Verrechnungskreis, also gegen sämtliche verbliebenen Kapitalerträge. Der
-    # eigene Kreis des § 20 Abs. 6 Satz 6 für Ausfallverluste ist mit dem
-    # JStG 2024 entfallen (siehe AUSFALLVERLUST_HINWEIS).
-    ohne_aktien_verrechnet = min(verluste_ohne_aktien, max(nach_termin, NULL))
-    nach_ohne_aktien = nach_termin - ohne_aktien_verrechnet
-    ausfall_verrechnet = min(verluste_ausfall, max(nach_ohne_aktien, NULL))
-    vortrag_uebrige = ((verluste_ohne_aktien - ohne_aktien_verrechnet)
-                       + (verluste_ausfall - ausfall_verrechnet))
-
-    netto_kap = nach_ohne_aktien - ausfall_verrechnet    # vorzeichenbehaftet
-    vortrag_allgemein_laufend = (-netto_kap if netto_kap < 0 else NULL) + vortrag_uebrige
+    # Ein negativer Saldo, der über die erklärten Verlustzeilen hinausgeht (etwa ein
+    # negatives 'kapitalertraege' ohne Verlustangabe), ist ebenfalls vortragsfähig.
+    # 'vortrag_uebrige' deckt bereits den durch die Zeilen 22/24/25 erklärten Teil
+    # ab — sonst stünde derselbe Verlust zweimal im Vortrag.
+    vortrag_allgemein_laufend = (vortrag_uebrige
+                                 + max(-vor_uebrigen_verlusten, NULL))
 
     # Festgestellter allgemeiner Verlustvortrag der Vorjahre: NACH dem
     # Sparer-Pauschbetrag. Das ist die Reihenfolge, die ELSTER anwendet, und sie
@@ -1406,6 +1498,32 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     # nicht aus Zeile 19 herausziehen. Sonst stünden 5.000 € in beiden Zeilen.
     roh_nummern = {z["zeile"] for z in kapd["kap_zeilen"]
                    if _betrag(z["wert"], "kap_zeilen") != 0}
+    # Verlustzeilen im Mapping tragen immer den Betrag (ELSTER-Konvention). Wo eine
+    # Quelle das Vorzeichen anders setzt, wird das ausdrücklich gesagt — der Nutzer
+    # sieht sonst im Mapping eine andere Zahl als in seiner Bescheinigung und hält
+    # das für einen Fehler des Reports.
+    negative_verlust_zeilen = sorted(
+        {z["zeile"] for z in kapd["kap_zeilen"]
+         if z["zeile"] in KAP_ZEILEN_VERLUST
+         and _betrag(z["wert"], "kap_zeilen") < 0},
+        key=lambda nr: (int(nr) if nr.isdigit() else 99))
+    if negative_verlust_zeilen or any(
+            nr in roh_nummern for nr in KAP_ZEILEN_VERLUST) or (
+            verlust_aktien > 0 or verlust_termin > 0 or verluste_ohne_aktien > 0
+            or verluste_ausfall > 0):
+        if KAP_VERLUST_POSITIV_HINWEIS not in hinweise:
+            hinweise.append(KAP_VERLUST_POSITIV_HINWEIS)
+    if negative_verlust_zeilen:
+        quellen_neg = sorted({z["quelle"] for z in kapd["kap_zeilen"]
+                              if z["zeile"] in negative_verlust_zeilen
+                              and _betrag(z["wert"], "kap_zeilen") < 0})
+        hinweise.append(
+            "Anlage-KAP-Zeile(n) " + ", ".join(negative_verlust_zeilen)
+            + " werden von der Quelle " + ", ".join(quellen_neg)
+            + " mit negativem Vorzeichen ausgewiesen. Im ELSTER-Mapping stehen sie "
+              "als positiver Betrag — das ist die Zahl, die einzutippen ist. Die "
+              "Abschrift der Bescheinigung bleibt in anlagen.KAP.kap_zeilen "
+              "vorzeichengetreu erhalten.")
     ertraege_zeile = "19" if ("19" in roh_nummern and "7" not in roh_nummern) else "7"
     abgeleitete_kap_zeilen = {ertraege_zeile: kap_ertraege}
     if gewinn_termin != 0:
@@ -1497,6 +1615,13 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
                     "verluste_ohne_aktien": str(q2(verluste_ohne_aktien)),
                     "verluste_ausfall": str(q2(verluste_ausfall)),
                     "verlust_aktien_verrechnet": str(q2(aktien_verrechnet)),
+                    # Der nach § 20 Abs. 6 Satz 4 nicht verrechenbare Aktienverlust,
+                    # der der Bemessungsgrundlage wieder hinzugerechnet wurde, und
+                    # das Ergebnis dieser Hinzurechnung. Wer gegen einen
+                    # Steuerbescheid abgleicht, sieht hier den einzigen Punkt, an
+                    # dem die davon-Verlustzeilen die Bemessungsgrundlage bewegen.
+                    "verlust_aktien_ueberhang_hinzugerechnet": str(q2(aktien_ueberhang)),
+                    "kapitalertraege_nach_aktien_hinzurechnung": str(q2(kap_basis)),
                     "verlust_termingeschaefte_verrechnet": str(q2(termin_verrechnet)),
                     "verluste_ohne_aktien_verrechnet": str(q2(ohne_aktien_verrechnet)),
                     "verluste_ausfall_verrechnet": str(q2(ausfall_verrechnet)),
@@ -1612,6 +1737,10 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
         ],
     }
 
+    # Die davon-Zeilen-Auslegung ist die folgenreichste Annahme der KAP-Rechnung —
+    # sie steht deshalb nicht nur unter 'hinweise', sondern auch im Disclaimer.
+    if KAP_DAVON_ANNAHME_HINWEIS in hinweise:
+        report["disclaimer"].append(KAP_DAVON_ANNAHME_HINWEIS)
     if vv_23_verbraucht > 0:
         report["disclaimer"].append(
             f"§ 23-Verlustvortrag aus Vorjahren: {fmt_eur(vv_23_verbraucht)} von "
@@ -1786,19 +1915,21 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
         "steuerlib.sparer_pauschbetrag")
     if verluste_ohne_aktien > 0:
         add_kap("22", "Z. 22", "Verluste aus Kapitalvermögen ohne Verluste aus "
-                "Aktienveräußerungen (unbeschränkt verrechenbar)",
+                "Aktienveräußerungen (unbeschränkt verrechenbar; als positiven Betrag eintragen)",
                 q2(verluste_ohne_aktien), f"{kap_herkunft}.verluste_ohne_aktien")
     if verlust_aktien > 0:
-        add_kap("23", "Z. 23", "Verluste aus Aktienveräußerungen (§ 20 Abs. 6 Satz 4)",
+        add_kap("23", "Z. 23", "Verluste aus Aktienveräußerungen (§ 20 Abs. 6 Satz 4; als "
+                "positiven Betrag eintragen)",
                 q2(verlust_aktien), f"{kap_herkunft}.verlust_aktien")
     if verlust_termin > 0:
         add_kap("24", "Z. 24", "Verluste aus Termingeschäften (§ 20 Abs. 6 Satz 5 a. F. — "
-                "durch JStG 2024 aufgehoben, unbeschränkt verrechenbar)",
+                "durch JStG 2024 aufgehoben, unbeschränkt verrechenbar; als positiven Betrag "
+                "eintragen)",
                 q2(verlust_termin), f"{kap_herkunft}.verlust_termingeschaefte")
     if verluste_ausfall > 0:
         add_kap("25", "Z. 25", "Verluste aus wertlosem Ausfall / Ausbuchung von "
                 "Kapitalanlagen (§ 20 Abs. 6 Satz 6 a. F. — durch JStG 2024 aufgehoben, "
-                "unbeschränkt verrechenbar)",
+                "unbeschränkt verrechenbar; als positiven Betrag eintragen)",
                 q2(verluste_ausfall), f"{kap_herkunft}.verluste_ausfall")
     # Festgestellte Verlustvorträge aus Vorjahren gehören NICHT in die Verlustzeilen
     # 22–25: die nehmen ausschließlich die Verluste DIESES Jahres auf. Der Vortrag
@@ -1849,10 +1980,22 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
                 q2(fiktive_quellensteuer), f"{kap_herkunft}.fiktive_quellensteuer")
 
     # Rohzeilen der Bescheinigungen: genau das, was in ELSTER eingetippt wird.
+    #
+    # Einzige Ausnahme vom „wörtlich durchreichen": die Verlustzeilen 22–25. Sie
+    # nehmen den BETRAG des Verlustes auf, ELSTER erwartet dort eine positive Zahl.
+    # Quellen drucken Verluste aber mal positiv (deutsche Steuerbescheinigung), mal
+    # negativ (eToro: „−450,00"). Unverändert durchgereicht stünde im Mapping die
+    # Anweisung, ein Minus in ein Betragsfeld zu tippen — je nachdem, ob ELSTER das
+    # Zeichen verwirft oder den Verlust umdreht, kostet das den vollen
+    # Verlustabzug. Die wörtliche Abschrift bleibt in anlagen.KAP.kap_zeilen stehen.
     for z in roh_zeilen:
         label = KAP_ZEILEN_LABEL.get(z["zeile"], "Betrag laut Bescheinigung")
+        wert = z["wert"]
+        if z["zeile"] in KAP_ZEILEN_VERLUST:
+            wert = q2(abs(to_decimal(wert)))
+            label = f"{label} (als positiven Betrag eintragen)"
         add("Anlage KAP", f"Z. {z['zeile']}",
-            f"{label} — Rohzeile aus der Bescheinigung", z["wert"],
+            f"{label} — Rohzeile aus der Bescheinigung", wert,
             f"{z['quelle']} (kap_zeilen)")
     for row in kap_extra or []:
         add_extra(row, "Anlage KAP", "kap-quelle (elster_extra)")

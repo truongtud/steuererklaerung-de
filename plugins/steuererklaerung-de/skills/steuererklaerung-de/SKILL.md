@@ -1,6 +1,6 @@
 ---
 name: steuererklaerung-de
-description: Erstellt einen TaxReport für die deutsche Einkommensteuererklärung über alle Anlagen (N, KAP, SO, V, S, G, Vorsorge, Sonderausgaben, agB, Kind), rechnet Krypto exakt nach FIFO/§ 23 EStG (taggenaue Haltefrist, Freigrenze, Staking § 22 Nr. 3) und Kapitalerträge inkl. Verlusttöpfen, liest Broker- und Börsen-Reports als PDF oder CSV ein (Koinly, eToro, Kraken, Coinbase, Bitpanda, Binance, Steuerbescheinigungen und Erträgnisaufstellungen; neue über Profildateien) und exportiert HTML, PDF und ELSTER-Feld-Mapping. Use whenever the user mentions Steuererklärung, Einkommensteuer, Krypto-Steuer, crypto tax, Anlage N/KAP/SO/V, Veräußerungsgeschäfte, Staking-Steuer, ELSTER, Lohnsteuerbescheinigung, Steuerbescheinigung, Erträgnisaufstellung, Freigrenze, FIFO, Verlustvortrag, Termingeschäfte, or wants a tax report from broker/exchange PDFs, exchange CSVs or income data in Germany. Nicht für Steuerrecht anderer Länder.
+description: Erstellt einen TaxReport für die deutsche Einkommensteuererklärung über alle Anlagen (N, KAP, SO, V, S, G, Vorsorge, Sonderausgaben, agB, Kind), rechnet Krypto exakt nach FIFO/§ 23 EStG (taggenaue Haltefrist, Freigrenze, Staking § 22 Nr. 3) und Kapitalerträge inkl. Verlusttöpfen, liest Broker- und Börsen-Reports als PDF oder CSV über Profildateien ein (Koinly, eToro, Kraken, Coinbase, Bitpanda, Binance; weitere Broker und Steuerbescheinigungen über eigene Profile) und exportiert HTML, PDF und ELSTER-Feld-Mapping. Use whenever the user mentions Steuererklärung, Einkommensteuer, Krypto-Steuer, crypto tax, Anlage N/KAP/SO/V, Veräußerungsgeschäfte, Staking-Steuer, ELSTER, Lohnsteuerbescheinigung, Steuerbescheinigung, Erträgnisaufstellung, Freigrenze, FIFO, Verlustvortrag, Termingeschäfte, or wants a tax report from broker/exchange PDFs, exchange CSVs or income data in Germany. Nicht für Steuerrecht anderer Länder.
 license: MIT — NUR Orientierung, KEINE Steuerberatung.
 ---
 
@@ -48,9 +48,9 @@ python3 tests/run_tests.py                    # Selbsttest: muss grün sein
 Profile in `scripts/profiles/`, welcher Report vorliegt:
 
 ```bash
-python scripts/parse_broker.py --list              # welche Profile gibt es
-python scripts/parse_broker.py report.pdf          # Profil automatisch erkennen
-python scripts/parse_broker.py export.csv --profil binance
+python3 scripts/parse_broker.py --list              # welche Profile gibt es
+python3 scripts/parse_broker.py report.pdf          # Profil automatisch erkennen
+python3 scripts/parse_broker.py export.csv --profil binance
 ```
 
 Je nach Report entsteht `<name>.krypto_result.json`, `<name>.kap_result.json` oder
@@ -60,7 +60,7 @@ Ein neuer Broker ist eine Profildatei, kein neues Skript: `references/broker-pro
 beschreibt das Schema, `profile_wizard.py` erzeugt aus einem echten Report einen Entwurf.
 
 ```bash
-python scripts/profile_wizard.py neuer_report.pdf --id mein-broker
+python3 scripts/profile_wizard.py neuer_report.pdf --id mein-broker
 ```
 
 Der Entwurf enthält bewusst `TODO`-Marker für alles, was der Wizard nicht sicher zuordnen
@@ -83,7 +83,7 @@ Engine auf.
 
 **Generische Broker-PDFs** (eigene Transaktionslisten):
 ```bash
-python scripts/parse_pdf.py report.pdf --outdir arbeit --backend auto --ocr-lang deu+eng
+python3 scripts/parse_pdf.py report.pdf --outdir arbeit --backend auto --ocr-lang deu+eng
 ```
 Wählt automatisch das beste Backend (Docling → pdfplumber → PyMuPDF), erkennt gescannte
 Seiten und schaltet auf Tesseract-OCR um. Schreibt `<name>.extracted.json`,
@@ -101,9 +101,9 @@ achten; die vom Skript gemeldeten übersprungenen Tabellen ansehen. Details:
   **Lohnsteuerbescheinigung** als PDF vor: Nr. 3 → `bruttoarbeitslohn`, Nr. 4 →
   `lohnsteuer`, Nr. 5 → `soli`, Nr. 6 → `kirchensteuer`.
 - Unbekannte Feldnamen werden gemeldet („meintest du …?") und **ignoriert** — die Warnung
-  ernst nehmen, ein Tippfehler ist sonst stillschweigend 0 € wert. `--strict` macht daraus
-  einen Abbruch.
-- **Krypto aus CSV**: `python scripts/parse_inputs.py datei.csv --format kraken -o transactions.json`
+  ernst nehmen, ein Tippfehler ist sonst stillschweigend 0 € wert. `--strict` schreibt den
+  Report weiterhin, endet aber mit Rückgabecode 3, damit der Fehler nicht untergeht.
+- **Krypto aus CSV**: `python3 scripts/parse_inputs.py datei.csv --format kraken -o transactions.json`
 - **Krypto-zu-Krypto-Tausch ist eine Veräußerung** — als `swap` mit `eur_value` erfassen.
 - **Verlustvorträge aus Vorjahren** eintragen (`anlage_so.verlustvortrag_23_vorjahr`,
   `anlage_kap.verlustvortrag_aktien_vorjahr`), sonst verfallen sie faktisch.
@@ -114,7 +114,7 @@ der Anschaffungshistorie, offene Verlustfeststellungen.
 ### Schritt 2 — Krypto FIFO (nur bei Roh-Transaktionen)
 
 ```bash
-python scripts/krypto_fifo.py transactions.json <steuerjahr> krypto_result.json
+python3 scripts/krypto_fifo.py transactions.json <steuerjahr> krypto_result.json
 ```
 
 Rechnet per-Asset-FIFO über die **gesamte** Historie, weist aber nur das Steuerjahr aus.
@@ -126,12 +126,18 @@ sonst selbst auf.
 ### Schritt 3 — TaxReport bauen
 
 ```bash
-python scripts/build_taxreport.py steuerdaten.json --transactions transactions.json -o taxreport.json
+python3 scripts/build_taxreport.py steuerdaten.json --transactions transactions.json -o taxreport.json
 # mehrere Quellen, Krypto und Wertpapiere gemischt:
-python scripts/build_taxreport.py steuerdaten.json \
-    --krypto-result koinly.krypto_result.json \
-    --kap-result etoro.kap_result.json depot.kap_result.json -o taxreport.json
+python3 scripts/build_taxreport.py steuerdaten.json \
+    --krypto-result koinly.krypto_result.json taxReport.kap_result.json \
+    --kap-result    taxReport.kap_result.json \
+    -o taxreport.json
 ```
+
+**Die eToro-Datei steht absichtlich in beiden Listen.** Sie trägt beide Hälften — die
+Anlage-KAP-Kennzahlen *und* das § 23-/§ 22-Ergebnis. `--krypto-result` liest nur die eine,
+`--kap-result` nur die andere; in beiden Listen wird jede Hälfte genau einmal verbraucht,
+in nur einer verschwindet die andere. Das Skript warnt dann und nennt, was fehlt.
 
 Setzt die Anlagen zusammen, wendet die Freigrenzen **einmal auf die Summe** an, verrechnet
 Verlustvorträge, schätzt zvE und ESt (§ 32a, Grund-/Splittingtarif), Soli (mit
@@ -148,7 +154,7 @@ dann die Werte nach `references/steuerwerte.md` in `steuerlib.py` ergänzen.
 ### Schritt 4 — Exportieren
 
 ```bash
-python scripts/export_report.py taxreport.json --outdir out --formats html pdf elster
+python3 scripts/export_report.py taxreport.json --outdir out --formats html pdf elster
 ```
 
 - `taxreport_<jahr>.html` — Dashboard, self-contained, mit Druck-Stylesheet
@@ -173,8 +179,13 @@ Nur die gewünschten Formate wählen, die Dateien anschließend an den Nutzer au
 1. Kernzahlen in Klartext: zvE, ESt-Schätzung, **Nachzahlung/Erstattung**, Krypto § 23
    steuerpflichtig, steuerfrei (> 1 Jahr), Staking § 22 Nr. 3, Verlustvorträge.
 2. Auffälligkeiten: Freigrenze knapp über-/unterschritten, fehlende Anschaffungshistorie,
-   ignorierte unbekannte Felder, Steuerjahr ohne Tarif, Bestände nahe der Jahresfrist.
-3. Der **Disclaimer**: keine Steuerberatung, ELSTER ist maßgeblich, Endkontrolle durch
+   ignorierte unbekannte Felder, Steuerjahr ohne Tarif, Bestände nahe der Jahresfrist,
+   Haltefrist-Konflikte zwischen Report und Gesetz, Profile ohne Gegenprüfung.
+3. Bei Kapitalerträgen die **Saldo-Annahme** nennen: `kapitalertraege` wird als der Betrag
+   gelesen, der die Verluste der Anlage-KAP-Zeilen 22–25 **bereits enthält**. Ist die eigene
+   Bescheinigung brutto ausgewiesen, muss vorher saldiert werden. Der Report stellt diesen
+   Satz an den Anfang von `hinweise`; er gehört in die Antwort.
+4. Der **Disclaimer**: keine Steuerberatung, ELSTER ist maßgeblich, Endkontrolle durch
    Steuerberater. Nicht weglassen — er steht auch in jedem Export.
 
 ## Reference-Dateien (bei Bedarf lesen)
@@ -192,11 +203,12 @@ Nur die gewünschten Formate wählen, die Dateien anschließend an den Nutzer au
 
 ## Tests
 
-`python3 tests/run_tests.py` prüft Tarif-Stützpunkte und Zonenstetigkeit, Zahlenparser
-(DE/EN, Vorzeichen), Fristen-Grenzfälle, FIFO mit Teillosen und Gebühren, Freigrenzen-
-aggregation über mehrere Quellen, ELSTER-Export und die Schnittstellen zwischen den
-Skripten. **Nach jeder Änderung laufen lassen** — die Steuerwerte-Tests fangen falsch
-abgeschriebene Konstanten, die Kontrakt-Tests fangen auseinanderlaufende Schlüsselnamen.
+`python3 tests/run_tests.py` — **368 Fälle in 10 Dateien**: Tarif-Stützpunkte und
+Zonenstetigkeit, Zahlenparser (DE/EN, Vorzeichen), Fristen-Grenzfälle, FIFO mit Teillosen
+und Gebühren, Freigrenzen- und Verlusttopf-Aggregation über mehrere Quellen, KAP-Quellen,
+Profil-Validierung, den Wizard samt Anonymisierung, ELSTER-Export und die Schnittstellen
+zwischen den Skripten. **Nach jeder Änderung laufen lassen** — die Steuerwerte-Tests fangen
+falsch abgeschriebene Konstanten, die Kontrakt-Tests auseinanderlaufende Schlüsselnamen.
 
 ## Grenzen (bewusst nicht automatisiert)
 

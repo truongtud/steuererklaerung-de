@@ -90,6 +90,11 @@ def zeilen(report, anlage="Anlage KAP"):
     return [r for r in report["elster_mapping"] if r["anlage"] == anlage]
 
 
+def k_zeilen(report):
+    """Die wörtliche Abschrift der Bescheinigung (anlagen.KAP.kap_zeilen)."""
+    return report["anlagen"]["KAP"]["kap_zeilen"]
+
+
 def schreibe(tmp, name, obj):
     p = os.path.join(tmp, name)
     with open(p, "w", encoding="utf-8") as f:
@@ -156,7 +161,9 @@ def test_aktienverlust_der_einen_quelle_netzt_gegen_den_gewinn_der_anderen():
     über alle Depots — verrechnet wird deshalb einmal auf der Summe.
     """
     a = kap_quelle(quelle="Depot A", kapitalertraege="5000.00", gewinn_aktien="5000.00")
-    b = kap_quelle(quelle="Depot B", verlust_aktien="-3000.00")
+    # Depot B weist seinen Saldo aus, in dem der Aktienverlust bereits steckt
+    # (Z. 23 ist eine Davon-Zeile zu Z. 7/18/19) — deshalb kapitalertraege = -3.000.
+    b = kap_quelle(quelle="Depot B", kapitalertraege="-3000.00", verlust_aktien="-3000.00")
     r = bau(steuerdaten(), [a, b])
     k = kap_block(r)
     eq(k["gewinn_aktien"], "5000.00")
@@ -173,7 +180,8 @@ def test_aktienverlust_der_einen_quelle_netzt_gegen_den_gewinn_der_anderen():
 def test_termingeschaeftsverlust_netzt_ueber_depots_hinweg():
     """Seit JStG 2024 unbeschränkt verrechenbar — aber ebenfalls erst auf der Summe."""
     a = kap_quelle(quelle="Depot A", kapitalertraege="10000.00")
-    b = kap_quelle(quelle="Depot B", verlust_termingeschaefte="-4000.00")
+    b = kap_quelle(quelle="Depot B", kapitalertraege="-4000.00",
+                   verlust_termingeschaefte="-4000.00")
     k = kap_block(bau(steuerdaten(), [a, b]))
     eq(k["verlust_termingeschaefte"], "4000.00")
     eq(k["verlust_termingeschaefte_verrechnet"], "4000.00")
@@ -183,13 +191,26 @@ def test_termingeschaeftsverlust_netzt_ueber_depots_hinweg():
 
 @case
 def test_verlust_ohne_gegengewinn_bleibt_vortragsfaehig():
-    """Gegenprobe: ohne Aktiengewinn darf der Verlust NICHT verrechnet werden."""
-    b = kap_quelle(quelle="Depot B", kapitalertraege="5000.00", verlust_aktien="-3000.00")
-    k = kap_block(bau(steuerdaten(), [b]))
+    """Ohne Aktiengewinn darf der Aktienverlust NICHT verrechnet werden.
+
+    Der Saldo der Bescheinigung (2.000 €) hat den Aktienverlust bereits abgezogen —
+    5.000 € übrige Erträge − 3.000 € Aktienverlust. § 20 Abs. 6 Satz 4 EStG erlaubt
+    das nicht: der Verlust wird der Bemessungsgrundlage wieder HINZUGERECHNET und
+    in den Aktien-Verlusttopf gestellt. Die Verlustzeile mindert die Steuer damit
+    kein zweites Mal — sie ordnet nur zu.
+    """
+    b = kap_quelle(quelle="Depot B", kapitalertraege="2000.00", verlust_aktien="-3000.00")
+    r = bau(steuerdaten(), [b])
+    k = kap_block(r)
     eq(k["verlust_aktien_verrechnet"], "0.00")
     eq(k["verlustvortraege"]["aktien"], "3000.00",
        "Aktienverluste nur gegen Aktiengewinne (§ 20 Abs. 6 Satz 4 EStG)")
+    eq(k["verlust_aktien_ueberhang_hinzugerechnet"], "3000.00",
+       "der ringfenced Verlust wird dem Saldo wieder zugeschlagen")
+    eq(k["kapitalertraege_nach_aktien_hinzurechnung"], "5000.00")
     eq(k["netto_kapitalertraege"], "5000.00")
+    assert any("ANNAHME zur Anlage KAP" in h for h in r["hinweise"]), \
+        f"die Davon-Zeilen-Annahme muss im Report stehen: {r['hinweise']}"
 
 
 @case
@@ -251,7 +272,8 @@ def test_termingeschaeftsgewinn_und_verlust_aus_zwei_quellen_netten():
     """
     a = kap_quelle(quelle="Depot A", kapitalertraege="8000.00",
                    gewinn_termingeschaefte="8000.00")
-    b = kap_quelle(quelle="Depot B", verlust_termingeschaefte="-3000.00")
+    b = kap_quelle(quelle="Depot B", kapitalertraege="-3000.00",
+                   verlust_termingeschaefte="-3000.00")
     k = kap_block(bau(steuerdaten(), [a, b]))
     eq(k["gewinn_termingeschaefte"], "8000.00")
     eq(k["verlust_termingeschaefte"], "3000.00")
@@ -274,7 +296,8 @@ def test_gewinn_termingeschaefte_erscheint_als_elster_zeile_21():
 @case
 def test_verluste_ohne_aktien_verrechnen_sich_unbeschraenkt():
     a = kap_quelle(quelle="Depot A", kapitalertraege="5000.00")
-    b = kap_quelle(quelle="Depot B", verluste_ohne_aktien="-2000.00")
+    b = kap_quelle(quelle="Depot B", kapitalertraege="-2000.00",
+                   verluste_ohne_aktien="-2000.00")
     k = kap_block(bau(steuerdaten(), [a, b]))
     eq(k["verluste_ohne_aktien"], "2000.00")
     eq(k["verluste_ohne_aktien_verrechnet"], "2000.00",
@@ -285,7 +308,9 @@ def test_verluste_ohne_aktien_verrechnen_sich_unbeschraenkt():
 
 @case
 def test_ausfallverluste_verrechnen_sich_und_werden_erlaeutert():
-    q = kap_quelle(kapitalertraege="5000.00", verluste_ausfall="-1500.00")
+    # 5.000 € Bruttoerträge abzüglich 1.500 € Ausfallverlust = 3.500 € Saldo;
+    # Z. 25 ist eine Davon-Zeile dazu und wird nicht ein zweites Mal abgezogen.
+    q = kap_quelle(kapitalertraege="3500.00", verluste_ausfall="-1500.00")
     r = bau(steuerdaten(), [q])
     k = kap_block(r)
     eq(k["verluste_ausfall"], "1500.00")
@@ -299,12 +324,15 @@ def test_ausfallverluste_verrechnen_sich_und_werden_erlaeutert():
 
 @case
 def test_uebersteigende_verluste_gehen_in_den_allgemeinen_verlustvortrag():
-    q = kap_quelle(kapitalertraege="1000.00", verluste_ohne_aktien="-2500.00",
+    # 1.000 € Bruttoerträge, 2.500 € (Z. 22) + 500 € (Z. 25) Verluste → Saldo −2.000 €.
+    q = kap_quelle(kapitalertraege="-2000.00", verluste_ohne_aktien="-2500.00",
                    verluste_ausfall="-500.00")
     k = kap_block(bau(steuerdaten(), [q]))
-    eq(k["verluste_ohne_aktien_verrechnet"], "1000.00")
+    eq(k["verluste_ohne_aktien_verrechnet"], "1000.00",
+       "mehr als die 1.000 € Bruttoerträge konnte der Saldo nicht aufzehren")
     eq(k["verluste_ausfall_verrechnet"], "0.00", "nach Z. 22 ist nichts mehr übrig")
-    eq(k["netto_kapitalertraege"], "0.00")
+    eq(k["netto_kapitalertraege"], "-2000.00",
+       "der Saldo bleibt vorzeichenbehaftet — er wird nicht ein zweites Mal gemindert")
     eq(k["verlustvortraege"]["allgemein"], "2000.00", "1.500 (Z. 22) + 500 (Z. 25)")
     eq(k["abgeltungsteuer"], "0.00")
 
@@ -411,7 +439,20 @@ def test_neue_kennzahlen_lassen_sich_auch_von_hand_tippen():
     eq(k["verluste_ohne_aktien"], "300.00", "Handeingabe wird ebenfalls auf -abs() normiert")
     eq(k["verluste_ausfall"], "200.00")
     eq(k["fiktive_quellensteuer"], "50.00")
-    eq(k["netto_kapitalertraege"], "2500.00", "3000 − 300 − 200; Z. 21 ist eine Davon-Zeile")
+    # DIE REGEL, nicht die Arithmetik: Z. 21 (Gewinn), Z. 22 und Z. 25 (Verluste)
+    # stehen im Formular unter EINER Überschrift („In den Zeilen 18 und 19
+    # enthaltene …"). Sie werden deshalb alle gleich behandelt — keine von ihnen
+    # verschiebt die Bemessungsgrundlage. 'kapitalertraege' ist der Saldo, der die
+    # 300 € und die 200 € bereits enthält; ein zweiter Abzug wäre eine doppelte
+    # Berücksichtigung desselben Verlustes.
+    ohne = kap_block(bau(steuerdaten(anlage_kap={"kapitalertraege": "3000.00"})))
+    eq(k["netto_kapitalertraege"], ohne["netto_kapitalertraege"],
+       "Z. 22 und Z. 25 sind Davon-Zeilen wie Z. 21 — sie mindern den Saldo nicht erneut")
+    eq(k["netto_kapitalertraege"], "3000.00")
+    eq(k["verluste_ohne_aktien_verrechnet"], "300.00",
+       "verrechnet wurden sie trotzdem — nämlich bereits im Saldo")
+    eq(k["verluste_ausfall_verrechnet"], "200.00")
+    eq(k["verlustvortraege"]["allgemein"], "0.00")
 
 
 @case
@@ -905,20 +946,33 @@ def test_phantom_gewinn_aktien_laesst_den_verlust_im_aktientopf():
     with contextlib.redirect_stderr(err):
         r = bau(steuerdaten(), [q])
     k = kap_block(r)
-    eq(k["verlust_aktien_verrechnet"], "0.00", "es gibt nichts, wogegen verrechnet würde")
-    eq(k["verlustvortraege"]["aktien"], "10000.00", "der Verlust bleibt ringfenced")
+    # Unter der davon-Zeilen-Lesart ist die Eingabe nicht auflösbar: entweder
+    # enthält der Saldo tatsächlich 10.000 € Aktiengewinne und 10.000 €
+    # Aktienverluste (dann ist 0,00 € richtig), oder der Gewinn ist behauptet
+    # (dann müssten 10.000 € hinzugerechnet werden). Ein stiller Deckel würde bei
+    # ehrlichen Zahlen falsch rechnen — deshalb WARNT der Report, statt zu raten.
+    treffer = [w for w in r["warnungen"] if "gewinn_aktien" in w]
+    assert treffer, f"unstimmige Davon-Zeile nicht gemeldet: {r['warnungen']}"
+    assert "unversteuert" in treffer[0], treffer[0]
     eq(k["verlustvortraege"]["allgemein"], "0.00",
-       "er darf NICHT in den allgemeinen Topf gelangen")
-    assert any("gewinn_aktien" in w for w in r["warnungen"]), r["warnungen"]
+       "ein Aktienverlust darf NIE im allgemeinen Topf landen")
+    eq(dec(k["verlust_aktien_verrechnet"]) + dec(k["verlust_aktien_ueberhang_hinzugerechnet"]),
+       dec(k["verlust_aktien"]),
+       "jeder Aktienverlust ist entweder verrechnet oder hinzugerechnet — nie beides, "
+       "nie keines von beidem")
 
 
 @case
 def test_echter_aktiengewinn_wird_weiterhin_verrechnet():
     """Gegenprobe zur Deckelung: mit echten Kapitalerträgen bleibt alles wie bisher."""
-    q = kap_quelle(kapitalertraege="10000.00", gewinn_aktien="10000.00",
+    # Saldo 6.000 € = 10.000 € Aktiengewinne − 4.000 € Aktienverluste (Z. 20/Z. 23
+    # sind Davon-Zeilen dazu). Die Verrechnung ist zulässig, es wird nichts
+    # hinzugerechnet — und der Saldo auch nicht erneut gemindert.
+    q = kap_quelle(kapitalertraege="6000.00", gewinn_aktien="10000.00",
                    verlust_aktien="-4000.00")
     k = kap_block(bau(steuerdaten(), [q]))
     eq(k["verlust_aktien_verrechnet"], "4000.00")
+    eq(k["verlust_aktien_ueberhang_hinzugerechnet"], "0.00")
     eq(k["verlustvortraege"]["aktien"], "0.00")
     eq(k["netto_kapitalertraege"], "6000.00")
 
@@ -971,9 +1025,10 @@ def test_der_geschonte_pauschbetrag_geht_nicht_verloren():
 @case
 def test_nicht_verbrauchter_allgemeiner_vortrag_wird_fortgeschrieben():
     sd = steuerdaten(anlage_kap={"verlustvortrag_allgemein_vorjahr": "9000.00"})
-    q = kap_quelle(kapitalertraege="5000.00", verluste_ohne_aktien="-1000.00")
+    # Saldo 4.000 € — die 1.000 € aus Z. 22 stecken bereits darin (Davon-Zeile).
+    q = kap_quelle(kapitalertraege="4000.00", verluste_ohne_aktien="-1000.00")
     k = kap_block(bau(sd, [q]))
-    # 5000 − 1000 laufender Verlust = 4000; − 1000 Sparer-PB = 3000 verbraucht
+    # Saldo 4000; − 1000 Sparer-PB = 3000 verbraucht
     eq(k["verlustvortrag_allgemein_verbraucht"], "3000.00")
     eq(k["verlustvortrag_allgemein_rest"], "6000.00")
     eq(k["abgeltungsteuer"], "0.00")
@@ -1163,6 +1218,160 @@ def test_cli_meldet_fehlende_datei_und_kaputtes_json():
             rc2 = bt.main([p_sd, "--kap-result", p_bad, "-o", os.path.join(tmp, "o.json")])
         eq(rc2, 2)
         assert "kein gültiges JSON" in err2.getvalue(), err2.getvalue()
+
+
+# ── Zeilen 20–25: EINE Überschrift, EINE Behandlung ──────────────────────────
+# Im Formular stehen alle sechs Zeilen unter „In den Zeilen 18 und 19 enthaltene …"
+# (bzw. „In Zeile 7 enthaltene …"). Der Report legt sie deshalb als davon-Zeilen
+# aus: 'kapitalertraege' ist der Saldo, der sie bereits enthält. Diese Auslegung
+# entscheidet über tausende Euro Abgeltungsteuer — sie wird hier als REGEL geprüft.
+
+
+@case
+def test_alle_sechs_davon_zeilen_werden_gleich_behandelt():
+    """Keine der Zeilen 20–25 verschiebt die Bemessungsgrundlage.
+
+    Einzige Ausnahme ist der Aktienverlust der Zeile 23, und zwar nicht als Abzug,
+    sondern als HINZURECHNUNG: § 20 Abs. 6 Satz 4 EStG verbietet die Verrechnung
+    mit anderen Kapitalerträgen, also wird der Überhang zurückgeholt.
+    """
+    basis = kap_block(bau(steuerdaten(), [kap_quelle(kapitalertraege="10000.00")]))
+    for kennzahl, wert in (("gewinn_aktien", "4000.00"),
+                           ("gewinn_termingeschaefte", "4000.00"),
+                           ("verluste_ohne_aktien", "-4000.00"),
+                           ("verlust_termingeschaefte", "-4000.00"),
+                           ("verluste_ausfall", "-4000.00")):
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            k = kap_block(bau(steuerdaten(), [kap_quelle(
+                kapitalertraege="10000.00", **{kennzahl: wert})]))
+        eq(k["netto_kapitalertraege"], basis["netto_kapitalertraege"],
+           f"'{kennzahl}' ist eine Davon-Zeile und darf den Saldo nicht verändern")
+        eq(k["abgeltungsteuer"], basis["abgeltungsteuer"], kennzahl)
+    # Zeile 23 ohne Aktiengewinne: Hinzurechnung statt Abzug.
+    k23 = kap_block(bau(steuerdaten(), [kap_quelle(
+        kapitalertraege="10000.00", verlust_aktien="-4000.00")]))
+    eq(k23["netto_kapitalertraege"], "14000.00",
+       "der ringfenced Aktienverlust wird dem Saldo wieder hinzugerechnet, nie abgezogen")
+    eq(k23["verlustvortraege"]["aktien"], "4000.00")
+
+
+@case
+def test_verlustzeilen_mindern_die_bemessungsgrundlage_nicht_ein_zweites_mal():
+    """Der teure Fall aus der Praxis: Z. 19 = 30.000 €, darin Z. 24 = 25.000 €.
+
+    Als davon-Zeile gelesen bleiben 30.000 € − 1.000 € Sparer-Pauschbetrag =
+    29.000 € × 25 % = 7.250 € Abgeltungsteuer. Ein zweiter Abzug der 25.000 €
+    ergäbe 4.000 € Bemessungsgrundlage und 1.000 € Steuer — rund 6.250 € zu wenig.
+    """
+    q = kap_quelle(kapitalertraege="30000.00", verlust_termingeschaefte="-25000.00",
+                   kap_zeilen={"19": "30000.00", "24": "25000.00"})
+    r = bau(steuerdaten(), [q])
+    k = kap_block(r)
+    eq(k["netto_kapitalertraege"], "30000.00", "Z. 24 steckt bereits in Z. 19")
+    eq(k["bemessungsgrundlage_abgeltungsteuer"], "29000.00")
+    eq(k["abgeltungsteuer"], "7250.00")
+    eq(k["verlust_termingeschaefte_verrechnet"], "25000.00",
+       "verrechnet ist der Verlust — aber im Saldo, nicht noch einmal hier")
+    eq(k["verlustvortraege"]["termingeschaefte"], "0.00")
+
+
+@case
+def test_die_annahme_steht_prominent_im_report():
+    """Eine Auslegung, die tausende Euro bewegt, darf nicht nur im Code stehen."""
+    q = kap_quelle(kapitalertraege="30000.00", verlust_termingeschaefte="-25000.00")
+    r = bau(steuerdaten(), [q])
+    treffer = [h for h in r["hinweise"] if "ANNAHME zur Anlage KAP" in h]
+    assert treffer, f"Annahme-Hinweis fehlt: {r['hinweise']}"
+    eq(r["hinweise"][0], treffer[0],
+       "die Annahme gehört an den Anfang der Hinweise, nicht ans Ende")
+    for pflicht in ("Steuerbescheinigung", "BRUTTO", "22–25", "§ 20 Abs. 6 Satz 4"):
+        assert pflicht in treffer[0], f"'{pflicht}' fehlt im Annahme-Hinweis: {treffer[0]}"
+    assert any("ANNAHME zur Anlage KAP" in d for d in r["disclaimer"]), \
+        f"die Annahme fehlt im Disclaimer: {r['disclaimer']}"
+
+
+@case
+def test_ohne_verlustzeilen_kein_annahme_hinweis():
+    """Ohne Verlustzeile ist die Auslegung folgenlos — dann kein Rauschen."""
+    r = bau(steuerdaten(), [kap_quelle(kapitalertraege="5000.00")])
+    assert not [h for h in r["hinweise"] if "ANNAHME zur Anlage KAP" in h], r["hinweise"]
+
+
+# ── ELSTER erwartet Verluste als BETRAG, nicht als negative Zahl ─────────────
+@case
+def test_negative_rohverlustzeile_wird_im_mapping_zum_betrag():
+    """Die Quelle druckt −150,00; ELSTER will in Z. 23 die 150,00.
+
+    Der Abgleich Rohzeile ↔ abgeleitete Zeile vergleicht Beträge und entfernt die
+    abgeleitete (richtig signierte) Zeile als Dopplung. Bliebe die Rohzeile dann
+    negativ stehen, stünde im Mapping die Anweisung, ein Minus in ein
+    Betragsfeld zu tippen — je nach Verhalten von ELSTER kostet das den ganzen
+    Verlustabzug.
+    """
+    q = kap_quelle(quelle="eToro", kapitalertraege="-600.00",
+                   verlust_aktien="-150.00", verlust_termingeschaefte="-450.00",
+                   kap_zeilen={"19": "-600.00", "23": "-150.00", "24": "-450.00"})
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        r = bau(steuerdaten(), [q])
+    zs = [z for z in zeilen(r) if z["zeile"] in ("Z. 23", "Z. 24")]
+    eq(len([z for z in zs if z["zeile"] == "Z. 23"]), 1, f"Z. 23 doppelt: {zs}")
+    eq(len([z for z in zs if z["zeile"] == "Z. 24"]), 1, f"Z. 24 doppelt: {zs}")
+    for z in zs:
+        assert not str(z["wert"]).lstrip().startswith("-"), \
+            f"{z['zeile']} trägt ein Minuszeichen in ein Betragsfeld: {z}"
+    werte = {z["zeile"]: str(z["wert"]) for z in zs}
+    eq(werte["Z. 23"], "150.00")
+    eq(werte["Z. 24"], "450.00")
+    # Die wörtliche Abschrift bleibt vorzeichengetreu — sie ist der Beleg.
+    roh = {z["zeile"]: z["wert"] for z in k_zeilen(r)}
+    eq(roh["23"], "-150.00", "die Abschrift der Bescheinigung wird nicht umgeschrieben")
+    eq(roh["24"], "-450.00")
+    assert any("positive Zahl ohne Minuszeichen" in h for h in r["hinweise"]), \
+        f"Hinweis auf die ELSTER-Konvention fehlt: {r['hinweise']}"
+    assert any("mit negativem Vorzeichen ausgewiesen" in h for h in r["hinweise"]), \
+        f"Hinweis auf die umgestellten Zeilen fehlt: {r['hinweise']}"
+
+
+@case
+def test_positive_rohverlustzeile_bleibt_unveraendert():
+    """Gegenprobe: die deutsche Bescheinigung druckt den Betrag schon positiv."""
+    q = kap_quelle(quelle="Musterbank", kapitalertraege="1000.00",
+                   verlust_aktien="-500.00", kap_zeilen={"7": "1000.00", "23": "500.00"})
+    r = bau(steuerdaten(), [q])
+    z23 = [z for z in zeilen(r) if z["zeile"] == "Z. 23"]
+    eq(len(z23), 1)
+    eq(str(z23[0]["wert"]), "500.00")
+    assert not [h for h in r["hinweise"]
+                if "mit negativem Vorzeichen ausgewiesen" in h], r["hinweise"]
+
+
+@case
+def test_abgeleitete_verlustzeile_ist_immer_positiv():
+    """Auch ohne Rohzeile: Z. 22–25 tragen den Betrag, nie das Vorzeichen."""
+    q = kap_quelle(kapitalertraege="-1200.00", verluste_ohne_aktien="-200.00",
+                   verlust_aktien="-300.00", verlust_termingeschaefte="-400.00",
+                   verluste_ausfall="-500.00")
+    r = bau(steuerdaten(), [q])
+    zs = {z["zeile"]: z for z in zeilen(r)}
+    for nr, betrag in (("Z. 22", "200.00"), ("Z. 23", "300.00"),
+                       ("Z. 24", "400.00"), ("Z. 25", "500.00")):
+        eq(str(zs[nr]["wert"]), betrag, f"{nr} muss den Betrag tragen")
+        assert "positiven Betrag" in zs[nr]["bezeichnung"], \
+            f"{nr} sagt dem Nutzer nicht, dass ein positiver Betrag verlangt ist: {zs[nr]}"
+
+
+@case
+def test_zeile_20_hat_eine_eigene_bezeichnung():
+    """Ohne Label rendert Z. 20 als generisches „Betrag laut Bescheinigung"."""
+    q = kap_quelle(quelle="eToro", kapitalertraege="2000.00", gewinn_aktien="800.00",
+                   kap_zeilen={"19": "2000.00", "20": "800.00"})
+    r = bau(steuerdaten(), [q])
+    z20 = [z for z in zeilen(r) if z["zeile"] == "Z. 20"]
+    eq(len(z20), 1, f"Rohzeile 20 fehlt im Mapping: {zeilen(r)}")
+    assert "Aktienveräußerungen" in z20[0]["bezeichnung"], z20[0]
+    assert "Betrag laut Bescheinigung" not in z20[0]["bezeichnung"], z20[0]
 
 
 if __name__ == "__main__":

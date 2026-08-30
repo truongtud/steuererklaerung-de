@@ -534,6 +534,127 @@ def test_json_serialisierbar_und_cli():
         assert "Traceback" not in p.stderr, p.stderr
 
 
+# ── Eine 0, die niemand angegeben hat, darf keine Steuerzahl erreichen ───────
+def _wirft(fehler, fn, *a, label="", **kw):
+    try:
+        fn(*a, **kw)
+    except fehler:
+        return
+    raise AssertionError(f"{label}: {fehler.__name__} hätte geworfen werden müssen")
+
+
+@case
+def test_der_gemeldete_fall_swap_ohne_marktwert():
+    """Reproduktion: 1 ETH für 3.000 € gekauft, 2024 gegen 30 SOL getauscht (ohne
+    EUR-Wert), SOL für 3.200 € verkauft. Gemeldet wurden 3.200 € § 23-Gewinn statt
+    ~200 €, weil der Scheinverlust von -3.000 € im steuerfreien Topf verschwand."""
+    txs = [buy("2022-05-01", "ETH", "1", "3000"),
+           {"timestamp": "2024-03-01", "type": "swap", "asset": "ETH", "amount": "1",
+            "eur_value": "0", "counter_asset": "SOL", "counter_amount": "30",
+            "fee_eur": "0", "_needs_fmv": True},
+           sell("2024-09-01", "SOL", "30", "3200")]
+    _wirft(sl.ParseError, kf.compute_crypto_tax, txs, 2024,
+           label="Tausch ohne ergänzten Marktwert")
+    try:
+        kf.compute_crypto_tax(txs, 2024)
+    except sl.ParseError as e:
+        assert "Datensatz #2" in str(e), f"Datensatz wird nicht benannt: {e}"
+        assert "_needs_fmv" in str(e), e
+
+    # Mit ergänztem Marktwert rechnet dieselbe Historie korrekt: der ETH-Tausch
+    # liegt über der Jahresfrist (steuerfrei), steuerpflichtig ist nur der
+    # SOL-Verkauf 3.200 - 3.100 = 100 €. Nicht 3.200 €.
+    txs[1]["eur_value"] = "3100"
+    r = kf.compute_crypto_tax(txs, 2024)
+    eq(p23(r)["netto_ergebnis_eur"], "100.00", "nur der SOL-Gewinn ist steuerpflichtig")
+    eq(p23(r)["steuerfrei_langfristig_eur"], "100.00", "ETH > 1 Jahr gehalten")
+
+
+@case
+def test_needs_fmv_ohne_wert_bricht_ab_statt_still_null_zu_rechnen():
+    fmv_offen = {"timestamp": "2024-02-01", "type": "reward", "asset": "ETH",
+                 "amount": "1", "eur_value": None, "fee_eur": "0",
+                 "reward_kind": "staking", "_needs_fmv": True}
+    _wirft(sl.ParseError, kf.compute_crypto_tax, [fmv_offen], 2024,
+           label="eur_value None")
+    _wirft(sl.ParseError, kf.compute_crypto_tax,
+           [dict(fmv_offen, eur_value="0")], 2024, label="eur_value '0'")
+    # nachgetragener Wert -> die Markierung darf nicht weiter blockieren
+    r = kf.compute_crypto_tax([dict(fmv_offen, eur_value="300")], 2024)
+    eq(r["paragraph_22_nr_3"]["summe_eur"], "300.00")
+
+
+@case
+def test_staking_ohne_marktwert_wird_nicht_still_zu_null_euro():
+    """Ohne _needs_fmv-Markierung (z. B. handgepflegte CSV) muss wenigstens eine
+    Warnung im Ergebnis stehen — 0,00 € § 22 Nr. 3 ist sonst nicht von einem
+    echten Nullertrag zu unterscheiden."""
+    r = kf.compute_crypto_tax([reward("2024-02-01", "ETH", "1", "0")], 2024)
+    eq(r["paragraph_22_nr_3"]["summe_eur"], "0.00")
+    assert hat_warnung(r, "ohne EUR-Marktwert"), r["warnungen"]
+    assert hat_warnung(r, "Datensatz #1"), r["warnungen"]
+
+
+@case
+def test_verkauf_mit_erloes_null_wird_gemeldet():
+    txs = [buy("2024-01-01", "BTC", "1", "1000"),
+           sell("2024-06-01", "BTC", "1", "0")]
+    r = kf.compute_crypto_tax(txs, 2024)
+    eq(p23(r)["netto_ergebnis_eur"], "-1000.00")
+    assert hat_warnung(r, "Erlös von genau 0,00"), r["warnungen"]
+    d = p23(r)["veraeusserungen"][0]
+    eq(d["nullwert_ungeklaert"], True, "die Kennzeichnung muss in die Ausgabe wandern")
+
+
+@case
+def test_kostenbasis_null_aus_unbelegter_null_wird_beim_verkauf_gemeldet():
+    txs = [buy("2024-01-01", "BTC", "1", "0"),
+           sell("2024-06-01", "BTC", "1", "5000")]
+    r = kf.compute_crypto_tax(txs, 2024)
+    eq(p23(r)["netto_ergebnis_eur"], "5000.00")
+    assert hat_warnung(r, "Kostenbasis von genau 0,00"), r["warnungen"]
+    d = p23(r)["veraeusserungen"][0]
+    eq(d["nullwert_ungeklaert"], True)
+    assert "Anschaffungskosten 0,00" in d["note"], d["note"]
+
+
+@case
+def test_belegte_null_laeuft_ohne_warnung_durch():
+    """Ein nachweislich wertloser Zufluss ist eine Angabe, kein Datenloch."""
+    txs = [{"timestamp": "2024-01-01", "type": "reward", "asset": "XYZ",
+            "amount": "100", "eur_value": "0", "fee_eur": "0",
+            "reward_kind": "staking", "nullwert_bestaetigt": True},
+           sell("2024-06-01", "XYZ", "100", "50")]
+    r = kf.compute_crypto_tax(txs, 2024)
+    eq(p23(r)["netto_ergebnis_eur"], "50.00")
+    assert not hat_warnung(r, "ohne EUR-Marktwert"), r["warnungen"]
+    assert not hat_warnung(r, "Kostenbasis von genau"), r["warnungen"]
+    eq(p23(r)["veraeusserungen"][0]["nullwert_ungeklaert"], False)
+
+
+@case
+def test_parse_inputs_kraken_schreibt_keine_erfundene_null():
+    """Der Kraken-Pfad schrieb literal '0' + _needs_fmv; der Profil-CSV-Pfad ließ
+    None. Beide Wege müssen dieselbe (laute) Fehlerrichtung haben."""
+    import parse_inputs as pi
+    rows = [
+        {"txid": "T1", "refid": "R1", "time": "2024-03-01 10:00:00", "type": "staking",
+         "asset": "ETH.S", "amount": "0.5", "fee": "0", "balance": "0.5"},
+        {"txid": "T2", "refid": "R2", "time": "2024-04-01 10:00:00", "type": "trade",
+         "asset": "XETH", "amount": "-1", "fee": "0", "balance": "0"},
+        {"txid": "T3", "refid": "R2", "time": "2024-04-01 10:00:00", "type": "trade",
+         "asset": "SOL", "amount": "30", "fee": "0", "balance": "30"},
+    ]
+    txs, warnungen, stats = pi.from_kraken_ledger(rows, "en")
+    nach_typ = {t["type"]: t for t in txs}
+    for typ in ("reward", "swap"):
+        assert nach_typ[typ]["eur_value"] is None, \
+            f"{typ}: eine erfundene 0 statt eines fehlenden Werts: {nach_typ[typ]}"
+        assert nach_typ[typ]["_needs_fmv"] is True
+    _wirft(sl.ParseError, kf.compute_crypto_tax, txs, 2024,
+           label="Kraken-Export ohne ergänzte Marktwerte")
+
+
 if __name__ == "__main__":
     fails = []
     for fn in CASES:

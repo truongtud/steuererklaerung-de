@@ -22,11 +22,19 @@
   "anlage_kap": {
     "kapitalertraege": "0",
     "gewinn_aktien": "0",
+    "gewinn_termingeschaefte": "0",
     "verlust_aktien": "0",
     "verlust_termingeschaefte": "0",
+    "verluste_ohne_aktien": "0",
+    "verluste_ausfall": "0",
     "verlustvortrag_aktien_vorjahr": "0",
+    "verlustvortrag_allgemein_vorjahr": "0",
+    "verlustvortrag_termingeschaefte_vorjahr": "0",
     "anrechenbare_kest": "0",
-    "auslaendische_quellensteuer": "0"
+    "einbehaltener_soli": "0",
+    "einbehaltene_kirchensteuer": "0",
+    "auslaendische_quellensteuer": "0",
+    "fiktive_quellensteuer": "0"
   },
   "anlage_so": {
     "sonstige_einkuenfte": "0",

@@ -73,6 +73,22 @@ Kapitalertragsteuer 300,00
 Solidaritätszuschlag 16,50
 """
 
+# Derselbe Berichtstyp mit den beiden Fallen, an denen der Wizard sich früher selbst
+# betrogen hat: einer Anrede mit Klarnamen (so druckt eToro den Namen) und einer
+# "davon"-Zeile, die eine FREMDE Zeilennummer nennt. 400 € Aktienverlust gegen
+# 5.000 € Kapitalerträge zu halten und das "ok" zu nennen war der Kern des Fehlers.
+KAP_ZIRKULAER = """Musterbank AG
+Steuerbescheinigung für das Kalenderjahr 2024
+Guten Tag Max Mustermann,
+Depot 12345678
+
+Höhe der Kapitalerträge (Anlage KAP, Zeile 7) 5.000,00
+In Zeile 7 enthaltene Verluste aus Aktienveräußerungen 400,00
+Verluste aus Aktienveräußerungen (Anlage KAP, Zeile 23) 500,00
+Kapitalertragsteuer 300,00
+Solidaritätszuschlag 16,50
+"""
+
 CSV_TEXT = """Datum;Typ;Währung;Menge;Wert in EUR;Gebühr;Notiz
 2024-03-02;Kauf;BTC;0.5;12000.00;1.50;
 2024-05-14;Verkauf;ETH;2.0;4000.00;0.90;
@@ -202,6 +218,113 @@ def test_ohne_summenzeile_wird_gewarnt():
          "fehlende Summe ist der wichtigste offene Punkt")
 
 
+# ── 2b. Zirkuläre Abgleiche sind ein Fehler, kein "ok" ───────────────────────
+@case
+def test_zeilennummer_im_label_ist_keine_zeilenbezeichnung():
+    # "In Zeile 7 enthaltene Verluste" handelt VON Zeile 7 und ist selbst eine
+    # andere Zeile — die davon-Zeilen 20–25 tragen ihre eigene Nummer nie im Text.
+    for label in ("In Zeile 7 enthaltene Verluste aus Aktienveräußerungen",
+                  "In den Zeilen 18 und 19 enthaltene Gewinne aus Aktienveräußerungen",
+                  "davon Zeile 7", "siehe Zeile 12"):
+        pfad = pw._vergleichspfad(label, "kap")
+        wahr(not str(pfad).startswith("kap_zeilen."),
+             f"{label!r} ergibt fälschlich den Pfad {pfad!r}")
+    # Die echte Zeilenbezeichnung muss weiter funktionieren.
+    eq(pw._vergleichspfad("Höhe der Kapitalerträge (Anlage KAP, Zeile 7)", "kap"),
+       "kap_zeilen.7", "echte Zeilenbezeichnung")
+    eq(pw._vergleichspfad("Anlage KAP Zeile 19", "kap"), "kap_zeilen.19", "Zeile 19")
+
+
+@case
+def test_zirkulaerer_summenabgleich_wird_todo_statt_ok():
+    e = _entwurf(KAP_ZIRKULAER, "musterbank-kap")
+    p, b = e["profil"], e["bericht"]
+    eq(p["ergebnis"], "kap", "KAP-Schema")
+    wahr(b["summen"], "es müssen Summenkandidaten gefunden worden sein")
+    # Kein einziger Eintrag darf als gelungener Abgleich durchgehen …
+    for s in b["summen"]:
+        wahr(not s["abgleich"].startswith("ok"),
+             f"{s['label']!r} wird als {s['abgleich']!r} gemeldet, obwohl der "
+             f"Vergleichswert aus derselben Zeile stammt")
+    wahr(b["zirkulaer"], "die zirkulären Einträge müssen benannt werden")
+    wahr(not b["abgleich_ok"],
+         "ein zirkulärer Selbstvergleich ist kein belastbarer Abgleich")
+    # … und keiner darf im Profil als fertiger Zielpfad landen.
+    for s in p["summen"]:
+        eq(s["vergleich"], pw.TODO, f"{s['label']!r} behauptet einen Zielpfad")
+    todos = pw.finde_todos(p)
+    wahr([t for t in todos if t.startswith("summen[")],
+         f"die offenen Abgleiche müssen als TODO auftauchen: {todos}")
+    wahr(todos != ["datum", "geprueft_am"],
+         "ein Profil, dem nur noch das Datum fehlt, wird arglos übernommen")
+
+
+@case
+def test_zirkularitaet_wird_als_fehler_gemeldet_und_erklaert():
+    b = _entwurf(KAP_ZIRKULAER, "musterbank-kap")["bericht"]
+    warnung = " ".join(b["warnungen"])
+    wahr("zirkul" in warnung.lower() or "ZIRKUL" in warnung,
+         f"der Selbstvergleich muss in den Warnungen stehen: {b['warnungen']}")
+    kommentare = _entwurf(KAP_ZIRKULAER, "musterbank-kap")["profil"]["kommentare"]
+    erklaerungen = [v for k, v in kommentare.items()
+                    if k.startswith("summen[") and k.endswith(".vergleich")]
+    wahr(erklaerungen, "jedes zirkuläre TODO braucht eine Begründung")
+    wahr(any("Aggregation" in v or "aggregat" in v.lower() for v in erklaerungen),
+         f"der Kommentar muss sagen, was ein echter Abgleich ist: {erklaerungen[:1]}")
+
+
+@case
+def test_davon_zeile_wird_nicht_als_zeilenwert_gelesen():
+    # 400 € Aktienverlust dürfen weder als Wert der Zeile 7 gelesen noch gegen die
+    # 5.000 € Kapitalerträge gehalten werden.
+    p = _entwurf(KAP_ZIRKULAER, "musterbank-kap")["profil"]
+    davon = [w for w in p["werte"]
+             if "Verluste" in w["muster"] and "Aktien" in w["muster"]]
+    wahr(davon, f"die davon-Zeile fehlt ganz in `werte`: {p['werte']}")
+    eq(davon[0]["pfad"], pw.TODO,
+       "die davon-Zeile darf keinen geratenen kap_zeilen-Pfad bekommen")
+    # Zeile 7 selbst bleibt der Zeile 7 vorbehalten.
+    zeile7 = [w for w in p["werte"] if "kap_zeilen.7" in pw._liste_pfade(w)]
+    eq(len(zeile7), 1, f"kap_zeilen.7 mehrfach oder gar nicht belegt: {p['werte']}")
+    wahr(r"Zeile\s+7" in zeile7[0]["muster"], f"falsches Muster: {zeile7[0]}")
+
+
+@case
+def test_pruefe_entwurf_meldet_zirkulaer_als_fehler():
+    # Direkt auf der Selbstprüfung: derselbe Wert, dieselbe Zeile.
+    struktur = pw._struktur(["Kapitalertragsteuer 300,00"], None)
+    werte = [{"pfad": "kennzahlen.anrechenbare_kest",
+              "muster": "Kapitalertragsteuer{VOR}({NUM})", "_zeile": 0}]
+    summen = [{"label": "Kapitalertragsteuer",
+               "muster": "Kapitalertragsteuer{VOR}({NUM})",
+               "vergleich": "kennzahlen.anrechenbare_kest", "toleranz": "0.01",
+               "_wert": "300.00", "_zeile": 0}]
+    b = pw.pruefe_entwurf(struktur, [], summen, "de", werte)
+    eq(b["summen"][0]["zirkulaer"], True, "Selbstvergleich nicht erkannt")
+    wahr(not b["summen"][0]["abgleich"].startswith("ok"),
+         f"als {b['summen'][0]['abgleich']!r} gemeldet")
+    wahr(not b["abgleich_ok"], "abgleich_ok darf davon nicht gesetzt werden")
+    wahr(any("ZIRKUL" in w.upper() for w in b["warnungen"]),
+         f"Warnung fehlt: {b['warnungen']}")
+
+
+@case
+def test_unabhaengiger_zweiter_ausweis_bleibt_ein_echter_abgleich():
+    # Gegenprobe: steht der Gegenwert in einer ANDEREN Zeile, ist es ein echter
+    # zweiter Ausweis — die Prüfung darf nicht pauschal alles verwerfen.
+    struktur = pw._struktur(["Kapitalertragsteuer 300,00",
+                             "Summe Kapitalertragsteuer 300,00"], None)
+    werte = [{"pfad": "kennzahlen.anrechenbare_kest",
+              "muster": "Kapitalertragsteuer{VOR}({NUM})", "_zeile": 0}]
+    summen = [{"label": "Summe Kapitalertragsteuer",
+               "muster": "Summe\\s+Kapitalertragsteuer{VOR}({NUM})",
+               "vergleich": "kennzahlen.anrechenbare_kest", "toleranz": "0.01",
+               "_wert": "300.00", "_zeile": 1}]
+    b = pw.pruefe_entwurf(struktur, [], summen, "de", werte)
+    eq(b["summen"][0]["zirkulaer"], False,
+       "ein zweiter, unabhängiger Ausweis ist kein Selbstvergleich")
+
+
 # ── 3. Unklares wird TODO, nicht geraten ─────────────────────────────────────
 @case
 def test_unklare_spalte_wird_todo_statt_falsch_zugeordnet():
@@ -303,6 +426,141 @@ def test_anonymisierung_entfernt_und_meldet():
     # Was kein Personenbezug ist, bleibt stehen — sonst ist das Fixture wertlos.
     wahr("Musterbroker AG" in sauber, "geschützte Marke wurde geschwärzt")
     wahr("Zusammenfassung Kapitalgewinne" in sauber, "Fachbegriffe wurden geschwärzt")
+
+
+# Jede Zeile hier ist ein Leck, das die Anonymisierung vorher unverändert
+# durchgelassen hat. Geprüft wird das Verhalten (der Wert ist weg und die Redaktion
+# ist gemeldet), nicht der Wortlaut des Ersatzes.
+LECKS = [
+    # (Zeile, was verschwinden muss, erwartete Redaktionsart)
+    ("Guten Tag Max Mustermann,", "Max Mustermann", "name"),
+    ("Depot 12345678", "12345678", "konto"),
+    ("Account 987654321", "987654321", "konto"),
+    ("Portfolio 4711556", "4711556", "konto"),
+    ("MAX MUSTERMANN", "MAX MUSTERMANN", "name"),
+    ("Dr. Anna Maria Schmidt", "Anna Maria Schmidt", "name"),
+    ("IBAN: de89 3704 0044 0532 0130 00", "de89 3704 0044 0532 0130 00", "iban"),
+    ("Inhaber: Max Mustermann", "Max Mustermann", "name"),
+    ("Für Max Mustermann erstellt am 01.02.2025", "Max Mustermann", "name"),
+    ("Empfänger Max Mustermann, Musterweg 3, 10115 Berlin", "Max Mustermann", "name"),
+]
+
+
+@case
+def test_bekannte_lecks_werden_geschwaerzt():
+    for zeile, geheim, art in LECKS:
+        sauber, redaktionen = pw.anonymisiere(zeile)
+        wahr(geheim not in sauber,
+             f"{geheim!r} steht nach der Anonymisierung noch in {sauber!r}")
+        wahr(redaktionen, f"{zeile!r}: Redaktion wurde nicht gemeldet")
+        arten = {r["art"] for r in redaktionen}
+        wahr(any(a.startswith(art) for a in arten),
+             f"{zeile!r}: erwartete Redaktionsart {art!r}, gemeldet wurde {arten}")
+
+
+@case
+def test_empfaengerzeile_verliert_namen_nicht_nur_die_adresse():
+    # Der gefährlichste Teiltreffer: die Adresse wird geschwärzt, der Name bleibt
+    # stehen und das Fixture sieht trotzdem redigiert aus.
+    zeile = "Empfänger Max Mustermann, Musterweg 3, 10115 Berlin"
+    sauber, redaktionen = pw.anonymisiere(zeile)
+    for weg in ("Max Mustermann", "Musterweg 3", "10115 Berlin"):
+        wahr(weg not in sauber, f"{weg!r} überlebt in {sauber!r}")
+    arten = {r["art"] for r in redaktionen}
+    wahr({"adresse"} < arten, f"nur die Adresse wurde erkannt: {arten}")
+
+
+@case
+def test_anrede_mit_klarnamen_taucht_nirgends_im_ergebnis_auf():
+    # `Guten Tag <Name>,` ist die eToro-Anrede — genau die Stelle, aus der
+    # scripts/profiles/etoro-de.json den Namen des Steuerpflichtigen liest.
+    e = _entwurf(KAP_ZIRKULAER, "musterbank-kap")
+    roh = json.dumps(e, ensure_ascii=False, default=str)
+    for geheim in ("Mustermann", "12345678"):
+        wahr(geheim not in roh,
+             f"{geheim!r} steht im Wizard-Ergebnis (Fixture, Profil oder Kommentar)")
+
+
+@case
+def test_versalien_und_titel_sind_keine_ausnahme():
+    # Deutsche Auszüge drucken Adressköpfe regelmäßig in Versalien; ein Titel davor
+    # hat die Zeile vorher ebenfalls durchrutschen lassen.
+    for zeile in ("MAX MUSTERMANN", "Dr. Anna Maria Schmidt",
+                  "Max Peter Klaus Mustermann", "KONTOINHABER: ERIKA MUSTERFRAU"):
+        sauber, redaktionen = pw.anonymisiere(zeile)
+        wahr(redaktionen, f"{zeile!r} wurde gar nicht als Personenangabe erkannt")
+        wahr("[NAME]" in sauber, f"{zeile!r} -> {sauber!r}")
+
+
+@case
+def test_anonymisierung_ist_case_insensitiv():
+    klein, _ = pw.anonymisiere("iban: de89 3704 0044 0532 0130 00")
+    gross, _ = pw.anonymisiere("IBAN: DE89 3704 0044 0532 0130 00")
+    wahr("de89" not in klein.lower(), f"kleingeschriebene IBAN überlebt: {klein!r}")
+    wahr("3704" not in gross, f"großgeschriebene IBAN überlebt: {gross!r}")
+    for zeile in ("kontoinhaber: Max Mustermann", "KONTOINHABER: Max Mustermann",
+                  "Steuer-id: 12 345 678 901", "depotnummer: DE-4711-0815"):
+        sauber, _ = pw.anonymisiere(zeile)
+        wahr(sauber != zeile, f"Beschriftung nur in einer Schreibweise erkannt: {zeile!r}")
+
+
+@case
+def test_anonymisierung_frisst_keine_betraege_und_keine_kopfzeilen():
+    # Gegenprobe zur schärferen Nummernregel: ein Betrag hinter "Konto:" ist keine
+    # Kontonummer, und ohne diese Grenze wäre das Fixture um einen Betrag ärmer —
+    # womit der Summenabgleich scheiterte, den das Fixture belegen soll.
+    unveraendert = [
+        "Konto: 1.234,56",
+        "Kontostand 1.234,56",
+        "Depotauszug 2024",
+        "Sehr geehrte Damen und Herren",
+        "Name Betrag",
+        "Höhe der Kapitalerträge (Anlage KAP, Zeile 7) 1.234,56",
+        "Kapitalgewinne   4.000,00",
+        "02.03.2024      15.01.2023     BTC     0,50    12.000,00   9.000,00",
+    ]
+    for zeile in unveraendert:
+        sauber, redaktionen = pw.anonymisiere(zeile)
+        eq(sauber, zeile, f"fälschlich geschwärzt (Redaktionen: {redaktionen})")
+
+
+@case
+def test_restrisiko_meldet_was_stehen_geblieben_ist():
+    # Nach der Redaktion bleibt Personenbezug übrig, den keine Regel kennt. Das
+    # muss der Wizard sagen, statt Vollständigkeit zu behaupten.
+    text = ("Musterbroker AG\n"
+            "Bearbeitet von Anna Beispielfrau\n"
+            "Order 998877665544\n"
+            "Auftrag AB12CD34XY\n"
+            "Kapitalgewinne 4.000,00\n")
+    sauber, _ = pw.anonymisiere(text, schuetze=("Musterbroker AG",))
+    funde = pw.restrisiko(sauber, schuetze=("Musterbroker AG",))
+    texte = " | ".join(f["text"] for f in funde)
+    wahr("Anna Beispielfrau" in texte,
+         f"stehengebliebener Name wird nicht gemeldet: {texte!r}")
+    wahr(any("998877665544" in f["text"] for f in funde),
+         f"lange Ziffernfolge wird nicht gemeldet: {texte!r}")
+    wahr(all(f.get("zeile") and f.get("hinweis") for f in funde),
+         "jeder Fund braucht Zeile und Hinweis, sonst ist er nicht nachprüfbar")
+
+
+@case
+def test_restrisiko_schweigt_ueber_fach_und_markenvokabular():
+    # Ein Melder, der bei jedem Tabellenkopf anschlägt, wird überlesen.
+    text = ("Musterbroker AG\n"
+            "Verkaufsdatum   Erwerbsdatum   Asset   Menge   Gewinn\n"
+            "Zusammenfassung Kapitalgewinne\n"
+            "Kapitalgewinne   4.000,00\n")
+    funde = pw.restrisiko(text, schuetze=("Musterbroker AG",))
+    eq(funde, [], "Fachvokabular darf kein Restrisiko sein")
+
+
+@case
+def test_entwurf_liefert_restrisiken_und_die_laute_warnung():
+    e = _entwurf()
+    wahr("restrisiken" in e["fixture"],
+         "der Entwurf muss die Restrisiko-Liste mitliefern")
+    wahr(isinstance(e["fixture"]["restrisiken"], list), "Restrisiken als Liste")
 
 
 @case

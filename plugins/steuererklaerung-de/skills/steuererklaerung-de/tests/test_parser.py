@@ -166,7 +166,10 @@ def test_koinly_abgleich_schlaegt_bei_fehlender_zeile_an():
 def test_koinly_unlesbare_zeile_wird_gezaehlt():
     kaputt = ("31/12/2024 10:30 01/06/2024 09:00 BTC 0,5 4.000,00 7.000,00 "
               "3.000,00 Kraken ???")
-    text = koinly_report(DE_ZEILEN + [kaputt], "2.900,00")
+    # anzahl=2: die beiden lesbaren Zeilen. Ohne diese Angabe fände der
+    # Anzahl-Abgleich im Report nichts — und ein Abgleich ohne Vergleichswert
+    # bricht ab (die geparste Zahl wäre durch nichts gedeckt).
+    text = koinly_report(DE_ZEILEN + [kaputt], "2.900,00", anzahl=2)
     r = pk.build_result(text, 2024, quelle="x")
     p = r["paragraph_23"]
     eq(len(p["nicht_zugeordnete_zeilen"]), 1, "unlesbare Tabellenzeile gezählt")
@@ -236,10 +239,14 @@ def test_koinly_wendet_keine_freigrenze_an():
 @case
 def test_etoro_unicode_minus_behaelt_vorzeichen():
     text = etoro_report([
+        "Ausländische Kapitalerträge (Anlage KAP Zeile 19) 4.000,00",
         "Gewinne aus Aktienveräußerungen (Anlage KAP Zeile 20) 2.646,52",
         "Verluste aus Termingeschäften (Anlage KAP Zeile 24) −5.334,40",
         "Private Veräußerungsgeschäfte (Anlage SO Zeile 47) −1.234,56",
         "Staking (Anlage SO Zeile 11) 300,00",
+        # Der verbindliche Summenabgleich des Profils: ohne diese Zeile im Report
+        # ist das Ergebnis nicht gegengeprüft und der Lauf bricht ab.
+        "Summe der Kapitalerträge 4.000,00",
     ])
     r = pe.build_result(text, 2024, quelle="etoro.pdf")
     eq(r["etoro_kap"]["z24_verluste_termingeschaefte"], "-5334.40",

@@ -29,10 +29,10 @@ vor der Eingabe in „Mein ELSTER" prüfen. **Keine Steuerberatung.**
     }
   },
   "anlage_kap": {
-    "kapitalertraege": "3200",             // Zinsen, Dividenden, realisierte Gewinne — BRUTTO (Z. 7/18/19)
-    "gewinn_aktien": "0",                  // nur zur Größe des Aktien-Verlusttopfs, s. u. (Z. 20)
-    "gewinn_termingeschaefte": "0",        // Z. 21 — erhöht die Bemessungsgrundlage
-    "verlust_aktien": "0",                 // Z. 23, § 20 Abs. 6 Satz 4 — eigener Topf
+    "kapitalertraege": "3200",             // Zinsen, Dividenden, realisierte Gewinne — SALDO der Z. 7/18/19, s. u.
+    "gewinn_aktien": "0",                  // Z. 20 — davon-Zeile, nur zur Größe des Aktien-Verlusttopfs, s. u.
+    "gewinn_termingeschaefte": "0",        // Z. 21 — davon-Zeile zu Z. 7, erhöht die Bemessungsgrundlage NICHT
+    "verlust_aktien": "0",                 // Z. 23, § 20 Abs. 6 Satz 4 — eigener Topf, s. u.
     "verlust_termingeschaefte": "0",       // Z. 24, seit JStG 2024 voll verrechenbar, s. u.
     "verluste_ohne_aktien": "0",           // Z. 22, allgemeine Verluste
     "verluste_ausfall": "0",               // Z. 25, Ausfall/Ausbuchung
@@ -111,25 +111,77 @@ verrechnung, Günstigerprüfung oder fehlerhaftem Steuerabzug. Sparer-Pauschbetr
 > Verluste aus der Veräußerung von Aktien nur gegen Gewinne aus Aktien.
 > Ältere Anleitungen, die zwei getrennte Töpfe führen, sind überholt.
 
-> **Falle `gewinn_aktien`:** Dieses Feld dient **nur** dazu, den Aktien-Verlusttopf zu
-> bemessen. Es erhöht die Bemessungsgrundlage **nicht** — die realisierten Aktiengewinne
-> müssen bereits in `kapitalertraege` enthalten sein. `build_taxreport.py` warnt, wenn
-> `gewinn_aktien` größer ist als `kapitalertraege`.
->
-> **Zeilen 20–25 sind „davon"-Zeilen.** Im Formular stehen sie unter der Überschrift
-> *„In den Zeilen 18 und 19 enthaltene …"* (bzw. *„In Zeile 7 enthaltene …"*). Sie sind
-> also bereits in den Summen enthalten und dienen nur der Zuordnung zu den
-> Verrechnungskreisen. Deshalb erhöht **keines** der Felder `gewinn_aktien`,
-> `gewinn_termingeschaefte`, `verluste_ohne_aktien`, `verluste_ausfall` die
-> Bemessungsgrundlage — die Beträge müssen in `kapitalertraege` enthalten sein.
-> Übersteigt eine davon-Zeile die Kapitalerträge, warnt der Report: dann fehlt der Betrag
-> in der Summe und bliebe unversteuert.
+#### Die Zeilen 20–25 sind „davon"-Zeilen — die folgenreichste Annahme des Reports
 
-Statt die Werte hier von Hand einzutragen, lassen sich Steuerbescheinigungen und
-Erträgnisaufstellungen auch direkt einlesen — siehe `references/broker-profile.md`:
+Im Formular stehen die Zeilen 20 bis 25 unter **einer** gemeinsamen Überschrift:
+*„In den Zeilen 18 und 19 enthaltene …"* bzw. *„In Zeile 7 enthaltene …"*. Sie sind damit
+Teilmengen der Summenzeilen und dienen allein der Zuordnung zu den Verrechnungskreisen.
+
+`build_taxreport.py` liest daraus eine Konsequenz, die alle sechs Zeilen gleich behandelt:
+
+> **`kapitalertraege` (Z. 7 bzw. Z. 18/19) wird als der SALDO genommen, der die Verluste
+> der Zeilen 22–25 BEREITS ENTHÄLT.** Die Verlustzeilen mindern die Bemessungsgrundlage
+> deshalb **kein zweites Mal**; sie ordnen nur zu. Ebenso erhöht keine der Gewinnzeilen
+> (`gewinn_aktien` Z. 20, `gewinn_termingeschaefte` Z. 21) die Bemessungsgrundlage — die
+> Gewinne müssen bereits in `kapitalertraege` stecken.
+
+Die Verlustzeilen hier zusätzlich abzuziehen wäre ein doppelter Abzug: eine Bescheinigung,
+die netto ausweist, hat sie längst verrechnet.
+
+**Einzige Ausnahme: der Aktienverlust (Z. 23).** Er darf nach § 20 Abs. 6 Satz 4 EStG nur
+gegen Aktienveräußerungsgewinne (Z. 20) laufen. Soweit er sie übersteigt, hat der Saldo
+etwas verrechnet, was er nicht durfte — dieser Überhang wird den Kapitalerträgen wieder
+**hinzugerechnet** und in den Aktien-Verlustvortrag gestellt (ring-fenced). Für die
+Zeilen 22, 24 und 25 gibt es seit dem JStG 2024 keinen eigenen Verrechnungskreis mehr;
+was der Saldo dort verrechnet hat, durfte er verrechnen.
+
+Beispiel (`kapitalertraege` 5.000, `gewinn_aktien` 500, `verlust_aktien` 2.000, 2025):
+
+```
+verlust_aktien_verrechnet                 500,00   (= min(2.000, 500))
+verlust_aktien_ueberhang_hinzugerechnet  1.500,00   ring-fenced
+kapitalertraege_nach_aktien_hinzurechnung 6.500,00   (= 5.000 + 1.500)
+− Sparer-Pauschbetrag                     1.000,00
+bemessungsgrundlage_abgeltungsteuer       5.500,00 → Abgeltungsteuer 1.375,00 €
+verlustvortraege.aktien                   1.500,00   (Feststellung beantragen)
+```
+
+**Was zu prüfen ist — und nur der Steuerpflichtige kann es:** ob die eigene
+Bescheinigung ihre „Höhe der Kapitalerträge" **netto** (nach Verlustverrechnung) oder
+**brutto** ausweist. Deutsche Steuerbescheinigungen sind in aller Regel netto; ein
+ausländischer Broker-Export kann brutto sein. Ist er brutto, ist die hier ausgewiesene
+Bemessungsgrundlage **zu hoch** — dann sind die Verluste der Zeilen 22–25 von
+`kapitalertraege` **abzuziehen, bevor** der Report gebaut wird (im Beispiel also
+5.000 − 2.000 = 3.000 einzutragen). Bei nennenswerten Verlusten entscheidet das über
+tausende Euro Abgeltungsteuer.
+
+Sobald eine Verlustzeile belegt ist, stellt der Report diese Annahme selbst an den Anfang
+seiner `hinweise` — sie steht damit auch im HTML/PDF und im Disclaimer des Exports.
+`build_taxreport.py` warnt außerdem, wenn `gewinn_aktien` oder `gewinn_termingeschaefte`
+größer sind als `kapitalertraege`: dann fehlt der Betrag in der Summe und bliebe
+unversteuert.
+
+**Vorzeichen im ELSTER-Mapping:** Die Verlustzeilen 22–25 werden als **positiver Betrag**
+ausgegeben, gleich welches Vorzeichen die Quelle benutzt hat — die Formularzeile heißt
+bereits „Verluste …", und ELSTER erwartet dort eine Zahl ohne Minus. Die wörtliche
+Abschrift der Bescheinigung bleibt vorzeichengetreu unter `anlagen.KAP.kap_zeilen` stehen;
+weicht beides voneinander ab, sagt der Report das ausdrücklich. Andernfalls stünde im
+Mapping die Anweisung, ein Minus in ein Betragsfeld zu tippen — und je nachdem, ob ELSTER
+das Zeichen verwirft oder den Verlust umdreht, kostet das den vollen Verlustabzug.
+
+#### Statt Handeingabe: Bescheinigungen einlesen
+
+Steuerbescheinigungen und Erträgnisaufstellungen sind bereits nach Anlage-KAP-Zeilen
+aufgebaut; genau dafür gibt es das Ausgabeschema `kap` (siehe
+`references/broker-profile.md`). Einlesen kann es die Profil-Engine — **sofern für das
+Institut ein Profil existiert.** Mitgeliefert ist bisher nur `etoro-de`; für eine
+Bescheinigung der eigenen Bank ist zuerst ein Profil zu schreiben
+(`scripts/profile_wizard.py` liefert den Entwurf). `parse_broker.py` rät nicht: passt
+kein Profil, bricht es ab.
 
 ```bash
-python scripts/parse_broker.py ertraegnisaufstellung.pdf -o depot.kap_result.json
+python scripts/parse_broker.py --list                 # welche Profile es gibt
+python scripts/parse_broker.py depot.pdf              # nur mit passendem Profil
 python scripts/build_taxreport.py steuerdaten.json --kap-result depot.kap_result.json …
 ```
 

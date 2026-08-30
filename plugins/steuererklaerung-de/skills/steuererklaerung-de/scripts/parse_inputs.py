@@ -190,7 +190,15 @@ def from_kraken_ledger(rows, hint: str | None = None):
 
     'trade'-Zeilen kommen paarweise (Asset raus / EUR rein o. umgekehrt) mit gleicher
     refid. 'staking'/'reward' -> reward, 'deposit'/'withdrawal' werden ausgegeben.
-    Rückgabe: (transaktionen, warnungen, statistik)."""
+    Rückgabe: (transaktionen, warnungen, statistik).
+
+    Wo Kraken keinen Euro-Wert liefert (Staking-Zufluss, Krypto-Tausch, Ein-/
+    Auslieferung), bleibt `eur_value` **None** und die Zeile trägt `_needs_fmv`.
+    Bewusst keine "0": eine 0 ist eine Aussage über den Markt, die hier niemand
+    getroffen hat — sie würde im FIFO als echter Erlös bzw. als Anschaffungskosten
+    0 durchlaufen und einen Gewinn erzeugen, den es nicht gibt. None bricht
+    stattdessen in krypto_fifo._pflichtzahl sichtbar ab (genau wie der
+    Profil-CSV-Pfad in brokerprofile.py)."""
     hint = hint or locale_hint_fuer(rows)
     warnungen: list[str] = []
     benutzt = [False] * len(rows)
@@ -224,7 +232,7 @@ def from_kraken_ledger(rows, hint: str | None = None):
                     continue
                 out.append({"timestamp": _zeit(g.get("time"), warnungen), "type": "reward",
                             "asset": asset, "amount": str(abs(betrag(g, "amount"))),
-                            "eur_value": "0", "fee_eur": "0", "reward_kind": "staking",
+                            "eur_value": None, "fee_eur": "0", "reward_kind": "staking",
                             "source": "kraken", "tx_id": g.get("txid"),
                             "_needs_fmv": True})
                 benutzt[i] = True
@@ -241,7 +249,7 @@ def from_kraken_ledger(rows, hint: str | None = None):
                     continue          # EUR-Ein-/Auszahlung ist steuerlich kein Vorgang
                 amt = abs(betrag(g, "amount"))
                 out.append({"timestamp": _zeit(g.get("time"), warnungen), "type": t,
-                            "asset": asset, "amount": str(amt), "eur_value": "0",
+                            "asset": asset, "amount": str(amt), "eur_value": None,
                             "fee_eur": str(abs(betrag(g, "fee"))), "source": "kraken",
                             "tx_id": g.get("txid"), "_needs_fmv": True,
                             "_hinweis": ("Ein-/Auslieferung ohne Anschaffungskosten — "
@@ -274,7 +282,7 @@ def from_kraken_ledger(rows, hint: str | None = None):
                 out.append({"timestamp": _zeit(s.get("time"), warnungen), "type": "swap",
                             "asset": norm_asset(s.get("asset")),
                             "amount": str(abs(betrag(s, "amount"))),
-                            "eur_value": "0",
+                            "eur_value": None,
                             "counter_asset": norm_asset(b.get("asset")),
                             "counter_amount": str(abs(betrag(b, "amount"))),
                             "fee_eur": str(abs(betrag(s, "fee"))), "source": "kraken",
@@ -411,10 +419,12 @@ def main():
         print(f"WARNUNG: {w}", file=sys.stderr)
     needs_fmv = [t for t in txs if t.get("_needs_fmv")]
     if needs_fmv:
-        print(f"\nHINWEIS: {len(needs_fmv)} Transaktion(en) brauchen einen EUR-Marktwert "
-              f"(eur_value=0): Staking-Zuflüsse, Krypto-Tausche und Ein-/Auslieferungen. "
-              f"Bitte FMV bzw. Anschaffungskosten ergänzen (historischer Kurs zum "
-              f"Zeitpunkt).", file=sys.stderr)
+        print(f"\nACHTUNG: {len(needs_fmv)} Transaktion(en) ohne EUR-Marktwert "
+              f"(eur_value ist null): Staking-Zuflüsse, Krypto-Tausche und Ein-/"
+              f"Auslieferungen. Der Wert wird NICHT als 0 angenommen — krypto_fifo.py "
+              f"bricht ab, solange er fehlt. Bitte den historischen Kurs zum Zeitpunkt "
+              f"eintragen (und das Feld '_needs_fmv' dabei stehen lassen oder "
+              f"entfernen, beides ist zulässig).", file=sys.stderr)
 
 
 if __name__ == "__main__":

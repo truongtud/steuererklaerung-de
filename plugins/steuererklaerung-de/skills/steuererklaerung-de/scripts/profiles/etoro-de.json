@@ -331,7 +331,9 @@
       ],
       "form": "betrag2",
       "vergleich": "paragraph_23.netto_ergebnis_eur",
-      "toleranz": "0.01"
+      "toleranz": "0.01",
+      "optional": true,
+      "begruendung": "eToro ist in erster Linie Aktien-/CFD-Broker: enthaelt ein Depot keine privaten Veraeusserungsgeschaefte (kein Krypto-Spot), fehlt im Report der gesamte Anlage-SO-Block und damit auch jede Summenzeile dazu. Der Wert waere dann korrekt 0,00 EUR, ohne dass es etwas gegenzupruefen gibt. Der verbindliche Abgleich dieses Profils ist die Summe der Kapitalertraege (Anlage KAP); dieser Eintrag bleibt als 'OHNE GEGENPRUEFUNG' im Abgleichsbericht sichtbar."
     }
   ],
   "elster": [
@@ -397,7 +399,7 @@
     "etoro_extra.netto_nach_verlustverrechnung ist eToros eigenes Ergebnis und wird NICHT verrechnet: § 20 Abs. 6 gilt personenbezogen über alle Depots — das rechnet build_taxreport über alle Quellen.",
     "Freigrenzen (§ 23: 1.000/600 €, § 22 Nr. 3: 256 €) sind hier bewusst NICHT angewendet — sie gelten pro Person und Jahr über alle Broker; build_taxreport.py rechnet sie einmal auf die Summe.",
     "§ 23 (Anlage SO Z. 47): Krypto-Spot, bereits FIFO-saldiert. Verlust -> Verlustfeststellung; nur mit § 23-Gewinnen verrechenbar.",
-    "Termingeschäfte (CFDs, § 20 Abs. 2): Verluste (KAP Z. 24) nur mit Termingeschäfts-Gewinnen/Stillhalterprämien verrechenbar; Sonderverlusttopf, Verrechnung pro Jahr betraglich begrenzt.",
+    "Termingeschäfte (CFDs, § 20 Abs. 2): der eigene Verrechnungskreis und der 20.000-€-Deckel (§ 20 Abs. 6 Sätze 5 und 6 EStG) wurden durch das Jahressteuergesetz 2024 aufgehoben — anwendbar in allen offenen Fällen. Verluste aus Termingeschäften (KAP Z. 24) sind seither mit sämtlichen Kapitalerträgen verrechenbar.",
     "Aktienverluste (KAP Z. 23) nur mit Aktiengewinnen verrechenbar (eigener Topf).",
     "Bei mehreren Brokern/Tools: § 23-Ergebnisse addieren, KAP-Töpfe getrennt führen.",
     "Endkontrolle durch Steuerberater — keine Steuerberatung."

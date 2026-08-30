@@ -78,9 +78,33 @@ Die Milderungszone ist kein Detail: Bei einer ESt von 18.200 € (2024) sind es 
    `AN_PAUSCHBETRAG` eintragen — und in der Tabelle oben.
 3. `python3 tests/run_tests.py` — der Stetigkeitstest läuft automatisch über alle Jahre.
 
-Fehlt ein Jahr, überspringt `build_taxreport.py` die ESt-Schätzung und sagt das; die
-Krypto-Engine liefert das Roh-Netto ohne angewandte Freigrenze. Beides ist gewollt: lieber
-keine Zahl als eine erfundene.
+## Ein Jahr ohne hinterlegten Tarif
+
+Ist für das Steuerjahr kein `TARIF` hinterlegt, wird der Report trotzdem **gebaut**. Nur
+die ESt-Schätzung entfällt — und mit ihr alles, was auf ihr aufbaut:
+
+| | Verhalten |
+|---|---|
+| ESt, Soli, Kirchensteuer (Tarif) | `null`; `ergebnis.status` ist `"nicht berechenbar"` mit Begründung, es gibt kein Nachzahlung/Erstattung-Saldo |
+| Arbeitnehmer-Pauschbetrag, Sparer-Pauschbetrag, Freigrenze § 23 | **Wert des nächstgelegenen hinterlegten Jahres**, plus Warnung: *„Für 2030 ist kein § 32a-Tarif hinterlegt; Pauschbeträge und Freigrenzen wurden ersatzweise mit den Werten für 2026 angesetzt."* |
+| Sonderausgaben-Pauschbetrag, Freigrenze § 22 Nr. 3 | 36 € bzw. 256 € — im Gesetz jahresunabhängig, daher unberührt |
+| zvE, Einkünfte je Anlage, Abgeltungsteuer, Verlusttöpfe, ELSTER-Mapping | werden normal gerechnet |
+
+Grund für die Zweiteilung: der Tarif lässt sich nicht extrapolieren — jede Zahl daraus wäre
+erfunden. Die Freigrenze § 23 dagegen entscheidet, ob ein Ergebnis überhaupt
+steuerpflichtig ist; ohne sie stünde im Report ein deutlich **zu hoher**
+steuerpflichtiger Betrag, und das ist die schlechtere Auskunft als ein um ein Jahr
+veralteter Pauschbetrag mit Warnung. Der Ausweichwert wird auf den hinterlegten Bereich
+gekappt, also nach oben wie nach unten.
+
+**Anders bei `krypto_fifo.py` im Alleinlauf:** dort steht bewusst kein Ersatzwert. Fehlt
+das Jahr, wird das **rohe Netto** mit `"freigrenze_angewendet": false` und einer eigenen
+Warnung ausgewiesen — `build_taxreport.py` behandelt eine solche Quelle danach wie jede
+andere Rohquelle und wendet die Freigrenze selbst an. Beim Lauf über `build_taxreport.py`
+erscheinen deshalb **beide** Warnungen; das ist kein Widerspruch, sondern die Reihenfolge.
+
+In jedem Fall gilt: die Werte nach dem Abschnitt oben in `steuerlib.py` nachtragen. Eine
+Schätzung mit Vorjahreswerten ist Orientierung, keine Zahl für eine Erklärung.
 
 ## Vereinfachungen der ESt-Schätzung (bewusst)
 

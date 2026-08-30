@@ -230,7 +230,9 @@ def test_kap_kirchensteuer_mit_reduktionsformel():
 @case
 def test_kap_verlusttoepfe_nach_jstg_2024():
     # Termingeschäftsverluste sind seit dem JStG 2024 unbeschränkt verrechenbar …
-    sd = steuerdaten(anlage_kap={"kapitalertraege": "30000",
+    # kapitalertraege ist der Saldo, der die Verluste der Zeilen 22–25 bereits
+    # enthält (davon-Zeilen): 30.000 brutto − 25.000 Terminverlust = 5.000.
+    sd = steuerdaten(anlage_kap={"kapitalertraege": "5000",
                                  "verlust_termingeschaefte": "25000"})
     r = bau(sd)
     k = r["anlagen"]["KAP"]
@@ -242,7 +244,7 @@ def test_kap_verlusttoepfe_nach_jstg_2024():
         "die Rechtsänderung muss als Hinweis ausgewiesen werden"
 
     # … Aktienverluste dagegen nur gegen Aktiengewinne (§ 20 Abs. 6 Satz 4).
-    sd2 = steuerdaten(anlage_kap={"kapitalertraege": "30000", "verlust_aktien": "25000"})
+    sd2 = steuerdaten(anlage_kap={"kapitalertraege": "5000", "verlust_aktien": "25000"})
     r2 = bau(sd2)
     eq(r2["anlagen"]["KAP"]["verlust_aktien_verrechnet"], "0.00", "eigener Topf bleibt")
     eq(r2["anlagen"]["KAP"]["verlustvortraege"]["aktien"], "25000.00")
@@ -257,7 +259,8 @@ def test_kap_verlusttoepfe_nach_jstg_2024():
 
 @case
 def test_kap_nettoverlust_bleibt_vorzeichenbehaftet():
-    sd = steuerdaten(anlage_kap={"kapitalertraege": "5000",
+    # Saldo-Lesart: 5.000 brutto − 12.000 Terminverlust = −7.000.
+    sd = steuerdaten(anlage_kap={"kapitalertraege": "-7000",
                                  "verlust_termingeschaefte": "12000"})
     r = bau(sd)
     k = r["anlagen"]["KAP"]

@@ -16,11 +16,17 @@ Der Wizard liefert einen **Entwurf**, keine fertige Anbindung (siehe
      `zeile`-Regex mit benannten Gruppen; die Spaltenzuordnung nutzt die
      Synonymtabelle aus `parse_pdf.py`,
   4. sucht `summen` — ausgewiesene Gesamtwerte; das ist der wertvollste Teil, weil ein
-     Profil ohne funktionierenden Abgleich stromabwärts abgelehnt wird,
+     Profil ohne funktionierenden Abgleich stromabwärts abgelehnt wird. Ein Abgleich,
+     der einen Wert gegen dieselbe Report-Zeile prüft, aus der er stammt, ist **kein**
+     Abgleich: er meldet für jeden Report `Abweichung 0,00 €`. Solche Einträge werden
+     als Fehler gemeldet und bleiben `TODO`,
   5. rät `notation`/`datum` über `steuerlib.detect_locale` und die tatsächlich
      vorkommenden Datumsformen,
   6. **validiert den eigenen Vorschlag** gegen den Report, aus dem er stammt, und
-  7. schreibt ein anonymisiertes Fixture-Gerüst und meldet jede Redaktion einzeln.
+  7. schreibt ein anonymisiertes Fixture-Gerüst, meldet jede Redaktion einzeln — und
+     sagt danach, was ihm daran *trotzdem* noch nach Name oder Nummer aussieht. Die
+     Anonymisierung ist eine Heuristik; ein Fixture landet in einem öffentlichen
+     Repository, also behauptet sie keine Vollständigkeit.
 
 Was er nicht sicher weiß, schreibt er als `"TODO"`. `parse_broker.py` lehnt Profile mit
 TODO ab — genau so ist es gemeint: der Wizard ist ein Startpunkt, kein Ergebnis.
@@ -146,42 +152,96 @@ def text_aus_datei(pfad, *, backend: str = "auto", ocr_lang: str = "deu+eng") ->
 # 1. Anonymisierung (Fixture + Filter für `erkennung`)
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Namensbausteine.
+#
+# Wichtig für alle Namensmuster: die **Beschriftung** wird case-insensitiv gematcht
+# (`(?i:…)`), der **Name selbst nicht**. Die Großschreibung ist das einzige Signal,
+# das einen Namen von einem Fließtextwort trennt — ein re.I über das ganze Muster
+# würde aus "guten tag und auf wiedersehen" einen Namen machen. Umgekehrt darf die
+# Beschriftung nicht case-sensitiv bleiben: Kopfzeilen deutscher Auszüge stehen oft
+# komplett in Versalien ("KONTOINHABER: …").
+_NAM_TITEL = r"(?:Dr|Prof|Dipl|Ing|Mag|Med|Herr|Frau|Mr|Mrs|Ms)\.?"
+_NAM_WORT = r"(?:[A-ZÄÖÜ][\wäöüß'’-]{1,24}|[A-ZÄÖÜ]\.)"
+# Bis zu vier Namensbestandteile plus Titel und Namenszusatz: "Dr. Anna Maria Schmidt",
+# "MAX MUSTERMANN", "Jan van den Berg". `_NAM_WORT` deckt Versalien mit ab, weil `\w`
+# auch Großbuchstaben enthält.
+_NAM = (rf"(?:{_NAM_TITEL}\s+)*{_NAM_WORT}"
+        rf"(?:\s+(?:von|van|de|der|den|zu|di|del|la)\b)?(?:\s+{_NAM_WORT}){{0,3}}")
+
+# Beschriftungen, hinter denen ein Personenname steht.
+_NAM_LABEL = (r"Herr|Frau|Name|Vorname|Nachname|Kunde|Kundin|"
+              r"(?:Konto|Depot|Wertpapier|Anteils|Vertrags)?Inhaber(?:in)?|"
+              r"Steuerpflichtige[rn]?|Empf(?:ä|ae)nger(?:in)?|Adressat(?:in)?|"
+              r"Mr\.?|Mrs\.?|Ms\.?")
+# Anreden. `Guten Tag <Name>,` ist die eToro-Anrede — genau die Stelle, aus der
+# `scripts/profiles/etoro-de.json` den Namen des Steuerpflichtigen liest.
+_NAM_ANREDE = (r"Guten\s+(?:Tag|Morgen|Abend)|Sehr\s+geehrte(?:r|s)?(?:\s+(?:Herr|Frau))?|"
+               r"Hallo|Liebe(?:r|s)?|Dear")
+_NAM_ERSTELLT = r"erstellt|angefertigt|ausgestellt|ausgefertigt|erzeugt|generiert"
+
 # (art, muster, gruppe, ersatz) — gruppe 0 heißt: ganzer Treffer wird ersetzt.
+# Jedes Muster matcht seine Beschriftung case-insensitiv; wo Großschreibung das
+# Erkennungsmerkmal ist (Namen), steht das re.I gezielt nur um die Beschriftung.
 _PII = [
-    ("email", re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]{2,}"), 0, "[EMAIL]"),
-    ("iban", re.compile(r"\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{4}){3,7}(?:[ ]?[A-Z0-9]{1,4})?\b"),
+    ("email", re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]{2,}", re.I), 0, "[EMAIL]"),
+    # re.I ist hier Pflicht: aus PDFs kommen IBANs regelmäßig klein geschrieben.
+    ("iban", re.compile(r"\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{4}){3,7}(?:[ ]?[A-Z0-9]{1,4})?\b",
+                        re.I),
      0, "[IBAN]"),
     ("steuer_id", re.compile(
         r"(?:Steuer-?(?:ID|IdNr\.?|Identifikationsnummer)|St(?:euer)?-?Nr\.?|Tax\s*ID)"
         r"\s*:?\s*([\d][\d /.-]{8,20})", re.I), 1, "[STEUER-ID]"),
     # Freistehende 11-stellige Zahl: die deutsche IdNr. Beträge haben Trennzeichen.
-    ("steuer_id", re.compile(r"(?<![\d.,/-])\d{11}(?![\d.,/-])"), 0, "[STEUER-ID]"),
+    ("steuer_id", re.compile(r"(?<![\d.,/-])\d{11}(?![\d.,/-])", re.I), 0, "[STEUER-ID]"),
     # Nummer nur mit ausdrücklichem Label *und* Ziffer im Wert: sonst schluckt
     # "Kontoinhaber" sein eigenes Wortende und der Name dahinter bleibt stehen.
     ("konto", re.compile(
         r"(?:Konto|Depot|Kunden|Vertrag|Account|Portfolio|Referenz)"
         r"(?:nummer|-?\s?Nr\.?|nr\.?|-?ID)\s*[:.#]?\s*"
-        r"((?=[A-Z0-9./-]{5,})[A-Z0-9./-]*\d[A-Z0-9./-]*)", re.I), 1, "[KONTO]"),
+        r"((?=[A-Z0-9./-]{5,})[A-Z0-9./-]*\d[A-Z0-9./-]*)(?![A-Z0-9.,/-])", re.I),
+     1, "[KONTO]"),
+    # `(?![A-Z0-9.,/-])` erzwingt, dass die Nummer *ganz* gelesen wird: sonst wird
+    # aus "Konto: 1.234,56" ein "[KONTO],56" und das Fixture verliert einen Betrag.
     ("konto", re.compile(
         r"(?:Konto|Depot|Kunden|Vertrag|Account|Portfolio)\s*[:#]\s*"
-        r"((?=[A-Z0-9./-]{5,})[A-Z0-9./-]*\d[A-Z0-9./-]*)", re.I), 1, "[KONTO]"),
+        r"((?=[A-Z0-9./-]{5,})[A-Z0-9./-]*\d[A-Z0-9./-]*)(?![A-Z0-9.,/-])", re.I),
+     1, "[KONTO]"),
+    # Nacktes Label plus reine Ziffernfolge: "Depot 12345678", "Account 987654321",
+    # "Portfolio 4711556". Ohne diese Regel war eine Kontonummer nur dann PII, wenn
+    # der Report zufällig "nummer", ":" oder "#" dazuschrieb.
+    #   - `\b` hinter dem Label hält "Depotauszug 2024" und "Kontoinhaber" heraus,
+    #   - `(?![\d.,])` hinter dem Wert hält Beträge heraus: bei "Konto: 1.234,56"
+    #     scheitert jeder Kandidat an der Nachkommastelle, der Betrag bleibt stehen.
+    ("konto", re.compile(
+        r"(?i:Konto|Depot|Kunden?|Vertrag|Account|Portfolio|Referenz)"
+        r"(?i:nummer|-?\s?Nr\.?|nr\.?|-?ID)?\b\s*[:.#]?\s*"
+        r"(\d[\d./ -]{2,}\d)(?![\d.,/-])"), 1, "[KONTO]"),
     ("adresse", re.compile(
         r"\b[A-ZÄÖÜ][\wäöüß.-]*(?:stra(?:ß|ss)e|str\.|weg|allee|platz|gasse|ring|damm)"
-        r"\s+\d+\s*[a-zA-Z]?\b"), 0, "[ADRESSE]"),
-    ("adresse", re.compile(r"\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß.-]+(?:\s+[A-ZÄÖÜ][a-zäöüß.-]+)?\b"),
-     0, "[ADRESSE]"),
-    ("name", re.compile(
-        r"(?:Herr|Frau|Name|Kunde|Kundin|Kontoinhaber(?:in)?|Depotinhaber(?:in)?|"
-        r"Steuerpflichtige[rn]?|Mr\.?|Mrs\.?|Ms\.?)\s*:?\s+"
-        r"((?:[A-ZÄÖÜ][\wäöüß'’-]+\s+){0,2}[A-ZÄÖÜ][\wäöüß'’-]+)"), 1, "[NAME]"),
+        r"\s+\d+\s*[a-zA-Z]?\b", re.I), 0, "[ADRESSE]"),
+    ("adresse", re.compile(r"\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß.-]+(?:\s+[A-ZÄÖÜ][a-zäöüß.-]+)?\b",
+                           re.I), 0, "[ADRESSE]"),
+    # Beschrifteter Name — inklusive `Inhaber`, `Empfänger`, Titeln und vierteiligen
+    # Namen. Beschriftung case-insensitiv, Name case-sensitiv (siehe oben).
+    ("name", re.compile(rf"(?i:{_NAM_LABEL})\s*:?\s+({_NAM})"), 1, "[NAME]"),
+    # Anrede: "Guten Tag Max Mustermann," / "Sehr geehrter Herr Mustermann".
+    # Der Ausschluss verhindert, dass "Sehr geehrte Damen und Herren" zum Namen wird.
+    ("name", re.compile(rf"(?i:{_NAM_ANREDE})\s+(?!(?i:Damen|Kund))({_NAM})"), 1, "[NAME]"),
+    # "Erstellt für Max Mustermann" und "Für Max Mustermann erstellt am …".
+    ("name", re.compile(rf"(?i:{_NAM_ERSTELLT})\s+(?i:f(?:ü|ue)r)\s+({_NAM})"), 1, "[NAME]"),
+    ("name", re.compile(rf"(?i:\bf(?:ü|ue)r)\s+({_NAM})\s+(?i:{_NAM_ERSTELLT})"),
+     1, "[NAME]"),
 ]
 
-# Zeile, die *nur* aus zwei bis drei großgeschriebenen Wörtern besteht — der klassische
-# Adresskopf. Ohne die Fachwortliste unten würde sie auch "Zusammenfassung Kapitalgewinne"
+# Zeile, die *nur* aus zwei bis vier Namensbestandteilen besteht — der klassische
+# Adresskopf. Versalien ("MAX MUSTERMANN") sind in deutschen Auszügen die Regel und
+# waren vorher ausgenommen, weil das Muster ein kleingeschriebenes zweites Zeichen
+# verlangte; ein führender Titel ("Dr. Anna Maria Schmidt") ebenso. Ohne die
+# Fachwortliste unten würde die Regel auch "Zusammenfassung Kapitalgewinne"
 # schwärzen, und das Fixture wäre wertlos.
 _NAME_ZEILE = re.compile(
-    r"^(?:[A-ZÄÖÜ][a-zäöüß'’-]{1,20}\.?\s+){1,2}"
-    r"(?:(?:von|van|de|der|zu)\s+)?[A-ZÄÖÜ][a-zäöüß'’-]{1,20}$")
+    rf"^(?:{_NAM_TITEL}\s+)*(?:{_NAM_WORT}\s+){{1,3}}"
+    rf"(?:(?:von|van|de|der|den|zu|di|del|la)\s+)?{_NAM_WORT}$")
 
 _FACHWORTE = {
     # Dokument-/Tabellenvokabular. Alles hier gilt nie als Personenname.
@@ -204,7 +264,41 @@ _FACHWORTE = {
     "llc", "plc", "capital", "invest", "investments", "securities", "markets", "market",
     "trading", "trade", "exchange", "group", "holding", "finance", "financial",
     "europe", "deutschland", "germany", "global",
+    # Versalien-Überschriften, die durch die erweiterte Namenszeile sonst als Name
+    # gälten ("WICHTIGE INFORMATIONEN").
+    "wichtige", "wichtig", "information", "informationen", "erläuterung",
+    "erläuterungen", "erlaeuterung", "erlaeuterungen", "bescheinigung", "auszug",
+    "kalenderjahr", "steuerjahr", "jahr", "zeile", "zeilen", "position", "positionen",
 }
+
+# Wörter, die hinter einer Namensbeschriftung stehen können, ohne ein Name zu sein:
+# "Name Betrag" in einer Kopfzeile, "Sehr geehrte Damen und Herren". Besteht ein
+# Treffer *ausschließlich* aus solchen Wörtern, wird nicht geschwärzt — sonst
+# zerlegt die Anonymisierung die Tabellenköpfe, die das Fixture belegen soll.
+_KEIN_NAME = _FACHWORTE | {
+    "damen", "herren", "herr", "frau", "kunde", "kundin", "kunden", "und", "oder",
+    "sie", "ihr", "ihre", "unser", "unsere", "team", "service", "support", "sehr",
+    "geehrte", "geehrter", "guten", "tag", "hallo", "liebe", "lieber", "dear",
+    "inhaber", "inhaberin", "empfänger", "empfaenger", "adressat", "vorname",
+    "nachname", "steuerpflichtiger", "steuerpflichtige",
+    # Funktionswörter: am Satzanfang großgeschrieben und deshalb sonst der
+    # Anfang eines vermeintlichen Namens ("In Zeile 7 enthaltene …").
+    "in", "im", "an", "am", "auf", "aus", "bei", "bis", "für", "fuer", "mit",
+    "nach", "seit", "über", "ueber", "um", "unter", "vor", "zu", "zum", "zur",
+    "durch", "gegen", "ohne", "je", "pro", "davon", "enthaltene", "enthaltenen",
+    "sowie", "bzw", "ggf", "siehe", "gesamtbetrag", "summen", "abzüglich",
+    "abzueglich", "zuzüglich", "zuzueglich",
+}
+
+
+def _worte(text: str) -> list[str]:
+    return [w.strip(".,;:()[]'’-").lower() for w in text.split() if w.strip(".,;:()[]'’-")]
+
+
+def _nur_fachworte(text: str) -> bool:
+    """True, wenn der Treffer ausschließlich aus Dokumentvokabular besteht."""
+    worte = _worte(text)
+    return bool(worte) and all(w in _KEIN_NAME for w in worte)
 
 
 def _ist_pii(text: str) -> str | None:
@@ -238,6 +332,8 @@ def anonymisiere(text: str, *, schuetze: tuple[str, ...] = ()) -> tuple[str, lis
                 treffer = m.group(gruppe) if gruppe else m.group(0)
                 if not treffer or treffer.strip().lower() in geschuetzt:
                     return m.group(0)
+                if art == "name" and _nur_fachworte(treffer):
+                    return m.group(0)       # "Name Betrag" ist eine Kopfzeile
                 redaktionen.append({"art": art, "original": treffer.strip(),
                                     "ersatz": ersatz, "zeile": idx + 1})
                 if gruppe:
@@ -260,6 +356,64 @@ def anonymisiere(text: str, *, schuetze: tuple[str, ...] = ()) -> tuple[str, lis
     return "\n".join(zeilen), redaktionen
 
 
+# Restrisiko-Heuristiken: was *nach* der Redaktion noch wie eine Person oder eine
+# Nummer aussieht. Bewusst weiter gefasst als `_PII` — hier wird nichts geschwärzt,
+# sondern nur gefragt.
+_REST_ZIFFERN = re.compile(r"(?<![\d.,/:-])\d[\d ]{5,}\d(?![\d.,/:-])")
+_REST_ALNUM = re.compile(r"\b(?=[A-Z0-9-]*\d)(?=[A-Z0-9-]*[A-Z])[A-Z0-9-]{8,}\b")
+# Wortfolge ohne Ziffern — Kennungen meldet `_REST_ALNUM` bereits.
+_REST_WORT = r"[A-ZÄÖÜ][A-Za-zÄÖÜäöüß'’-]{1,24}"
+_REST_NAME = re.compile(rf"\b{_REST_WORT}(?:\s+{_REST_WORT}){{1,3}}\b")
+# Beschriftung mit *inhaltlichem* Rest dahinter — nach einer erfolgreichen
+# Redaktion steht dort nur noch der Platzhalter (der vorher entfernt wird) plus
+# Satzzeichen, und das ist kein Fund.
+_REST_ANREDE = re.compile(rf"(?i:{_NAM_ANREDE}|{_NAM_LABEL})\s*:?\s+[^\s,.;:]")
+
+
+def restrisiko(text: str, *, schuetze: tuple[str, ...] = ()) -> list[dict]:
+    """Was im *bereits anonymisierten* Text noch nach Personenbezug aussieht.
+
+    Die Anonymisierung ist eine Heuristik. Sie kann nicht beweisen, dass nichts
+    mehr drinsteht — also sagt sie, worüber sie sich unsicher ist, statt
+    Vollständigkeit zu behaupten. Ein Fixture landet in einem öffentlichen
+    Repository; ein falscher Alarm kostet einen Blick, ein übersehener Name nicht.
+    """
+    geschuetzt = {s.strip().lower() for s in schuetze if s and s.strip()}
+    funde: list[dict] = []
+    gesehen: set[tuple[str, str]] = set()
+
+    def _melde(art: str, stelle: str, zeile: int, hinweis: str):
+        stelle = stelle.strip()
+        if not stelle or stelle.lower() in geschuetzt:
+            return
+        if (art, stelle.lower()) in gesehen:
+            return
+        gesehen.add((art, stelle.lower()))
+        funde.append({"art": art, "text": stelle, "zeile": zeile, "hinweis": hinweis})
+
+    for idx, zeile in enumerate(text.split("\n"), start=1):
+        ohne_platzhalter = re.sub(r"\[[A-ZÄÖÜ-]+\]", " ", zeile)
+        for m in _REST_ZIFFERN.finditer(ohne_platzhalter):
+            _melde("ziffernfolge", m.group(0), idx,
+                   "lange Ziffernfolge ohne Trennzeichen — Konto-, Kunden- oder "
+                   "Vertragsnummer? Wenn ja, von Hand ersetzen.")
+        for m in _REST_ALNUM.finditer(ohne_platzhalter):
+            _melde("kennung", m.group(0), idx,
+                   "alphanumerische Kennung — Depot-, Referenz- oder Auftragsnummer?")
+        for m in _REST_NAME.finditer(ohne_platzhalter):
+            if _nur_fachworte(m.group(0)):
+                continue
+            _melde("name?", m.group(0), idx,
+                   "sieht aus wie ein Personenname (mehrere großgeschriebene Wörter) — "
+                   "wenn es kein Marken- oder Fachbegriff ist, von Hand ersetzen.")
+        m = _REST_ANREDE.search(ohne_platzhalter)
+        if m:
+            _melde("anrede", zeile.strip()[:80], idx,
+                   "Anrede oder Personen-Beschriftung mit Inhalt dahinter — prüfen, "
+                   "ob dort noch ein Name steht.")
+    return funde
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 2. Erkennung
 # ─────────────────────────────────────────────────────────────────────────────
@@ -278,6 +432,11 @@ _ZU_GENERISCH = {
     "von", "bis", "für", "fuer", "und", "der", "die", "das",
     # Platzhalter der Anonymisierung — die dürfen nie in `erkennung` landen.
     "iban", "email", "steuer-id", "kontonummer", "depotnummer",
+    # Anreden. Nach der Redaktion bleibt von "Guten Tag Max Mustermann," genau
+    # "Guten Tag" übrig — kein Markenmerkmal, sondern der Anker eines Namens.
+    "guten", "tag", "morgen", "abend", "sehr", "geehrte", "geehrter", "hallo",
+    "liebe", "lieber", "dear", "inhaber", "kontoinhaber", "depotinhaber",
+    "empfänger", "empfaenger",
 }
 
 # Firmenkennzeichen: die Markenzeile ist das stabilste Erkennungsmerkmal, viel
@@ -952,10 +1111,36 @@ _VERGLEICH_HINWEISE = [
 ]
 
 
+# Eine Zeilennummer *irgendwo* im Label ist noch keine Zeilenbezeichnung.
+# "In Zeile 7 enthaltene Verluste aus Aktienveräußerungen" handelt VON Zeile 7 und
+# ist selbst eine ganz andere Zeile (die davon-Zeilen 20–25 tragen die Nummer, auf
+# die sie sich beziehen, nie ihre eigene). Wer daraus `kap_zeilen.7` ableitet,
+# vergleicht 400 € Aktienverlust mit 5.000 € Kapitalerträgen und nennt das Abgleich.
+_ZEILE_NR = re.compile(r"\bZeile\s+(\d{1,2})\b", re.I)
+_ZEILE_QUERVERWEIS = re.compile(
+    # "In den Zeilen 18 und 19 enthaltene …", "In Zeile 7 enthaltene …",
+    # "davon Zeile 7", "siehe Zeile 12", "gemäß Zeile 9"
+    r"\bZeilen\s+\d"
+    r"|\b(?:in|im|zu|aus|nach|gem(?:ä|ae)ß|laut|siehe|davon|vgl\.?|unter)\b"
+    r"\s+(?:der|den|die|dem)?\s*Zeile\s+\d"
+    r"|\benthalten\w*\b|\bincluded\b|\bdavon\b", re.I)
+
+
+def _zeilen_pfad(label: str) -> str | None:
+    """`kap_zeilen.N`, wenn das Label wirklich Zeile N **bezeichnet** — sonst None."""
+    treffer = _ZEILE_NR.findall(label)
+    if len(treffer) != 1:
+        return None                     # keine oder mehrere Nummern: nicht eindeutig
+    if _ZEILE_QUERVERWEIS.search(label):
+        return None                     # Querverweis auf eine andere Zeile
+    return f"kap_zeilen.{treffer[0]}"
+
+
 def _vergleichspfad(label: str, ergebnis: str) -> str:
-    m = re.search(r"Zeile\s+(\d{1,2})", label, re.I)
-    if m and ergebnis == "kap":
-        return f"kap_zeilen.{m.group(1)}"
+    if ergebnis == "kap":
+        pfad = _zeilen_pfad(label)
+        if pfad:
+            return pfad
     for muster, ziele in _VERGLEICH_HINWEISE:
         if re.search(muster, label, re.I):
             ziel = ziele.get(ergebnis)
@@ -1092,31 +1277,63 @@ def pruefe_entwurf(struktur: list[dict], tabellen: list[dict], summen: list[dict
                                                "spalte": k}
         bericht["tabellen"].append(eintrag)
 
-    wert_pfade = {p for w in (werte or []) for p in _liste_pfade(w)}
+    # Welcher `werte`-Eintrag füllt welchen Pfad, und aus welcher Report-Zeile?
+    # Genau daran hängt die Zirkularitätsprüfung: liest der Abgleich denselben
+    # Wert aus derselben Zeile, prüft er nichts.
+    wert_quellen: dict[str, dict] = {}
+    for w in werte or []:
+        for pfad in _liste_pfade(w):
+            if not pfad or pfad == TODO:
+                continue
+            eintrag = wert_quellen.setdefault(pfad, {"zeilen": set(), "muster": set()})
+            eintrag["zeilen"].add(w.get("_zeile"))
+            if w.get("muster"):
+                eintrag["muster"].add(w["muster"])
+
     zirkulaer = False
     for s in summen:
         wert = sl.to_decimal(s["_wert"])
         treffer = [k for k, v in alle_summen.items() if abs(v["wert"] - wert) <= D("0.01")]
-        if treffer:
-            abgleich = "ok"
-        elif s["vergleich"] in wert_pfade:
-            # Werte-Profile (KAP) haben keine Spaltensumme: der Abgleich prüft den
-            # Wert gegen die Zeile, aus der er stammt. Das hält das Muster stabil,
-            # ersetzt aber keinen echten Summenabgleich — und wird so benannt.
-            abgleich = "ok (Einzelwert, zirkulär)"
+        ziel = s.get("vergleich")
+        quelle = wert_quellen.get(ziel) if ziel and ziel != TODO else None
+        # Zirkulär, wenn der Vergleichswert aus derselben Report-Zeile stammt wie
+        # der verglichene Wert — oder wenn dasselbe Muster beides liest. Steht der
+        # Gegenwert in einer ANDEREN Zeile, ist es ein echter zweiter Ausweis und
+        # bleibt ein gültiger Abgleich. Fehlt die Zeilenherkunft ganz (`None`),
+        # gilt der Eintrag als zirkulär: bei einer Prüfung, deren einziger Zweck
+        # das Aufdecken von Selbstbestätigung ist, muss der Zweifel gegen den
+        # Entwurf ausschlagen, nicht für ihn.
+        ist_zirkulaer = bool(quelle) and (
+            s.get("_zeile") in quelle["zeilen"]
+            or s.get("muster") in quelle["muster"]
+            or s.get("_zeile") is None or None in quelle["zeilen"])
+        if ist_zirkulaer:
+            # Kein "ok". Ein Abgleich, der eine Zeile gegen sich selbst prüft,
+            # meldet für JEDEN Report `Abweichung 0,00 €` — auch für einen, dem der
+            # halbe Report fehlt. Genau die Garantie, auf der das Profil-Format
+            # ruht, wäre damit wertlos.
+            abgleich = "ZIRKULÄR — kein Abgleich"
             zirkulaer = True
+        elif treffer:
+            abgleich = "ok"
         else:
             abgleich = "keine Spalte passt"
         eintrag = {"label": s["label"], "wert": s["_wert"], "abgleich": abgleich,
-                   "spalten": treffer}
+                   "spalten": [] if ist_zirkulaer else treffer, "zirkulaer": ist_zirkulaer}
         if abgleich.startswith("ok"):
             bericht["abgleich_ok"] = True
         bericht["summen"].append(eintrag)
+    bericht["zirkulaer"] = [e["label"] for e in bericht["summen"] if e["zirkulaer"]]
     if zirkulaer:
         bericht["warnungen"].append(
-            "Der Abgleich prüft Einzelwerte gegen dieselbe Zeile, aus der sie stammen. "
-            "Er meldet ein geändertes Layout, aber keinen Zeilenverlust — wenn der "
-            "Report eine echte Gesamtsumme ausweist, diese zusätzlich eintragen.")
+            "FEHLER, ZIRKULÄRER ABGLEICH: " + str(len(bericht["zirkulaer"]))
+            + " Summeneintrag/-einträge "
+            "prüfen einen Wert gegen dieselbe Report-Zeile, aus der `werte` ihn liest "
+            "(" + ", ".join(repr(x) for x in bericht["zirkulaer"]) + "). Das ist kein "
+            "Abgleich: er meldet für jeden Report 'Abweichung 0,00 €', auch wenn Zeilen "
+            "fehlen. Ein echter Abgleich stellt eine GEPARSTE Aggregation einer im "
+            "Report unabhängig ausgewiesenen Gesamtsumme gegenüber — die Einträge "
+            "stehen deshalb als TODO im Entwurf.")
 
     if not summen:
         bericht["warnungen"].append(
@@ -1479,33 +1696,53 @@ def entwurf_aus_text(text: str, profil_id: str, *, eingabe: str = "pdf",
                       and not _JAHRESZAHL.match(z.group(0).strip())]
             if not zahlen:
                 continue
-            m = re.search(r"Zeile\s+(\d{1,2})", txt, re.I)
+            # Nur eine echte Zeilen*bezeichnung* ergibt `kap_zeilen.N` — siehe
+            # `_zeilen_pfad`. "In Zeile 7 enthaltene Verluste" ist die davon-Zeile
+            # zu Zeile 7 und trägt ihre eigene Nummer nirgends im Text.
+            zeilen_pfad = _zeilen_pfad(txt)
+            querverweis = bool(_ZEILE_NR.search(txt)) and zeilen_pfad is None
             kennzahl = next((z for muster, z in _KAP_KENNZAHLEN
                              if re.search(muster, txt, re.I)
                              and z not in gesehen_kennzahl), None)
-            if not m and not kennzahl:
+            if not zeilen_pfad and not kennzahl and not querverweis:
                 continue
             pfade = []
-            if m:
-                pfade.append(f"kap_zeilen.{m.group(1)}")
+            if zeilen_pfad:
+                pfade.append(zeilen_pfad)
             if kennzahl:
                 pfade.append(kennzahl)
                 gesehen_kennzahl.add(kennzahl)
-            if any(set(_liste_pfade(w)) & set(pfade) for w in werte):
+            if pfade and any(set(_liste_pfade(w)) & set(pfade) for w in werte):
                 continue
-            if m:
-                muster = rf"Zeile\s+{m.group(1)}\)?{{VOR}}{_ZAHL_GRUPPE}"
+            if zeilen_pfad:
+                muster = rf"Zeile\s+{zeilen_pfad.split('.')[-1]}\)?{{VOR}}{_ZAHL_GRUPPE}"
             else:
                 label = txt[:zahlen[-1].start()].strip(" .:…-")
                 muster = re.escape(label).replace("\\ ", r"\s+") + "{VOR}" + _ZAHL_GRUPPE
+            hinweise_wert: list[str] = []
+            if querverweis and not pfade:
+                pfade = [TODO]
+                hinweise_wert.append(
+                    "Diese Zeile nennt eine Zeilennummer, bezeichnet sie aber nicht: "
+                    "sie ist eine 'davon'-Zeile ZU der genannten Zeile (Anlage KAP "
+                    "20–25) und trägt ihre eigene Nummer nirgends im Text. Den "
+                    "richtigen `kap_zeilen.NN` samt passender `kennzahlen.*` von Hand "
+                    "eintragen — der Betrag gehört NICHT in die genannte Zeile.")
+            elif querverweis:
+                hinweise_wert.append(
+                    "Die Zeile nennt eine fremde Zeilennummer ('davon'-Zeile); daraus "
+                    "wurde bewusst KEIN `kap_zeilen.NN` abgeleitet. Prüfen, ob "
+                    "zusätzlich eine eigene Zeilennummer gebraucht wird.")
             werte.append({"pfad": pfade[0] if len(pfade) == 1 else pfade,
-                          "muster": muster})
+                          "muster": muster, "_zeile": s["i"]})
             if re.search(r"Verlust", txt, re.I):
-                kommentare[f"werte[{len(werte) - 1}]"] = (
+                hinweise_wert.append(
                     "Verlustzeile: im Ergebnisschema tragen Verluste ein NEGATIVES "
                     "Vorzeichen. Der Report weist sie hier positiv aus — Muster so "
                     "schärfen, dass das Vorzeichen mitkommt, sonst wird aus einem "
                     "Verlust ein Gewinn.")
+            if hinweise_wert:
+                kommentare[f"werte[{len(werte) - 1}]"] = " ".join(hinweise_wert)
         if werte and not tabellen:
             # Ohne Mindestzahl wäre ein Ergebnis aus lauter Nullen von einem echten
             # Null-Report nicht zu unterscheiden — der Motor verlangt sie deshalb.
@@ -1555,11 +1792,23 @@ def entwurf_aus_text(text: str, profil_id: str, *, eingabe: str = "pdf",
         eintrag = {"label": s["label"], "muster": s["muster"],
                    "vergleich": s["vergleich"], "toleranz": s["toleranz"]}
         idx = len(summen_profil)
-        if b and b["abgleich"].startswith("ok (Einzelwert"):
+        if b and b.get("zirkulaer"):
+            # Der Entwurf würde hier einen Wert gegen sich selbst prüfen. Als
+            # `vergleich` eingetragen wäre das ein Profil, das für jeden Report
+            # `Abweichung 0,00 €` druckt — auch für einen halb verlorenen. Also TODO.
+            eintrag["vergleich"] = TODO
             kommentare[f"summen[{idx}].vergleich"] = (
-                f"Ausgewiesener Wert {s['_wert']} wird gegen denselben Wert geprüft, den "
-                f"`werte` aus dieser Zeile liest — das hält das Muster stabil, ersetzt "
-                f"aber keinen Summenabgleich über mehrere Zeilen.")
+                f"ZIRKULÄR und deshalb TODO: der ausgewiesene Wert {s['_wert']} würde "
+                f"gegen genau den Pfad geprüft, den `werte` aus DERSELBEN Report-Zeile "
+                f"({s['_zeile'] + 1}) liest. Ein solcher Abgleich stimmt immer und "
+                f"findet nie etwas — er meldet auch dann 'Abweichung 0,00 €', wenn dem "
+                f"Report Zeilen fehlen. Ein echter Abgleich stellt eine über MEHRERE "
+                f"Zeilen geparste Aggregation einem im Report unabhängig ausgewiesenen "
+                f"Gesamtwert gegenüber (z. B. `kennzahlen.kapitalertraege` gegen eine "
+                f"ausgewiesene Summe der Kapitalerträge, oder "
+                f"`summen_basis.veraeusserungen_gewinn_gesamt` gegen eine Endsumme). "
+                f"Weist der Report keinen unabhängigen Gesamtwert aus, gehört das im "
+                f"Profil gesagt — nicht mit einem Selbstvergleich überdeckt.")
         elif b and b["abgleich"] != "ok":
             eintrag["vergleich"] = TODO
             kommentare[f"summen[{idx}].vergleich"] = (
@@ -1597,7 +1846,9 @@ def entwurf_aus_text(text: str, profil_id: str, *, eingabe: str = "pdf",
         "notation": notation,
         "datum": datum,
         "tabellen": [t["profil"] for t in tabellen],
-        "werte": werte,
+        # `_zeile` ist Buchhaltung der Selbstprüfung (welche Report-Zeile hat den
+        # Wert geliefert) und gehört nicht ins Profil.
+        "werte": [{k: v for k, v in w.items() if not k.startswith("_")} for w in werte],
         "summen": summen_profil,
         "elster": [],
         # Ein Entwurf ist per Definition ungeprüft — 'geprueft' verlangt ein Datum,
@@ -1623,11 +1874,16 @@ def entwurf_aus_text(text: str, profil_id: str, *, eingabe: str = "pdf",
         struktur, tabellen, summen, marken, bericht, notation, max_fixture_zeilen,
         csv_kopf=(csv_meta.get("kopf_index") if csv_block is not None else None))
 
+    # Die Anonymisierung ist eine Heuristik und darf nicht so tun, als wäre sie
+    # vollständig: was danach noch nach Person oder Nummer aussieht, wird benannt.
+    restrisiken = restrisiko(fixture_text, schuetze=tuple(marken))
+
     return {
         "profil": profil,
         "bericht": bericht,
         "fixture": {"text": fixture_text, "redaktionen": redaktionen,
-                    "hinweise": fixture_hinweise, "quelle": quelle_datei},
+                    "hinweise": fixture_hinweise, "restrisiken": restrisiken,
+                    "quelle": quelle_datei},
     }
 
 
@@ -1693,6 +1949,18 @@ def _drucke_bericht(erg: dict, quelle: str, out_pfad: Path, fix_pfad: Path) -> N
               "Commit selbst durchlesen: der Wizard erkennt nicht jede Personenangabe.")
     for h in fixture["hinweise"]:
         print(f"  {h}")
+    rest = fixture.get("restrisiken") or []
+    if rest:
+        print(f"  RESTRISIKO — {len(rest)} Stelle(n), die NACH der Redaktion noch nach "
+              f"Personenbezug aussehen. Der Wizard schwärzt sie nicht von sich aus, "
+              f"weil sie genauso gut Fach- oder Markenbegriffe sein können. Einzeln "
+              f"bestätigen:")
+        for r in rest:
+            print(f"    Zeile {r['zeile']}: {r['text']!r}  [{r['art']}] — {r['hinweis']}")
+    else:
+        print("  Restrisiko-Prüfung: nichts Auffälliges mehr gefunden. Das ist keine "
+              "Freigabe — die Prüfung ist eine Heuristik und kennt nur Namensformen, "
+              "Ziffernfolgen und Anreden.")
     print("  ACHTUNG: Fixtures landen im Repository. Vor dem Commit lesen. Beträge dürfen "
           "verfälscht werden, müssen aber zur Summenzeile passen — sonst schlägt der "
           "Abgleich des Profils fehl.")
@@ -1712,12 +1980,17 @@ def _drucke_bericht(erg: dict, quelle: str, out_pfad: Path, fix_pfad: Path) -> N
         print("  2. `zeile`-Regex gegen weitere Seiten prüfen: jede Zeile ohne Treffer "
               "im Tabellenbereich ist eine potenziell verlorene Position.")
     print("  3. Mindestens einen `summen`-Eintrag zum Greifen bringen — ein Profil ohne "
-          "Summenabgleich wird beim Laden als unfertig markiert.")
-    print(f"  4. {fix_pfad} durchlesen, Redaktionen prüfen, Beträge ggf. konsistent "
-          "verfälschen.")
+          "Summenabgleich wird beim Laden als unfertig markiert. Der Eintrag muss eine "
+          "geparste Aggregation gegen einen im Report UNABHÄNGIG ausgewiesenen "
+          "Gesamtwert stellen; ein Wert gegen seine eigene Zeile ist kein Abgleich.")
+    print(f"  4. {fix_pfad} durchlesen, Redaktionen und Restrisiken prüfen, Beträge ggf. "
+          "konsistent verfälschen.")
     print("  5. `python scripts/parse_broker.py <report> -o test.json` laufen lassen.")
-    print("  6. `geprueft_am` auf das heutige Datum setzen und "
-          "`python3 tests/run_tests.py` fahren.")
+    print("  6. Erst wenn Schritt 5 mit einem *echten* Report durchgelaufen ist und der "
+          "Summenabgleich dabei gegriffen hat: `geprueft_am` auf das heutige Datum "
+          "setzen, `status` auf 'geprueft', dann `python3 tests/run_tests.py` fahren. "
+          "Ein Datum, das nur bestätigt, dass der Wizard sich selbst zugestimmt hat, "
+          "ist schlimmer als keines.")
     print("\nDer Entwurf ist ein Startpunkt, keine fertige Anbindung. "
           "Solange TODO drinsteht, lehnt parse_broker.py das Profil ab — so gewollt.")
 

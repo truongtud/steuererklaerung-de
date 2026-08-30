@@ -10,6 +10,7 @@ steuerdaten.json
 transactions.json
 taxreport.json
 *.krypto_result.json
+*.kap_result.json
 *.transactions.json
 *.extracted.json
 *.tables.csv

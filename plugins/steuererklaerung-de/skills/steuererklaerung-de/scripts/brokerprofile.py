@@ -395,6 +395,9 @@ def pruefe_profil(profil) -> list[str]:
     if not p.summen:
         f.append("summen fehlt — ohne Abgleich gegen die im Report ausgewiesenen "
                  "Summen bleibt ein Zeilenverlust unbemerkt.")
+    elif all(s.get("optional") for s in p.summen):
+        f.append("alle summen-Einträge sind 'optional' — damit hat das Profil kein "
+                 "Sicherheitsnetz mehr. Mindestens ein Abgleich muss verbindlich sein.")
     moeglich = erzeugbare_pfade(p)
     for s in p.summen:
         if not s.get("vergleich"):
@@ -416,6 +419,15 @@ def pruefe_profil(profil) -> list[str]:
         if art not in ("betrag", "anzahl", "zeilen"):
             f.append(f"summen-Eintrag {s.get('label')!r}: art {art!r} unbekannt "
                      f"(betrag|anzahl|zeilen).")
+        if "optional" in s and not isinstance(s.get("optional"), bool):
+            f.append(f"summen-Eintrag {s.get('label')!r}: optional muss true/false "
+                     f"sein, nicht {s.get('optional')!r}.")
+        if s.get("optional") and not str(s.get("begruendung") or "").strip():
+            f.append(
+                f"summen-Eintrag {s.get('label')!r}: 'optional': true ohne "
+                f"'begruendung'. Ein Abgleich darf nur dann entfallen, wenn der Report "
+                f"diese Summe nachweislich nicht ausweist — das ist zu begründen, "
+                f"sonst wird das Sicherheitsnetz aus Bequemlichkeit abgeschaltet.")
         if art != "zeilen" and not s.get("muster"):
             f.append(f"summen-Eintrag {s.get('label')!r} ohne muster.")
         for m in _liste(s.get("muster")):
@@ -466,13 +478,55 @@ def _sicherstellen_benutzbar(profil: Profil) -> None:
 
 
 # ──────────────────────────────────────────────────────────────── Erkennung ───
+def erkennung_defekt(profil) -> Optional[str]:
+    """Grund, falls die Erkennungsmuster dieses Profils nicht kompilierbar sind.
+
+    Ein kaputtes Profil darf nicht die Erkennung *aller* Reports lahmlegen: es
+    passt einfach auf nichts. Damit es dabei nicht unsichtbar wird, macht diese
+    Funktion den Defekt abfragbar (parse_broker meldet ihn bei jedem Lauf).
+    """
+    if isinstance(profil, dict):
+        profil = Profil(profil)
+    if not _liste(profil.erkennung.get("muss")):
+        return "erkennung.muss ist leer — das Profil würde auf jeden Report passen."
+    for m in _liste(profil.erkennung.get("muss")) + _liste(profil.erkennung.get("darf_nicht")):
+        try:
+            re.compile(entfalte(m))
+        except re.error as e:
+            return f"ungültiger regulärer Ausdruck {m!r} ({e})"
+    return None
+
+
+def defekte_profile(profile=None) -> list[tuple[str, str]]:
+    """[(profil_id, Grund)] für alle Profile mit unbrauchbarer Erkennung."""
+    profile = list(profile) if profile is not None else lade_profile()
+    return [(p.id, grund) for p in profile
+            if (grund := erkennung_defekt(p)) is not None]
+
+
 def _bewerte(profil: Profil, text: str) -> tuple[bool, str]:
-    """(passt, Begründung)."""
+    """(passt, Begründung).
+
+    Ein unkompilierbares Muster wirft hier NICHT: sonst reißt eine einzige
+    kaputte Profildatei die Erkennung jedes Reports mit einem nackten
+    `re.error`-Traceback ab. Das defekte Profil passt stattdessen auf nichts und
+    sagt im Erkennungsbericht, warum.
+    """
     for m in _liste(profil.erkennung.get("muss")):
-        if not re.search(entfalte(m), text, re.I | re.M):
+        try:
+            treffer = re.search(entfalte(m), text, re.I | re.M)
+        except re.error as e:
+            return False, (f"erkennung.muss enthält einen ungültigen regulären "
+                           f"Ausdruck {m!r} ({e}) — Profil wird nicht angewendet.")
+        if not treffer:
             return False, f"Muster fehlt: {m!r}"
     for m in _liste(profil.erkennung.get("darf_nicht")):
-        if re.search(entfalte(m), text, re.I | re.M):
+        try:
+            treffer = re.search(entfalte(m), text, re.I | re.M)
+        except re.error as e:
+            return False, (f"erkennung.darf_nicht enthält einen ungültigen regulären "
+                           f"Ausdruck {m!r} ({e}) — Profil wird nicht angewendet.")
+        if treffer:
             return False, f"Ausschlussmuster gefunden: {m!r}"
     return True, "alle Erkennungsmuster gefunden"
 
@@ -482,6 +536,13 @@ def passt(profil, text: str) -> bool:
     if isinstance(profil, dict):
         profil = Profil(profil)
     return _bewerte(profil, text)[0]
+
+
+def passt_begruendet(profil, text: str) -> tuple[bool, str]:
+    """Wie passt(), liefert aber auch den Grund — für Fehlermeldungen."""
+    if isinstance(profil, dict):
+        profil = Profil(profil)
+    return _bewerte(profil, text)
 
 
 def kandidaten(text: str, profile=None) -> list[Profil]:
@@ -637,10 +698,16 @@ def _wandle(wert, typ: str, hint, dayfirst: bool, wo: str):
 class _AnzahlAbgleich(sl.Abgleich):
     """Wie Abgleich, nur ohne Euro-Formatierung (Stückzahlen)."""
 
+    def _fehlend_text(self) -> str:
+        if self.optional:
+            return (f"{self.label}: geparst {self.geparst} — OHNE GEGENPRÜFUNG "
+                    f"(im Profil als 'optional' gekennzeichnet). NICHT verifiziert.")
+        return (f"{self.label}: geparst {self.geparst} — NICHT GEGENGEPRÜFT: "
+                f"der Vergleichswert wurde im Report nicht gefunden.")
+
     def __str__(self) -> str:
         if self.ausgewiesen is None:
-            return (f"{self.label}: geparst {self.geparst} "
-                    f"(kein Vergleichswert im Report gefunden)")
+            return self._fehlend_text()
         return (f"{self.label}: geparst {self.geparst} vs. Report "
                 f"{self.ausgewiesen}")
 
@@ -1263,6 +1330,11 @@ def wende_an(profil, text, *, jahr=None, quelle="", datum=None, strikt=True) -> 
                                  "uebersprungene_zeilen": 0,
                                  "verarbeitete_zeilen": len(txs),
                                  "nicht_zugeordnete_zeilen": len(unmatched_gesamt)})
+        leer_ok = bool((profil.csv or {}).get("darf_leer_sein")
+                       or any(t.get("darf_leer_sein") for t in profil.tabellen))
+        _pruefe_nicht_leer(profil, "keine Transaktionen erkannt", len(txs),
+                           summen_basis.get("nicht_zugeordnete_zeilen", 0),
+                           opt_out=leer_ok)
         ergebnis["transactions"] = txs
         ergebnis["anzahl_transaktionen"] = len(txs)
         summen_basis["anzahl_transaktionen"] = len(txs)
@@ -1274,6 +1346,9 @@ def wende_an(profil, text, *, jahr=None, quelle="", datum=None, strikt=True) -> 
                     if (t.get("rolle") or t.get("name")) == "veraeusserungen"), None)
         if tab is not None:
             zeilen = tabellen_zeilen.get(tab.get("name"), [])
+            _pruefe_nicht_leer(
+                profil, f"die Tabelle {tab.get('name')!r} blieb leer", len(zeilen),
+                len(unmatched_gesamt), opt_out=bool(tab.get("darf_leer_sein")))
             if datumsmodus == "auto":
                 roh = [(z["_zeile_verkauf"], z["_zeile_erwerb"], z["_lang"])
                        for z in _rohdaten(tab, zeilen, text, dayfirst)]
@@ -1408,6 +1483,28 @@ def wende_an(profil, text, *, jahr=None, quelle="", datum=None, strikt=True) -> 
     return ergebnis
 
 
+def _pruefe_nicht_leer(profil: Profil, was: str, anzahl: int, unmatched: int,
+                       *, opt_out: bool) -> None:
+    """Null gelesene Datensätze sind ein Lesefehler, kein Ergebnis.
+
+    Ein Profil, dessen Tabelle keine einzige Zeile trifft, liefert sonst ein
+    vollständig aussehendes Ergebnis aus lauter Nullen — nicht unterscheidbar von
+    einem echten Report ohne Vorgänge. Wer das ausdrücklich zulassen will
+    (Anbieter, deren Report auch leer ausgeliefert wird), setzt
+    `"darf_leer_sein": true`.
+    """
+    if anzahl or opt_out:
+        return
+    raise sl.ParseError(
+        f"Profil {profil.id!r}: {was} — es wurde KEINE einzige Zeile gelesen"
+        + (f" ({unmatched} Zeile(n) passten auf kein Muster)." if unmatched
+           else " (der Tabellenkopf bzw. das Zeilenmuster hat gar nicht gegriffen).")
+        + "\n→ Falsches Profil, geändertes Report-Layout oder falscher Bereich. "
+        "Ein Ergebnis aus lauter Nullen ist von einem echten Null-Report nicht zu "
+        "unterscheiden und wird deshalb NICHT ausgegeben. Ist dieser Report "
+        "wirklich leer, im Profil \"darf_leer_sein\": true setzen.")
+
+
 def _rohdaten(tab, zeilen, text, dayfirst):
     """Rohe Datumsstrings je Zeile — nur für die Datumsformat-Prüfung."""
     zeile = _kompiliere(tab["zeile"])
@@ -1477,6 +1574,11 @@ def _summen_abgleich(profil: Profil, ergebnis: dict, text: str, hint,
                 text, hint, bereiche)
             if gefunden:
                 ausgewiesen = D(wert)
+            elif s.get("optional"):
+                warnungen.append(
+                    f"Summenabgleich {s.get('label', s['vergleich'])!r}: im Profil als "
+                    f"'optional' gekennzeichnet und im Report nicht gefunden — dieser "
+                    f"Wert wurde NICHT gegengeprüft und ist unbestätigt.")
             else:
                 warnungen.append(
                     f"Summenabgleich {s.get('label', s['vergleich'])!r}: das Muster "
@@ -1491,5 +1593,5 @@ def _summen_abgleich(profil: Profil, ergebnis: dict, text: str, hint,
             geparst = sl.q2(geparst)
             ausgewiesen = None if ausgewiesen is None else sl.q2(ausgewiesen)
         abgleiche.append(klasse(s.get("label") or s["vergleich"], geparst,
-                                ausgewiesen, toleranz))
+                                ausgewiesen, toleranz, bool(s.get("optional"))))
     return abgleiche, [str(a) for a in abgleiche]

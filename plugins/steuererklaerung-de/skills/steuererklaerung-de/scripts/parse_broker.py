@@ -12,8 +12,16 @@ ein Test-Fixture, kein neues Skript (siehe references/broker-profile.md).
 
 Abbruch (Exit-Code 1) bei:
   * unerkanntem Report — geraten wird nicht,
+  * einem mit --profil erzwungenen Profil, dessen Erkennungsmuster NICHT passen
+    (--profil wählt das Profil, es hebt die Prüfung nicht auf; Notausgang nach
+    Sichtprüfung: --profil-trotzdem),
   * unfertigem Profil (fehlender Summenabgleich, fehlende Pflichtfelder, TODO),
-  * abweichendem Summenabgleich — dann sind vermutlich Zeilen verlorengegangen.
+  * abweichendem Summenabgleich — dann sind vermutlich Zeilen verlorengegangen,
+  * FEHLENDEM Summenabgleich: findet das Profil die im Report ausgewiesene
+    Vergleichssumme nicht, hat die Prüfung nicht stattgefunden und das Ergebnis
+    ist unbestätigt (Ausnahme nur mit summen[].optional im Profil),
+  * einer Tabelle, die keine einzige Zeile liefert — ein Ergebnis aus lauter
+    Nullen ist von einem echten Null-Report nicht zu unterscheiden.
 
 KEINE Steuerberatung. Werte gegen den Original-Report prüfen.
 """
@@ -74,8 +82,16 @@ def drucke_bericht(result: dict, profil, ziel=None) -> None:
     print(f"Profil: {profil.id} — {profil.label} "
           f"(geprüft_am {profil.geprueft_am or '—'})", file=aus)
     print("  Abgleich (geparst vs. im Report ausgewiesen):", file=aus)
+    ungeprueft = []
     for zeile in result.get("abgleich", []):
-        print(f"    {zeile}", file=aus)
+        if "NICHT GEGENGEPRÜFT" in zeile or "OHNE GEGENPRÜFUNG" in zeile:
+            ungeprueft.append(zeile)
+            print(f"    !!  {zeile}", file=aus)
+        else:
+            print(f"    {zeile}", file=aus)
+    # Ein Abgleich ohne Vergleichswert darf nicht zwischen grünen Zeilen untergehen.
+    for zeile in ungeprueft:
+        print(f"  ACHTUNG — ohne Gegenprüfung: {zeile}", file=sys.stderr)
 
     p23 = result.get("paragraph_23") or {}
     if p23.get("netto_ergebnis_eur") is not None:
@@ -103,8 +119,10 @@ def drucke_bericht(result: dict, profil, ziel=None) -> None:
               f"{sb.get('nicht_zugeordnete_zeilen', 0)} nicht zugeordnet)", file=aus)
         offen = [t for t in result["transactions"] if t.get("_needs_fmv")]
         if offen:
-            print(f"  {len(offen)} Transaktion(en) ohne EUR-Wert — Marktwert zum "
-                  f"Zeitpunkt ergänzen, sonst rechnet FIFO mit 0 €.", file=aus)
+            print(f"  {len(offen)} Transaktion(en) ohne EUR-Wert ('_needs_fmv') — "
+                  f"historischen Marktwert zum Zeitpunkt in 'eur_value' ergänzen. "
+                  f"krypto_fifo.py bricht ab, solange er fehlt; als 0 € gerechnet "
+                  f"würde daraus ein Gewinn, den es nicht gibt.", file=aus)
 
     for w in result.get("warnungen", []):
         print(f"  WARNUNG: {w}", file=sys.stderr)
@@ -113,7 +131,11 @@ def drucke_bericht(result: dict, profil, ziel=None) -> None:
 
 
 def liste_profile(verzeichnis=None) -> int:
-    profile = bp.lade_profile(verzeichnis)
+    try:
+        profile = bp.lade_profile(verzeichnis)
+    except sl.ParseError as e:
+        print(f"ABBRUCH: Profilverzeichnis nicht lesbar: {e}", file=sys.stderr)
+        return 1
     if not profile:
         print("Keine Profile gefunden.", file=sys.stderr)
         return 1
@@ -131,7 +153,15 @@ def main() -> int:
                     "profilgesteuert und mit Summenabgleich.",
         epilog=EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("report", nargs="?", help="Report als PDF oder CSV")
-    ap.add_argument("--profil", help="Profil-ID erzwingen (sonst automatische Erkennung)")
+    ap.add_argument("--profil", help="Profil-ID erzwingen (sonst automatische "
+                                     "Erkennung). Die Erkennungsmuster des Profils "
+                                     "werden trotzdem geprüft — passt es nicht, wird "
+                                     "abgebrochen.")
+    ap.add_argument("--profil-trotzdem", action="store_true",
+                    help="mit --profil auch dann anwenden, wenn die Erkennungsmuster "
+                         "NICHT passen. Notausgang für ein geändertes Report-Layout; "
+                         "das Ergebnis ist dann ungeprüft und Spalte für Spalte gegen "
+                         "das Original zu kontrollieren.")
     ap.add_argument("--year", help="Steuerjahr überschreiben (sonst aus dem Report)")
     ap.add_argument("--dateformat", choices=["de", "en", "iso"],
                     help="Datumsformat erzwingen: de=TT/MM/JJJJ, en=MM/TT/JJJJ")
@@ -155,7 +185,21 @@ def main() -> int:
         print(f"ABBRUCH: {args.report} nicht lesbar: {e}", file=sys.stderr)
         return 1
 
-    profile = bp.lade_profile(args.profile_verzeichnis)
+    # lade_profile wirft bei kaputtem JSON — das gehört in den try, sonst kippt
+    # eine einzelne unlesbare Profildatei mit nacktem Traceback heraus.
+    try:
+        profile = bp.lade_profile(args.profile_verzeichnis)
+    except sl.ParseError as e:
+        print(f"ABBRUCH: Profilverzeichnis nicht lesbar: {e}", file=sys.stderr)
+        return 1
+
+    # Ein Profil mit unbrauchbaren Erkennungsmustern legt nicht mehr die Erkennung
+    # aller Reports lahm (es passt auf nichts) — aber unsichtbar bleiben darf es nicht.
+    for pid, grund in bp.defekte_profile(profile):
+        print(f"WARNUNG: Profil {pid!r} hat unbrauchbare Erkennungsmuster und wird bei "
+              f"der Erkennung übergangen: {grund}", file=sys.stderr)
+
+    warnung_erzwungen = None
     try:
         if args.profil:
             profil = next((p for p in profile if p.id == args.profil), None)
@@ -163,6 +207,26 @@ def main() -> int:
                 print(f"ABBRUCH: Kein Profil mit der id {args.profil!r}. Verfügbar: "
                       + ", ".join(p.id for p in profile), file=sys.stderr)
                 return 1
+            # --profil wählt das Profil, es hebt die Prüfung nicht auf: ein
+            # erzwungenes falsches Profil liest fremde Spalten und liefert ein
+            # vollständig aussehendes Ergebnis aus lauter Nullen.
+            trifft, grund = bp.passt_begruendet(profil, text)
+            if not trifft and not args.profil_trotzdem:
+                print(f"ABBRUCH: Das erzwungene Profil {profil.id!r} passt NICHT auf "
+                      f"diesen Report: {grund}", file=sys.stderr)
+                print("Geprüfte Profile:", file=sys.stderr)
+                for zeile in bp.erkennungs_bericht(text, profile):
+                    print(f"  {zeile}", file=sys.stderr)
+                print("→ Richtiges Profil wählen, die Erkennungsmuster des Profils an "
+                      "das (geänderte) Layout anpassen oder — nur nach Sichtprüfung "
+                      "des Originals — mit --profil-trotzdem erzwingen.",
+                      file=sys.stderr)
+                return 1
+            if not trifft:
+                warnung_erzwungen = (
+                    f"Profil {profil.id!r} wurde mit --profil-trotzdem gegen die "
+                    f"Erkennung erzwungen ({grund}). Die Spaltenzuordnung ist damit "
+                    f"NICHT bestätigt — jede Zahl gegen das Original prüfen.")
         else:
             profil = bp.erkenne(text, profile)
     except sl.ParseError as e:
@@ -194,6 +258,9 @@ def main() -> int:
     except (sl.ParseError, sl.PlausibilityError) as e:
         print(f"ABBRUCH: {e}", file=sys.stderr)
         return 1
+
+    if warnung_erzwungen:
+        result.setdefault("warnungen", []).insert(0, warnung_erzwungen)
 
     out = args.out or standard_ausgabe(args.report, profil)
     with open(out, "w", encoding="utf-8") as f:

@@ -1,8 +1,12 @@
 # PDF-Ingestion — Broker-/Exchange-TaxReports einlesen
 
 `scripts/parse_pdf.py` liest TaxReports als PDF, erkennt Tabellen und mappt Transaktionen
-ins kanonische Schema. Für Koinly und eToro gibt es fertige Presets. **Keine
-Steuerberatung.** Extraktion immer gegen das Original prüfen.
+ins kanonische Schema — **generisch, ohne jede Broker-Kenntnis**. Wo ein Anbieter bekannt
+ist, führt der andere Weg schneller zum Ziel: die Profil-Engine. Für Koinly und eToro
+liegen fertige **Profile** unter `scripts/profiles/` (`koinly-de.json`, `etoro-de.json`),
+angewendet von `scripts/parse_broker.py` — siehe `references/broker-profile.md`.
+`parse_pdf.py` ist der Weg für alles, wofür es kein Profil gibt. **Keine Steuerberatung.**
+Extraktion immer gegen das Original prüfen.
 
 ## Grundregeln dieser Parser
 
@@ -10,15 +14,16 @@ Steuerberatung.** Extraktion immer gegen das Original prüfen.
    Notation, Unicode-Minus (−), Klammer-Notation `(1.234,56)`, nachgestelltes Minus und
    Währungssuffixe. Bei Unlesbarem wirft er — er gibt **nie still 0 zurück**. Ein
    stiller 0-Wert ist der teuerste Fehler in einer Steuerberechnung.
-2. **Summenabgleich statt Vertrauen.** `parse_koinly.py` und `parse_etoro.py` lesen
-   zusätzlich die im Report **selbst ausgewiesenen** Summen (und die Anzahl der
-   Veräußerungen) und vergleichen sie mit dem, was sie geparst haben. Weicht es ab, brechen
-   sie ab. Ohne diesen Abgleich kann ein Parser die Hälfte einer Tabelle verlieren und
-   trotzdem eine plausibel aussehende Zusammenfassung drucken.
+2. **Summenabgleich statt Vertrauen.** Die Profil-Engine liest zusätzlich die im Report
+   **selbst ausgewiesenen** Summen (und die Anzahl der Veräußerungen) und vergleicht sie mit
+   dem Geparsten. Weicht es ab **oder findet das Summenmuster gar nichts**, bricht der Lauf
+   ab und schreibt keine Ausgabedatei. Ohne diesen Abgleich kann ein Parser die Hälfte einer
+   Tabelle verlieren und trotzdem eine plausibel aussehende Zusammenfassung drucken.
 3. **Keine Freigrenzen in den Parsern** — sie gelten pro Person und Jahr über alle Broker
    und werden einmal in `build_taxreport.py` angewandt (siehe `krypto-steuer.md`).
-4. **Ausgabedateien tragen den PDF-Namen** (`<pdf-name>.krypto_result.json`), damit ein
-   zweiter Broker den ersten nicht überschreibt.
+4. **Ausgabedateien tragen den PDF-Namen** (`<pdf-name>.krypto_result.json`,
+   `.kap_result.json`, `.transactions.json`), damit ein zweiter Broker den ersten nicht
+   überschreibt.
 
 ## Backends (automatische Wahl, beste zuerst)
 
@@ -36,7 +41,13 @@ keine brauchbare Textebene hat. Sprachen: `--ocr-lang deu+eng`.
 
 ```bash
 python scripts/parse_pdf.py report.pdf --outdir arbeit --backend auto --ocr-lang deu+eng
+python scripts/parse_pdf.py report.pdf --no-map     # nur extrahieren, kein Mapping
 ```
+
+`--no-map` überspringt die heuristische Transaktionszuordnung und schreibt nur
+`.extracted.json` und `.tables.csv`. Sinnvoll, wenn die Tabellen ohnehin von Hand ins
+kanonische Schema überführt werden — dann ist eine Transaktionsdatei mit geratenen Spalten
+nur eine Datei mehr, die jemand für fertig halten könnte.
 
 Ausgaben in `--outdir`:
 - `<name>.extracted.json` — je Seite `text`, `tables`, `backend`, `ocr`
@@ -73,7 +84,9 @@ dem Wort „Trade" zum `swap` und ein Verkauf aus einer Wallet namens „Kraken 
 ## Verifikations-Checkliste (vor der Steuerberechnung)
 
 1. Alle `_needs_review: true` und niedrige `confidence` gegen das PDF prüfen.
-2. EUR-**Marktwerte** für `reward`/`swap` ergänzen, falls nicht im Report enthalten.
+2. EUR-**Marktwerte** für `reward`/`swap` ergänzen, falls nicht im Report enthalten. Das
+   ist keine Fleißaufgabe: `krypto_fifo.py` **bricht ab**, solange ein als `_needs_fmv`
+   markierter Vorgang keinen Wert hat (siehe `krypto-steuer.md`).
 3. `counter_asset`/`counter_amount` für Tausche ergänzen (für korrekte Folge-Lose).
 4. **Vollständigkeit der Anschaffungshistorie** — fehlt ein Kauf, rechnet die FIFO-Engine
    mit Kostenbasis 0 und warnt.
@@ -95,11 +108,23 @@ Veräußerungen mit Kostenbasis und Kurz-/Langfristig-Einstufung. Diese **nicht*
 durch `krypto_fifo.py` schicken — die Kaufhistorie fehlt, die Kostenbasis würde 0.
 
 ```bash
-python scripts/parse_koinly.py koinly_report.pdf -o koinly.krypto_result.json
-python scripts/parse_etoro.py  taxReport.pdf     -o etoro.krypto_result.json
+python scripts/parse_koinly.py koinly_report.pdf   # -> koinly_report.krypto_result.json
+python scripts/parse_etoro.py  taxReport.pdf       # -> taxReport.kap_result.json
 python scripts/build_taxreport.py steuerdaten.json \
-    --krypto-result koinly.krypto_result.json etoro.krypto_result.json -o taxreport.json
+    --krypto-result koinly_report.krypto_result.json taxReport.kap_result.json \
+    --kap-result    taxReport.kap_result.json \
+    -o taxreport.json
 ```
+
+**Die eToro-Datei steht absichtlich in beiden Listen.** `parse_etoro.py` liefert seit dem
+Umbau auf die Profil-Engine das Ausgabeschema **`kap`** (Standardname
+`<pdf-name>.kap_result.json`), und diese eine Datei trägt **beide** Hälften: die
+Anlage-KAP-Kennzahlen *und* das § 23-/§ 22-Ergebnis. `--krypto-result` liest nur die
+Krypto-Hälfte, `--kap-result` nur die KAP-Hälfte. Wird sie nur einer Liste übergeben,
+verschwindet die andere Hälfte — bei `--krypto-result` allein also sämtliche
+Kapitalerträge, anrechenbare Kapitalertragsteuer und Verlustzeilen. `build_taxreport.py`
+warnt in diesem Fall und nennt, was ignoriert wurde; übergeben an beide Listen, wird jede
+Hälfte genau einmal verbraucht. Details: `references/broker-profile.md`.
 
 **Koinly**: liest § 23-Veräußerungen mit Kostenbasis, Einnahmen (§ 22 Nr. 3, inkl. Airdrops
 und Forks), das Futures-Ergebnis (→ Anlage KAP, Termingeschäfte § 20 Abs. 2) und Gebühren.
@@ -110,9 +135,23 @@ Datumsformat (Tag ≤ 12) hilft `--dateformat de|en`.
 **eToro**: liest den Summenausweis auf Seite 2, der bereits nach deutschem Recht
 klassifiziert ist — Anlage SO Z. 47 (§ 23 Krypto-Spot), Anlage KAP Z. 19/21/23/24
 (ausländische Kapitalerträge, Termingeschäfte, Aktienverluste), SO Z. 10/11
-(Wertpapierleihe/Staking). Vorzeichen bleiben erhalten; findet das Skript **keine**
-Zeilenzuordnung, bricht es ab, statt lauter Nullen zu liefern.
+(Wertpapierleihe/Staking). In `kap_zeilen` bleiben die Vorzeichen des Reports erhalten
+(wörtliche Abschrift), in `kennzahlen` werden sie normiert (Gewinne positiv, Verluste
+negativ) — beide Blöcke stehen in derselben Datei, siehe `broker-profile.md`. Findet das
+Skript **keine** Zeilenzuordnung, bricht es ab, statt lauter Nullen zu liefern. Der
+Abgleich der Anlage-SO-Z.-47-Summe ist im Profil als `optional` gekennzeichnet, weil ein
+reines Aktien-/CFD-Depot gar keinen Anlage-SO-Block erzeugt; fehlt die Summenzeile, druckt
+der Lauf dafür eine `ACHTUNG — ohne Gegenprüfung`-Zeile auf stderr.
 
-Für andere Tools analog ein Preset bauen oder deren CSV-Transaktionsexport über
-`parse_inputs.py` führen (`--format kraken`, `--format map --map mapping.json`;
-`--delimiter` erzwingt das Trennzeichen).
+Für andere Tools analog ein **Profil** bauen (`references/broker-profile.md`) oder deren
+CSV-Transaktionsexport über `parse_inputs.py` führen:
+
+| `--format` | wofür |
+|---|---|
+| `canonical` (Standard) | die CSV liegt bereits im kanonischen Schema vor — die Spaltennamen sind dann die Feldnamen aus `krypto-steuer.md` |
+| `kraken` | Kraken-`ledgers.csv`; paart die zwei Ledger-Zeilen eines Trades und normalisiert Assetcodes (`XETC` → `ETC`, `ETH.S` → `ETH`) |
+| `map` | beliebige CSV über `--map mapping.json` |
+| `coinbase`, `binance` | **bricht bewusst ab.** Beides ist nicht implementiert; als `canonical` gelesen ergäbe eine solche Datei lauter leere Zeilen und trotzdem eine Erfolgsmeldung. Stattdessen `--format map` mit einem Spalten-Mapping benutzen — oder die mitgelieferten (ungeprüften) Profile über `parse_broker.py` |
+
+`--delimiter` erzwingt das Trennzeichen (deutsches Excel schreibt Semikolon), `-o` schreibt
+in eine Datei statt nach stdout.
