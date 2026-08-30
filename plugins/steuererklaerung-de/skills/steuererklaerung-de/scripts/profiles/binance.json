@@ -1,0 +1,60 @@
+{
+  "id": "binance",
+  "label": "Binance Transaction History (CSV-Export)",
+  "quelle": "Binance",
+  "eingabe": "csv",
+  "ergebnis": "krypto_transaktionen",
+  "erkennung": {
+    "muss": [
+      "\\bUTC_Time\\b",
+      "\\bOperation\\b",
+      "\\bCoin\\b",
+      "\\bChange\\b"
+    ],
+    "darf_nicht": [],
+    "punkte": 10
+  },
+  "notation": "en",
+  "datum": "iso",
+  "csv": {
+    "spalten": {
+      "timestamp": "UTC_Time",
+      "type": "Operation",
+      "asset": "Coin",
+      "amount": "Change"
+    },
+    "pflicht": [
+      "timestamp",
+      "type",
+      "asset",
+      "amount"
+    ],
+    "typ_werte": {
+      "Buy": "buy",
+      "Sell": "sell",
+      "Deposit": "deposit",
+      "Withdraw": "withdrawal",
+      "Staking Rewards": "reward",
+      "Simple Earn Flexible Interest": "reward",
+      "Savings Interest": "reward"
+    },
+    "hinweis": "Der Export enthält KEINE Euro-Spalte: 'Change' ist die Coin-Menge, nicht der Gegenwert. Nicht dokumentierte Operation-Werte (z. B. 'Transaction Related', 'Small assets exchange BNB') sind bewusst NICHT zugeordnet und werden gemeldet."
+  },
+  "summen": [
+    {
+      "label": "Verarbeitete CSV-Zeilen",
+      "art": "zeilen",
+      "vergleich": "summen_basis.verarbeitete_zeilen",
+      "quelle_pfad": "summen_basis.csv_datenzeilen",
+      "toleranz": "0"
+    }
+  ],
+  "hinweise": [
+    "UNGEPRÜFT: Spaltenzuordnung aus der öffentlichen Dokumentation abgeleitet, nie gegen einen echten Binance-Export gelaufen.",
+    "Binance bucht einen Trade als mehrere Zeilen (Coin raus, Coin rein, Fee). Ohne EUR-Spalte ist jede Zeile mit _needs_fmv markiert — Marktwerte ergänzen.",
+    "Operation-Werte, die hier nicht zugeordnet sind, werden gezählt und gemeldet, statt geraten zu werden."
+  ],
+  "status": "ungeprueft",
+  "geprueft_am": null,
+  "fixture": "tests/fixtures/binance.txt"
+}

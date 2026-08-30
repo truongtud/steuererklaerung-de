@@ -1,0 +1,66 @@
+{
+  "id": "coinbase",
+  "label": "Coinbase Transaction History Report (CSV)",
+  "quelle": "Coinbase",
+  "eingabe": "csv",
+  "ergebnis": "krypto_transaktionen",
+  "erkennung": {
+    "muss": [
+      "Quantity\\s+Transacted",
+      "Spot\\s+Price\\s+Currency",
+      "Transaction\\s+Type"
+    ],
+    "darf_nicht": [],
+    "punkte": 10
+  },
+  "notation": "en",
+  "datum": "iso",
+  "csv": {
+    "spalten": {
+      "timestamp": "Timestamp",
+      "type": "Transaction Type",
+      "asset": "Asset",
+      "amount": "Quantity Transacted",
+      "eur_value": "Subtotal",
+      "fee_eur": "Fees and/or Spread"
+    },
+    "pflicht": [
+      "timestamp",
+      "type",
+      "asset",
+      "amount"
+    ],
+    "pruefe_spalte": {
+      "spalte": "Spot Price Currency",
+      "erwartet": "EUR"
+    },
+    "typ_werte": {
+      "Buy": "buy",
+      "Advanced Trade Buy": "buy",
+      "Sell": "sell",
+      "Advanced Trade Sell": "sell",
+      "Staking Income": "reward",
+      "Learning Reward": "reward"
+    },
+    "hinweis": "Bewusst NICHT zugeordnet, weil die Spalte allein die steuerliche Einordnung nicht hergibt — solche Zeilen werden gezählt, gemeldet und brechen den Zeilenabgleich ab: 'Convert' (erhaltenes Asset steht nur im Freitext 'Notes'; ein swap ohne counter_asset wäre falsch) · 'Send' (Eigentransfer ODER Zahlung/Schenkung — Letzteres ist eine Veräußerung nach § 23) · 'Receive' (Eigentransfer ODER Airdrop/Schenkung — als deposit entstünde kein Anschaffungs-Lot) · 'Deposit'/'Withdrawal' (Fiat oder Krypto, aus der Spalte nicht unterscheidbar) · 'Rewards Income' (enthält auch USDC-Zinsen: § 20 Abs. 1 Nr. 7 -> Anlage KAP, nicht § 22 Nr. 3)."
+  },
+  "summen": [
+    {
+      "label": "Verarbeitete CSV-Zeilen",
+      "art": "zeilen",
+      "vergleich": "summen_basis.verarbeitete_zeilen",
+      "quelle_pfad": "summen_basis.csv_datenzeilen",
+      "toleranz": "0"
+    }
+  ],
+  "hinweise": [
+    "UNGEPRÜFT: Spaltenzuordnung aus der öffentlichen Dokumentation abgeleitet, nie gegen einen echten Coinbase-Export gelaufen.",
+    "'Spot Price Currency' wird geprüft: steht dort nicht EUR, sind 'Subtotal' und 'Fees and/or Spread' NICHT in Euro und müssen umgerechnet werden.",
+    "'Subtotal' ist der Betrag ohne Gebühren; Coinbase liefert ihn nur bei Käufen und Verkäufen.",
+    "Zugeordnet sind nur Käufe, Verkäufe und Staking/Learning-Rewards. Send/Receive/Deposit/Withdrawal/Convert/Rewards Income bleiben bewusst offen: krypto_fifo.py verwirft deposit/withdrawal vollständig, eine falsche Zuordnung macht deshalb aus einer steuerpflichtigen Veräußerung (z. B. Bezahlen mit Krypto) lautlos einen Nicht-Vorgang und lässt das Lot im FIFO-Bestand stehen.",
+    "Solche Zeilen brechen den Zeilenabgleich ab. Sie gehören von Hand klassifiziert (parse_inputs.py --format map oder canonical) — das ist Absicht: ein sauberer Abbruch ist besser als eine stille Nullbuchung."
+  ],
+  "status": "ungeprueft",
+  "geprueft_am": null,
+  "fixture": "tests/fixtures/coinbase.txt"
+}

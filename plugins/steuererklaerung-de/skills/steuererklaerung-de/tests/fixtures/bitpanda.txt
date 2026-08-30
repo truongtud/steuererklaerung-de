@@ -1,0 +1,4 @@
+Transaction ID,Timestamp,Transaction Type,In/Out,Amount Fiat,Fiat,Amount Asset,Asset,Asset market price,Asset market price currency,Asset class,Product ID,Fee,Fee asset,Spread,Spread Currency
+00000000-0000-0000-0000-000000000001,2024-02-11T08:15:00+01:00,deposit,incoming,500.00,EUR,,EUR,,,Fiat,,0.00,EUR,,
+00000000-0000-0000-0000-000000000002,2024-02-12T09:30:00+01:00,buy,incoming,400.00,EUR,0.00800000,BTC,50000.00,EUR,Cryptocurrency,1,1.49,EUR,0.50,EUR
+00000000-0000-0000-0000-000000000003,2024-06-20T17:45:00+01:00,sell,outgoing,300.00,EUR,0.00500000,BTC,60000.00,EUR,Cryptocurrency,1,1.49,EUR,0.40,EUR

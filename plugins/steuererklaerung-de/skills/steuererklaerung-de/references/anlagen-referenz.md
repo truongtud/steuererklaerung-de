@@ -29,13 +29,21 @@ vor der Eingabe in „Mein ELSTER" prüfen. **Keine Steuerberatung.**
     }
   },
   "anlage_kap": {
-    "kapitalertraege": "3200",             // Zinsen, Dividenden, realisierte Gewinne — BRUTTO
-    "gewinn_aktien": "0",                  // nur zur Größe des Aktien-Verlusttopfs, s. u.
-    "verlust_aktien": "0",                 // § 20 Abs. 6 Satz 4 — eigener Topf
-    "verlust_termingeschaefte": "0",       // seit JStG 2024 voll verrechenbar, s. u.
+    "kapitalertraege": "3200",             // Zinsen, Dividenden, realisierte Gewinne — BRUTTO (Z. 7/18/19)
+    "gewinn_aktien": "0",                  // nur zur Größe des Aktien-Verlusttopfs, s. u. (Z. 20)
+    "gewinn_termingeschaefte": "0",        // Z. 21 — erhöht die Bemessungsgrundlage
+    "verlust_aktien": "0",                 // Z. 23, § 20 Abs. 6 Satz 4 — eigener Topf
+    "verlust_termingeschaefte": "0",       // Z. 24, seit JStG 2024 voll verrechenbar, s. u.
+    "verluste_ohne_aktien": "0",           // Z. 22, allgemeine Verluste
+    "verluste_ausfall": "0",               // Z. 25, Ausfall/Ausbuchung
     "verlustvortrag_aktien_vorjahr": "0",  // festgestellter Aktien-Verlustvortrag
-    "anrechenbare_kest": "550",            // einbehaltene Kapitalertragsteuer
-    "auslaendische_quellensteuer": "0"     // § 32d Abs. 5 EStG
+    "verlustvortrag_allgemein_vorjahr": "0",       // allgemeiner Verlustvortrag
+    "verlustvortrag_termingeschaefte_vorjahr": "0", // fließt in denselben Topf, s. u.
+    "anrechenbare_kest": "550",            // einbehaltene Kapitalertragsteuer (Z. 37)
+    "einbehaltener_soli": "0",             // Z. 38
+    "einbehaltene_kirchensteuer": "0",     // Z. 39
+    "auslaendische_quellensteuer": "0",    // Z. 41, § 32d Abs. 5 EStG
+    "fiktive_quellensteuer": "0"           // Z. 42, fiktive Quellensteuer nach DBA
   },
   "anlage_so": {
     "sonstige_einkuenfte": "0",            // § 22 Nr. 3 außerhalb Krypto (zählt in die 256 €)
@@ -107,6 +115,27 @@ verrechnung, Günstigerprüfung oder fehlerhaftem Steuerabzug. Sparer-Pauschbetr
 > bemessen. Es erhöht die Bemessungsgrundlage **nicht** — die realisierten Aktiengewinne
 > müssen bereits in `kapitalertraege` enthalten sein. `build_taxreport.py` warnt, wenn
 > `gewinn_aktien` größer ist als `kapitalertraege`.
+>
+> **Zeilen 20–25 sind „davon"-Zeilen.** Im Formular stehen sie unter der Überschrift
+> *„In den Zeilen 18 und 19 enthaltene …"* (bzw. *„In Zeile 7 enthaltene …"*). Sie sind
+> also bereits in den Summen enthalten und dienen nur der Zuordnung zu den
+> Verrechnungskreisen. Deshalb erhöht **keines** der Felder `gewinn_aktien`,
+> `gewinn_termingeschaefte`, `verluste_ohne_aktien`, `verluste_ausfall` die
+> Bemessungsgrundlage — die Beträge müssen in `kapitalertraege` enthalten sein.
+> Übersteigt eine davon-Zeile die Kapitalerträge, warnt der Report: dann fehlt der Betrag
+> in der Summe und bliebe unversteuert.
+
+Statt die Werte hier von Hand einzutragen, lassen sich Steuerbescheinigungen und
+Erträgnisaufstellungen auch direkt einlesen — siehe `references/broker-profile.md`:
+
+```bash
+python scripts/parse_broker.py ertraegnisaufstellung.pdf -o depot.kap_result.json
+python scripts/build_taxreport.py steuerdaten.json --kap-result depot.kap_result.json …
+```
+
+Beides lässt sich mischen: Datei-Quellen und Handeingaben werden **addiert**, und wenn
+eine Kennzahl in beiden belegt ist, weist der Report das getrennt aus
+(`anlagen.KAP.quellen`), damit eine Doppelerfassung auffällt.
 
 ### Anlage SO — sonstige Einkünfte  ← **Krypto**
 - **Private Veräußerungsgeschäfte § 23** (Krypto ≤ 1 Jahr): Z. 41–47.

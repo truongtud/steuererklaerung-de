@@ -1,0 +1,40 @@
+{
+  "id": "kraken-ledger",
+  "label": "Kraken ledgers.csv (Kontobuch-Export)",
+  "quelle": "Kraken",
+  "eingabe": "csv",
+  "ergebnis": "krypto_transaktionen",
+  "erkennung": {
+    "muss": [
+      "\\btxid\\b",
+      "\\brefid\\b",
+      "\\baclass\\b",
+      "\\bbalance\\b"
+    ],
+    "darf_nicht": [],
+    "punkte": 15
+  },
+  "notation": "auto",
+  "datum": "iso",
+  "csv": {
+    "normalisierer": "kraken_ledger",
+    "hinweis": "Kraken bucht einen Trade als ZWEI Zeilen mit gleicher refid (Asset-Bein und EUR-Bein). Die Paarbildung übernimmt parse_inputs.from_kraken_ledger — deklarativ ist sie nicht abbildbar."
+  },
+  "summen": [
+    {
+      "label": "Verarbeitete Kontobuchzeilen",
+      "art": "zeilen",
+      "vergleich": "summen_basis.verarbeitete_zeilen",
+      "quelle_pfad": "summen_basis.csv_datenzeilen",
+      "toleranz": "0"
+    }
+  ],
+  "hinweise": [
+    "Kraken liefert keine EUR-Werte für Staking-Zuflüsse, Krypto-Tausche und Ein-/Auslieferungen — diese Transaktionen sind mit _needs_fmv markiert und brauchen den historischen Kurs zum Zeitpunkt.",
+    "Ein-/Auslieferungen ohne Anschaffungskosten führen im FIFO zu Kostenbasis 0 — Anschaffungsdaten der abgebenden Börse ergänzen.",
+    "Nicht zugeordnete Zeilen (z. B. margin) brechen den Zeilenabgleich ab — das ist Absicht: lieber ein sauberer Abbruch als eine stille Lücke."
+  ],
+  "status": "geprueft",
+  "geprueft_am": "2026-08-30",
+  "fixture": "tests/fixtures/kraken-ledger.txt"
+}

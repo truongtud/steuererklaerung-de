@@ -1,0 +1,25 @@
+Koinly Steuerbericht 2024
+STEUERJAHR 2024
+Steuerpflichtiger: Anonym
+Seite 1
+
+Kapitalgewinne
+Verkaufsdatum Kaufdatum Asset Menge Kostenbasis Erlös Gewinn Wallet Haltedauer
+15/03/2024 14:22 02/01/2024 09:15 BTC 0,25000000 8.500,00 11.000,00 2.500,00 Boerse A Kurzfristig
+20/07/2024 11:05 05/05/2023 18:40 ETH 3,00000000 4.200,00 6.000,00 1.800,00 Wallet B Langfristig
+02/11/2024 08:30 01/09/2024 10:00 SOL 40,00000000 5.000,00 4.250,00 -750,00 Boerse A Kurzfristig
+
+Zusammenfassung
+Kapitalgewinne 3.550,00
+Veräußerungen: 3
+
+Zusammenfassung Einnahmen
+Belohnungen 420,00
+Airdrops 60,00
+Sonstige Einnahmen 20,00
+
+Ausgaben
+Loan fee 15,00
+
+Futures
+Realisiertes Ergebnis -320,00

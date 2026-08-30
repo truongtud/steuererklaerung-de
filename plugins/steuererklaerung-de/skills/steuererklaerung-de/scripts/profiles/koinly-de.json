@@ -1,0 +1,273 @@
+{
+  "id": "koinly-de",
+  "label": "Koinly Steuerbericht (deutsch und englisch)",
+  "quelle": "Koinly",
+  "eingabe": "pdf",
+  "ergebnis": "krypto_vorberechnet",
+  "erkennung": {
+    "muss": [
+      "Koinly",
+      "Steuerbericht|STEUERJAHR|Tax\\s+Report|TAX\\s+YEAR"
+    ],
+    "darf_nicht": [],
+    "punkte": 20
+  },
+  "notation": "auto",
+  "datum": "auto",
+  "jahr": {
+    "muster": [
+      "Steuerbericht\\s+(\\d{4})",
+      "STEUERJAHR\\s+(\\d{4})",
+      "Tax\\s+Report\\s+(\\d{4})",
+      "TAX\\s+YEAR\\s+(\\d{4})"
+    ]
+  },
+  "tabellen": [
+    {
+      "name": "veraeusserungen",
+      "rolle": "veraeusserungen",
+      "start": "(?i)(Verkaufsdatum|Kaufdatum|Erwerbsdatum|Ver(?:ä|ae)u(?:ß|ss)erungsdatum|Kostenbasis|Cost basis|Erl(?:ö|oe)s|Proceeds|Haltedauer|Holding period|Date (?:of )?(?:sold|acquired|disposal))",
+      "ende": "(?i)^(Zusammenfassung|Summary|Gesamt|Total|Einnahmen|Income|Ausgaben|Expenses|Futures|Derivate|Offene|Open)\\b",
+      "ignoriere": [
+        "(?i)^(Seite|Page)\\s*\\d+",
+        "^\\d+\\s*/\\s*\\d+$",
+        "(?i)^Koinly\\b"
+      ],
+      "zeile": "(?i)^(?P<verkauf>{DT})\\s+(?P<erwerb>{DT})\\s+(?P<asset>.+?)\\s+(?P<menge>{NUM})\\s+(?P<kosten>{NUM})\\s+(?P<erloes>{NUM})\\s+(?P<gewinn>{NUM})(?:\\s+(?P<notiz>.+?))?\\s+(?P<haltedauer>{HALTE})\\s*$",
+      "felder": {
+        "disposal_date": "verkauf",
+        "acquisition_date": "erwerb",
+        "asset": "asset",
+        "amount": "menge",
+        "cost_basis_eur": "kosten",
+        "proceeds_eur": "erloes",
+        "gain_eur": "gewinn",
+        "note": "notiz",
+        "haltedauer": "haltedauer"
+      },
+      "pflicht": [
+        "disposal_date",
+        "acquisition_date",
+        "asset",
+        "gain_eur",
+        "haltedauer"
+      ],
+      "langfristig": {
+        "feld": "haltedauer",
+        "muster": "^\\s*(?:lang|long)"
+      },
+      "notiz_suffix": "Quelle: Koinly",
+      "melde_nicht_zugeordnet": true
+    }
+  ],
+  "bereiche": {
+    "einnahmen": {
+      "start": "(?im)^\\s*(?:Zusammenfassung\\s+(?:der\\s+)?Einnahmen|Einnahmen(?:übersicht)?|Einkünfte|Income\\s+summary|Income)\\b.*$",
+      "ende": [
+        "(?im)^\\s*Zusammenfassung\\b",
+        "(?im)^\\s*Kapitalgewinn\\b",
+        "(?im)^\\s*Capital\\s+gain\\b",
+        "(?im)^\\s*Einnahmen\\b",
+        "(?im)^\\s*Income\\b",
+        "(?im)^\\s*Ausgaben\\b",
+        "(?im)^\\s*Expenses\\b",
+        "(?im)^\\s*Futures\\b",
+        "(?im)^\\s*Derivate\\b",
+        "(?im)^\\s*Offene\\s+Best(?:ä|ae)nde\\b",
+        "(?im)^\\s*Open\\s+positions\\b"
+      ],
+      "warnung_wenn_fehlt": "Einnahmen-Abschnitt im Report nicht gefunden — § 22 Nr. 3 (Staking/Lending/Mining/Airdrop) konnte NICHT ausgelesen werden. Werte manuell aus dem Report übernehmen."
+    },
+    "ausgaben": {
+      "start": "(?im)^\\s*(?:Zusammenfassung\\s+(?:der\\s+)?Ausgaben|Ausgaben(?:übersicht)?|Expenses\\s+summary|Expenses)\\b.*$",
+      "ende": [
+        "(?im)^\\s*Zusammenfassung\\b",
+        "(?im)^\\s*Kapitalgewinn\\b",
+        "(?im)^\\s*Capital\\s+gain\\b",
+        "(?im)^\\s*Einnahmen\\b",
+        "(?im)^\\s*Income\\b",
+        "(?im)^\\s*Ausgaben\\b",
+        "(?im)^\\s*Expenses\\b",
+        "(?im)^\\s*Futures\\b",
+        "(?im)^\\s*Derivate\\b",
+        "(?im)^\\s*Offene\\s+Best(?:ä|ae)nde\\b",
+        "(?im)^\\s*Open\\s+positions\\b"
+      ],
+      "warnung_wenn_fehlt": "Ausgaben-Abschnitt nicht gefunden (0 € angesetzt)."
+    }
+  },
+  "werte": [
+    {
+      "pfad": "paragraph_22_nr3.einnahmen_detail.Airdrop",
+      "muster": [
+        "(?im)^\\s*Airdrops?\\s*[:.]?{VOR}({NUM})"
+      ],
+      "typ": "betrag",
+      "bereich": "einnahmen",
+      "summiere_in": "paragraph_22_nr3.netto_ergebnis_eur"
+    },
+    {
+      "pfad": "paragraph_22_nr3.einnahmen_detail.Fork",
+      "muster": [
+        "(?im)^\\s*(?:Hard\\s+)?Forks?\\s*[:.]?{VOR}({NUM})"
+      ],
+      "typ": "betrag",
+      "bereich": "einnahmen",
+      "summiere_in": "paragraph_22_nr3.netto_ergebnis_eur"
+    },
+    {
+      "pfad": "paragraph_22_nr3.einnahmen_detail.Mining",
+      "muster": [
+        "(?im)^\\s*Mining\\s*[:.]?{VOR}({NUM})"
+      ],
+      "typ": "betrag",
+      "bereich": "einnahmen",
+      "summiere_in": "paragraph_22_nr3.netto_ergebnis_eur"
+    },
+    {
+      "pfad": "paragraph_22_nr3.einnahmen_detail.Reward",
+      "muster": [
+        "(?im)^\\s*Rewards?\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Belohnungen?\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Prämien?\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Staking(?:-Erträge)?\\s*[:.]?{VOR}({NUM})"
+      ],
+      "typ": "betrag",
+      "bereich": "einnahmen",
+      "summiere_in": "paragraph_22_nr3.netto_ergebnis_eur"
+    },
+    {
+      "pfad": "paragraph_22_nr3.einnahmen_detail.Salary",
+      "muster": [
+        "(?im)^\\s*Salary\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Gehalt\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Lohn\\s*[:.]?{VOR}({NUM})"
+      ],
+      "typ": "betrag",
+      "bereich": "einnahmen"
+    },
+    {
+      "pfad": "paragraph_22_nr3.einnahmen_detail.Lending interest",
+      "muster": [
+        "(?im)^\\s*Lending\\s+interest\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Kreditzinsen\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Lending-?Zinsen\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Zinsen\\s*[:.]?{VOR}({NUM})"
+      ],
+      "typ": "betrag",
+      "bereich": "einnahmen",
+      "summiere_in": "paragraph_22_nr3.netto_ergebnis_eur"
+    },
+    {
+      "pfad": "paragraph_22_nr3.einnahmen_detail.Other income",
+      "muster": [
+        "(?im)^\\s*Other\\s+income\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Sonstige\\s+Einnahmen\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Andere\\s+Einnahmen\\s*[:.]?{VOR}({NUM})"
+      ],
+      "typ": "betrag",
+      "bereich": "einnahmen",
+      "summiere_in": "paragraph_22_nr3.netto_ergebnis_eur"
+    },
+    {
+      "pfad": "koinly_extra.ausgaben_detail.Margin fee",
+      "muster": [
+        "(?im)^\\s*Margin\\s*-?\\s*(?:fee|Gebühr)e?n?\\s*[:.]?{VOR}({NUM})"
+      ],
+      "typ": "betrag",
+      "bereich": "ausgaben",
+      "summiere_in": "koinly_extra.ausgaben_total_eur"
+    },
+    {
+      "pfad": "koinly_extra.ausgaben_detail.Loan fee",
+      "muster": [
+        "(?im)^\\s*Loan\\s*fees?\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Kredit(?:gebühr|zins)en?\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Darlehensgebühren?\\s*[:.]?{VOR}({NUM})"
+      ],
+      "typ": "betrag",
+      "bereich": "ausgaben",
+      "summiere_in": "koinly_extra.ausgaben_total_eur"
+    },
+    {
+      "pfad": "koinly_extra.ausgaben_detail.Cost",
+      "muster": [
+        "(?im)^\\s*Costs?(?!\\s*basis)\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Kosten(?!basis)\\s*[:.]?{VOR}({NUM})"
+      ],
+      "typ": "betrag",
+      "bereich": "ausgaben",
+      "summiere_in": "koinly_extra.ausgaben_total_eur"
+    },
+    {
+      "pfad": "koinly_extra.ausgaben_detail.Transfer fees",
+      "muster": [
+        "(?im)^\\s*Transfer\\s*fees?\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*(?:Übertragungs|Transfer)gebühren?\\s*[:.]?{VOR}({NUM})"
+      ],
+      "typ": "betrag",
+      "bereich": "ausgaben",
+      "summiere_in": "koinly_extra.ausgaben_total_eur"
+    },
+    {
+      "pfad": "koinly_extra.futures_nettoergebnis_eur",
+      "muster": [
+        "(?im)^\\s*Realisierte[rs]?\\s+Gewinn\\s+und\\s+Verlust\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Realisierte[rs]?\\s+Ergebnis\\s*[:.]?{VOR}({NUM})",
+        "(?im)^\\s*Realized\\s+(?:profit\\s+and\\s+loss|P&L|gains?)\\s*[:.]?{VOR}({NUM})"
+      ],
+      "typ": "betrag",
+      "default": "0.00"
+    }
+  ],
+  "summen": [
+    {
+      "label": "Kapitalgewinn (alle Veräußerungen)",
+      "muster": [
+        "(?im)^\\s*Netto-?Kapitalgewinn(?:e|s)?{VOR}({NUM})",
+        "(?im)^\\s*Gesamt(?:e[rn]?\\s+)?Kapitalgewinn(?:e|s)?{VOR}({NUM})",
+        "(?im)^\\s*Kapitalgewinn(?:e|s)?\\s+gesamt{VOR}({NUM})",
+        "(?im)^\\s*Kapitalgewinn(?:e|s)?{VOR}({NUM})",
+        "(?im)^\\s*Ver(?:ä|ae)u(?:ß|ss)erungsgewinn(?:e|s)?{VOR}({NUM})",
+        "(?im)^\\s*Gesamtgewinn{VOR}({NUM})",
+        "(?im)^\\s*Reingewinn{VOR}({NUM})",
+        "(?im)^\\s*Net\\s+capital\\s+gains?{VOR}({NUM})",
+        "(?im)^\\s*Total\\s+(?:net\\s+)?(?:capital\\s+)?gains?{VOR}({NUM})",
+        "(?im)^\\s*Capital\\s+gains?{VOR}({NUM})"
+      ],
+      "vergleich": "summen_basis.veraeusserungen_gewinn_gesamt",
+      "toleranz": "0.01"
+    },
+    {
+      "label": "Anzahl Veräußerungen",
+      "art": "anzahl",
+      "muster": [
+        "(?im)^\\s*(?:Anzahl\\s+(?:der\\s+)?)?(?:Ver(?:ä|ae)u(?:ß|ss)erungen|Verk(?:ä|ae)ufe|Disposals|Transaktionen|Transactions)\\s*[:.]?\\s*(\\d{1,6})\\s*$",
+        "(?im)^\\s*(\\d{1,6})\\s+(?:Ver(?:ä|ae)u(?:ß|ss)erungen|Verk(?:ä|ae)ufe|Disposals)\\b"
+      ],
+      "vergleich": "summen_basis.anzahl_veraeusserungen",
+      "toleranz": "0"
+    }
+  ],
+  "elster": [],
+  "zusatz": {
+    "quelle_beschreibung": "Koinly-Steuerbericht (vorberechnet, FIFO wallet-übergreifend)",
+    "methode": "Veräußerungen direkt aus Koinly übernommen (kein Neu-FIFO).",
+    "offene_bestaende": {},
+    "koinly_extra": {
+      "ausgaben_total_eur": "0.00",
+      "futures_hinweis": "Futures/Derivate sind NICHT in den Kapitalgewinnen enthalten. In Deutschland i. d. R. Termingeschäfte § 20 Abs. 2 EStG -> Anlage KAP, gesondert angeben.",
+      "ausgaben_hinweis": "Gebühren wie 'Loan fee'/Margin sind für Privatanleger meist NICHT abziehbar. Steuerberater prüfen."
+    }
+  },
+  "hinweise": [
+    "Werte aus Koinly-Steuerbericht übernommen — gegen Original prüfen.",
+    "Freigrenzen (§ 23: 1.000/600 €, § 22 Nr. 3: 256 €) sind hier bewusst NICHT angewendet — sie gelten pro Person und Jahr über alle Broker; build_taxreport.py rechnet sie einmal auf die Summe.",
+    "§ 23: Verluste nur mit § 23-Gewinnen verrechenbar; Verlustfeststellung sichert den Vortrag in Folgejahre (Anlage SO / gesonderte Feststellung).",
+    "Coins > 1 Jahr gehalten sind steuerfrei (Koinly: 'Langfristig').",
+    "Endkontrolle durch Steuerberater — keine Steuerberatung."
+  ],
+  "status": "geprueft",
+  "geprueft_am": "2026-08-30",
+  "fixture": "tests/fixtures/koinly-de.txt"
+}

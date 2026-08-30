@@ -1,6 +1,6 @@
 ---
 name: steuererklaerung-de
-description: Erstellt einen TaxReport für die deutsche Einkommensteuererklärung über alle Anlagen (N, KAP, SO, V, S, G, Vorsorge, Sonderausgaben, agB, Kind), rechnet Krypto exakt nach FIFO/§ 23 EStG (taggenaue Haltefrist, Freigrenze, Staking § 22 Nr. 3), liest Broker-Reports als PDF ein (Koinly, eToro, generisch mit OCR) und exportiert HTML, PDF und ELSTER-Feld-Mapping. Use whenever the user mentions Steuererklärung, Einkommensteuer, Krypto-Steuer, crypto tax, Anlage N/KAP/SO/V, Veräußerungsgeschäfte, Staking-Steuer, ELSTER, Lohnsteuerbescheinigung, Freigrenze, FIFO, Verlustvortrag, or wants a tax report from broker PDFs, exchange CSVs or income data in Germany. Nicht für Steuerrecht anderer Länder.
+description: Erstellt einen TaxReport für die deutsche Einkommensteuererklärung über alle Anlagen (N, KAP, SO, V, S, G, Vorsorge, Sonderausgaben, agB, Kind), rechnet Krypto exakt nach FIFO/§ 23 EStG (taggenaue Haltefrist, Freigrenze, Staking § 22 Nr. 3) und Kapitalerträge inkl. Verlusttöpfen, liest Broker- und Börsen-Reports als PDF oder CSV ein (Koinly, eToro, Kraken, Coinbase, Bitpanda, Binance, Steuerbescheinigungen und Erträgnisaufstellungen; neue über Profildateien) und exportiert HTML, PDF und ELSTER-Feld-Mapping. Use whenever the user mentions Steuererklärung, Einkommensteuer, Krypto-Steuer, crypto tax, Anlage N/KAP/SO/V, Veräußerungsgeschäfte, Staking-Steuer, ELSTER, Lohnsteuerbescheinigung, Steuerbescheinigung, Erträgnisaufstellung, Freigrenze, FIFO, Verlustvortrag, Termingeschäfte, or wants a tax report from broker/exchange PDFs, exchange CSVs or income data in Germany. Nicht für Steuerrecht anderer Länder.
 license: MIT — NUR Orientierung, KEINE Steuerberatung.
 ---
 
@@ -18,13 +18,15 @@ und exportiert **HTML**, **PDF** und ein **ELSTER-Feld-Mapping**.
 ## Pipeline
 
 ```
-PDF-Reports ─▶ 0) einlesen ──────┐
-(Broker/Exchange)                │
-  parse_koinly · parse_etoro     ├▶ 1) normalisieren ▶ 2) FIFO ▶ 3) Report bauen ▶ 4) exportieren
-  parse_pdf (generisch)          │    parse_inputs    krypto_fifo  build_taxreport   export_report
-CSV/JSON ────────────────────────┘                                                   HTML · PDF · ELSTER
+PDF/CSV-Reports ─▶ 0) einlesen ───┐
+(Broker/Exchange)                 │
+  parse_broker (Profile)          ├▶ 1) normalisieren ▶ 2) FIFO ▶ 3) Report bauen ▶ 4) exportieren
+  parse_pdf (generisch)           │    parse_inputs    krypto_fifo  build_taxreport   export_report
+JSON/manuell ─────────────────────┘                                                  HTML · PDF · ELSTER
 
-scripts/steuerlib.py  ── ein Zahlenparser, eine Fristenlogik, alle Steuerwerte
+scripts/steuerlib.py      ── ein Zahlenparser, eine Fristenlogik, alle Steuerwerte
+scripts/brokerprofile.py  ── Profil-Engine: Erkennung, Anwendung, Summenabgleich
+scripts/profiles/*.json   ── ein Broker = eine Profildatei
 ```
 
 **`scripts/steuerlib.py` ist die einzige Stelle mit Steuerkonstanten und Zahlenlogik.**
@@ -42,23 +44,42 @@ python3 tests/run_tests.py                    # Selbsttest: muss grün sein
 
 ### Schritt 0 — Broker-Reports einlesen
 
-**Vorberechnete Steuerreports** (Koinly, CoinTracking, Blockpit …) haben FIFO bereits
-wallet-übergreifend gerechnet. Diese **nicht** erneut durch `krypto_fifo.py` schicken — die
-Kaufhistorie fehlt, die Kostenbasis würde 0.
+**Ein Einstiegspunkt für alle Broker und Börsen.** `parse_broker.py` erkennt anhand der
+Profile in `scripts/profiles/`, welcher Report vorliegt:
 
 ```bash
-python scripts/parse_koinly.py koinly_report.pdf -o koinly.krypto_result.json
-python scripts/parse_etoro.py  taxReport.pdf     -o etoro.krypto_result.json
+python scripts/parse_broker.py --list              # welche Profile gibt es
+python scripts/parse_broker.py report.pdf          # Profil automatisch erkennen
+python scripts/parse_broker.py export.csv --profil binance
 ```
 
-Beide Parser gleichen ihr Ergebnis gegen die **im Report selbst ausgewiesenen Summen** ab
-und brechen bei Abweichung ab. Diese Meldung ist der wichtigste Schutz gegen stille
-Zeilenverluste — nicht überspringen, nicht wegkonfigurieren.
+Je nach Report entsteht `<name>.krypto_result.json`, `<name>.kap_result.json` oder
+`<name>.transactions.json`. Vorhanden sind Profile für Koinly, eToro, Kraken sowie —
+**ungeprüft, gegen die dokumentierten Spalten gebaut** — Coinbase, Bitpanda und Binance.
+Ein neuer Broker ist eine Profildatei, kein neues Skript: `references/broker-profile.md`
+beschreibt das Schema, `profile_wizard.py` erzeugt aus einem echten Report einen Entwurf.
 
-Beide liefern **Roh-Nettobeträge ohne Freigrenze** (`freigrenze_angewendet: false`), weil
-die Freigrenzen pro Person und Jahr über alle Broker gelten. `build_taxreport.py` nimmt
-deshalb **mehrere** `--krypto-result`-Dateien und wendet die Freigrenze einmal auf die
-Summe an.
+```bash
+python scripts/profile_wizard.py neuer_report.pdf --id mein-broker
+```
+
+Der Entwurf enthält bewusst `TODO`-Marker für alles, was der Wizard nicht sicher zuordnen
+kann; ein Profil mit `TODO`, ohne Pflichtfelder oder ohne Summenabgleich wird von der
+Engine **abgelehnt**. Erst prüfen, dann `geprueft_am` setzen.
+
+Jeder Lauf gleicht das Ergebnis gegen die **im Report selbst ausgewiesenen Summen** ab und
+bricht bei Abweichung ab. Diese Meldung ist der wichtigste Schutz gegen stille
+Zeilenverluste — nicht überspringen, nicht wegkonfigurieren. Ein `ungeprueft`-Profil
+warnt zusätzlich deutlich; diese Warnung gehört in die Antwort an den Nutzer.
+
+**Vorberechnete Steuerreports** (Koinly, CoinTracking, Blockpit …) haben FIFO bereits
+wallet-übergreifend gerechnet. Diese **nicht** erneut durch `krypto_fifo.py` schicken — die
+Kaufhistorie fehlt, die Kostenbasis würde 0. Sie liefern **Roh-Nettobeträge ohne
+Freigrenze** (`freigrenze_angewendet: false`), weil die Freigrenzen pro Person und Jahr
+über alle Broker gelten; `build_taxreport.py` wendet sie einmal auf die Summe an.
+
+`parse_koinly.py` und `parse_etoro.py` bleiben als Kurzbefehle bestehen und rufen dieselbe
+Engine auf.
 
 **Generische Broker-PDFs** (eigene Transaktionslisten):
 ```bash
@@ -106,15 +127,21 @@ sonst selbst auf.
 
 ```bash
 python scripts/build_taxreport.py steuerdaten.json --transactions transactions.json -o taxreport.json
-# mehrere Broker-Ergebnisse:
+# mehrere Quellen, Krypto und Wertpapiere gemischt:
 python scripts/build_taxreport.py steuerdaten.json \
-    --krypto-result koinly.krypto_result.json etoro.krypto_result.json -o taxreport.json
+    --krypto-result koinly.krypto_result.json \
+    --kap-result etoro.kap_result.json depot.kap_result.json -o taxreport.json
 ```
 
 Setzt die Anlagen zusammen, wendet die Freigrenzen **einmal auf die Summe** an, verrechnet
 Verlustvorträge, schätzt zvE und ESt (§ 32a, Grund-/Splittingtarif), Soli (mit
-Milderungszone) und Kirchensteuer, rechnet die Abgeltungsteuer inkl.
-Verlusttöpfen, ermittelt **Nachzahlung oder Erstattung** und erzeugt das ELSTER-Mapping.
+Milderungszone) und Kirchensteuer, rechnet die Abgeltungsteuer inkl. Verlusttöpfen,
+ermittelt **Nachzahlung oder Erstattung** und erzeugt das ELSTER-Mapping.
+
+Freigrenzen und Verlusttöpfe gehören hierher und nicht in die Parser: § 23, § 22 Nr. 3 und
+§ 20 Abs. 6 gelten **personenbezogen über alle Broker und Depots**. Werte aus Dateien und
+handgepflegte Werte aus `steuerdaten.json` werden **addiert**; ist eine Kennzahl in beiden
+belegt, weist der Report das getrennt aus, damit eine Doppelerfassung auffällt.
 Fehlt für ein Jahr der Tarif, wird die Schätzung übersprungen und darauf hingewiesen —
 dann die Werte nach `references/steuerwerte.md` in `steuerlib.py` ergänzen.
 
@@ -158,6 +185,8 @@ Nur die gewünschten Formate wählen, die Dateien anschließend an den Nutzer au
   Freigrenze über alle Broker, Verlustvortrag, kanonisches Schema, Edge-Cases.
 - `references/anlagen-referenz.md` — `steuerdaten.json`-Schema, ELSTER-Zuordnung je Anlage,
   Rechtsstand § 20 Abs. 6 nach dem JStG 2024.
+- `references/broker-profile.md` — Profil-Schema, Ausgabeschemata (inkl. `kap`),
+  Vorzeichenregeln, wie ein neuer Broker angebunden wird. **Bei jedem neuen Broker hierher.**
 - `references/pdf-ingestion.md` — Backends, Spalten-Erkennung, Summenabgleich,
   Verifikations-Checkliste, Troubleshooting.
 

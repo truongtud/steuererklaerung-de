@@ -1,0 +1,81 @@
+{
+  "id": "bitpanda",
+  "label": "Bitpanda Transaktions-Export (CSV)",
+  "quelle": "Bitpanda",
+  "eingabe": "csv",
+  "ergebnis": "krypto_transaktionen",
+  "erkennung": {
+    "muss": [
+      "Transaction\\s+ID",
+      "Amount\\s+Fiat",
+      "Amount\\s+Asset",
+      "Asset\\s+market\\s+price"
+    ],
+    "darf_nicht": [],
+    "punkte": 10
+  },
+  "notation": "en",
+  "datum": "iso",
+  "csv": {
+    "spalten": {
+      "timestamp": "Timestamp",
+      "type": "Transaction Type",
+      "asset": "Asset",
+      "amount": "Amount Asset",
+      "eur_value": "Amount Fiat",
+      "fee_eur": [
+        "Fee",
+        "Spread"
+      ],
+      "tx_id": "Transaction ID"
+    },
+    "pflicht": [
+      "timestamp",
+      "type",
+      "asset",
+      "amount"
+    ],
+    "pruefe_spalte": [
+      {
+        "spalte": "Fiat",
+        "erwartet": "EUR"
+      },
+      {
+        "spalte": "Fee asset",
+        "erwartet": "EUR"
+      },
+      {
+        "spalte": "Spread Currency",
+        "erwartet": "EUR"
+      }
+    ],
+    "typ_werte": {
+      "buy": "buy",
+      "sell": "sell",
+      "deposit": "deposit",
+      "withdrawal": "withdrawal"
+    },
+    "ignoriere_asset": [
+      "EUR"
+    ],
+    "hinweis": "Fiat-Ein-/Auszahlungen (Asset EUR) sind steuerlich kein Vorgang und werden übersprungen. 'transfer' ist NICHT zugeordnet, weil aus der Spalte allein nicht hervorgeht, ob ein Verkauf, ein Eigentransfer oder eine Schenkung vorliegt."
+  },
+  "summen": [
+    {
+      "label": "Verarbeitete CSV-Zeilen",
+      "art": "zeilen",
+      "vergleich": "summen_basis.verarbeitete_zeilen",
+      "quelle_pfad": "summen_basis.csv_datenzeilen",
+      "toleranz": "0"
+    }
+  ],
+  "hinweise": [
+    "UNGEPRÜFT: Spaltenzuordnung aus der öffentlichen Dokumentation abgeleitet, nie gegen einen echten Bitpanda-Export gelaufen.",
+    "'Amount Fiat' ist der Gegenwert in der Spalte 'Fiat' — steht dort nicht EUR, muss umgerechnet werden (wird geprüft und gemeldet).",
+    "Bitpanda führt Staking/Rewards je nach Produkt getrennt aus; solche Zeilen sind hier nicht zugeordnet und werden gemeldet statt geraten.",
+    "fee_eur = 'Fee' + 'Spread': Bitpandas Entgelt steckt überwiegend im Spread. Nur 'Fee' anzusetzen ergäbe eine zu niedrige Kostenbasis beim Kauf und damit einen zu hohen Gewinn bei der späteren Veräußerung."
+  ],
+  "status": "ungeprueft",
+  "geprueft_am": null,
+  "fixture": "tests/fixtures/bitpanda.txt"
+}

@@ -1,0 +1,22 @@
+eToro (Europe) Ltd
+Steuerbericht
+Guten Tag Anonym Anonym,
+Berichtszeitraum: 01.01.2024 - 31.12.2024
+Depot: 000000
+
+Zusammenfassung nach deutschem Steuerrecht
+Als ausländischer Broker behalten wir keine deutsche Kapitalertragsteuer ein;
+sämtliche Erträge sind daher ohne Steuerabzug zu erklären.
+
+Ausländische Kapitalerträge (Anlage KAP Zeile 19) 2.000,00
+Summe der Kapitalerträge 2.000,00
+
+Davon in Zeile 19 enthalten:
+Gewinne aus Aktienveräußerungen (Anlage KAP Zeile 20) 800,00
+Verluste aus Aktienveräußerungen (Anlage KAP Zeile 23) −150,00
+Verluste aus Termingeschäften (Anlage KAP Zeile 24) −450,00
+Verbleibende Kapitalerträge nach Verlustverrechnung 1.400,00
+
+Private Veräußerungsgeschäfte (Anlage SO Zeile 47) 640,00
+Summe der privaten Veräußerungsgeschäfte 640,00
+Staking (Anlage SO Zeile 11) 120,00

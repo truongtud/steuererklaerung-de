@@ -1,0 +1,408 @@
+{
+  "id": "etoro-de",
+  "label": "eToro Steuerbericht (deutscher Summenausweis)",
+  "quelle": "eToro",
+  "eingabe": "pdf",
+  "ergebnis": "kap",
+  "erkennung": {
+    "muss": [
+      "eToro",
+      "Anlage\\s+(?:KAP|SO)\\b"
+    ],
+    "darf_nicht": [],
+    "punkte": 20
+  },
+  "notation": "de",
+  "datum": "de",
+  "jahr": {
+    "muster": [
+      "Berichtszeitraum:?\\s*\\d{1,2}\\.\\d{1,2}\\.(\\d{4})",
+      "Steuerjahr:?\\s*(\\d{4})",
+      "Tax\\s+year:?\\s*(\\d{4})"
+    ]
+  },
+  "tabellen": [],
+  "werte": [
+    {
+      "pfad": [
+        "kap_zeilen.7",
+        "etoro_kap.z7_inlaend_mit_steuerabzug"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*7(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*7(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.18",
+        "etoro_kap.z18_inlaend_ohne_steuerabzug"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*18(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*18(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.19",
+        "etoro_kap.z19_auslaend_kapitalertraege"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*19(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*19(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.20",
+        "etoro_kap.z20_aktien_veraeusserung_gewinn"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*20(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*20(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.21",
+        "etoro_kap.z21_termingeschaefte_stillhalter_gewinne"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*21(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*21(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.22",
+        "etoro_kap.z22_verluste_ohne_aktien"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*22(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*22(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.23",
+        "etoro_kap.z23_verluste_aktien"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*23(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*23(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.24",
+        "etoro_kap.z24_verluste_termingeschaefte"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*24(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*24(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.25",
+        "etoro_kap.z25_verluste_ausfall"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*25(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*25(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.37",
+        "etoro_kap.z37_kapitalertragsteuer"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*37(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*37(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.38",
+        "etoro_kap.z38_soli"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*38(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*38(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.39"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*39(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*39(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.41",
+        "etoro_kap.z41_anrechenbare_auslaend_steuer"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*41(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*41(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "kap_zeilen.42",
+        "etoro_kap.z42_fiktive_quellensteuer"
+      ],
+      "muster": [
+        "Anlage\\s+KAP(?!-INV)\\s*(?:{NUM})?\\s*Zeile\\s*42(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+KAP(?!-INV)\\s*({NUM})\\s*Zeile\\s*42(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "so_zeilen.47",
+        "paragraph_23.netto_ergebnis_eur"
+      ],
+      "muster": [
+        "Anlage\\s+SO\\s*(?:{NUM})?\\s*Zeile\\s*47(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+SO\\s*({NUM})\\s*Zeile\\s*47(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true
+    },
+    {
+      "pfad": [
+        "so_zeilen.11",
+        "paragraph_22_nr3.detail.staking_so_z11"
+      ],
+      "muster": [
+        "Anlage\\s+SO\\s*(?:{NUM})?\\s*Zeile\\s*11(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+SO\\s*({NUM})\\s*Zeile\\s*11(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true,
+      "summiere_in": "paragraph_22_nr3.netto_ergebnis_eur"
+    },
+    {
+      "pfad": [
+        "so_zeilen.10",
+        "paragraph_22_nr3.detail.wertpapierleihe_so_z10"
+      ],
+      "muster": [
+        "Anlage\\s+SO\\s*(?:{NUM})?\\s*Zeile\\s*10(?!\\d)\\)?\\s*({NUM})",
+        "Anlage\\s+SO\\s*({NUM})\\s*Zeile\\s*10(?!\\d)\\)?"
+      ],
+      "typ": "betrag",
+      "form": "betrag2",
+      "flach": true,
+      "summiere_in": "paragraph_22_nr3.netto_ergebnis_eur"
+    },
+    {
+      "pfad": "steuerpflichtiger_aus_report",
+      "typ": "text",
+      "muster": [
+        "Guten Tag\\s+(.+?),"
+      ]
+    },
+    {
+      "pfad": "etoro_extra.depot",
+      "typ": "text",
+      "muster": [
+        "Depot:\\s*(\\d+)"
+      ]
+    },
+    {
+      "pfad": "etoro_extra.netto_nach_verlustverrechnung",
+      "typ": "betrag",
+      "muster": [
+        "(?im)^\\s*(?:Verbleibende|Verrechnete)\\s+Kapitalertr(?:ä|ae)ge[^\\d\\n]*{VOR}({NUM})"
+      ],
+      "form": "betrag2"
+    }
+  ],
+  "werte_regeln": {
+    "mindestens": 1,
+    "marker": "Anlage\\s+(?:KAP-INV|KAP|SO)\\b[^\\n]{0,80}?Zeile\\s*\\d+",
+    "fehlermeldung": "Keine 'Anlage … Zeile N'-Zuordnungen gefunden — Report-Layout geändert? Ein Ergebnis aus lauter Nullen wäre von einem echten Null-Report nicht zu unterscheiden; deshalb Abbruch. Report manuell prüfen."
+  },
+  "kennzahlen": {
+    "kapitalertraege": [
+      "kap_zeilen.7",
+      "kap_zeilen.18",
+      "kap_zeilen.19"
+    ],
+    "gewinn_aktien": {
+      "quellen": "kap_zeilen.20",
+      "vorzeichen": "positiv"
+    },
+    "gewinn_termingeschaefte": {
+      "quellen": "kap_zeilen.21",
+      "vorzeichen": "positiv"
+    },
+    "verlust_aktien": {
+      "quellen": "kap_zeilen.23",
+      "vorzeichen": "negativ"
+    },
+    "verlust_termingeschaefte": {
+      "quellen": "kap_zeilen.24",
+      "vorzeichen": "negativ"
+    },
+    "verluste_ohne_aktien": {
+      "quellen": "kap_zeilen.22",
+      "vorzeichen": "negativ"
+    },
+    "verluste_ausfall": {
+      "quellen": "kap_zeilen.25",
+      "vorzeichen": "negativ"
+    },
+    "anrechenbare_kest": "kap_zeilen.37",
+    "einbehaltener_soli": "kap_zeilen.38",
+    "einbehaltene_kirchensteuer": "kap_zeilen.39",
+    "auslaendische_quellensteuer": "kap_zeilen.41",
+    "fiktive_quellensteuer": "kap_zeilen.42"
+  },
+  "summen": [
+    {
+      "label": "Kapitalerträge (Anlage KAP Z. 7 + 18 + 19)",
+      "muster": [
+        "(?im)^\\s*Summe\\s+(?:der\\s+)?Kapitalertr(?:ä|ae)ge{VOR}({NUM})",
+        "(?im)^\\s*Gesamtsumme\\s+Kapitalertr(?:ä|ae)ge{VOR}({NUM})",
+        "(?im)^\\s*Kapitalertr(?:ä|ae)ge\\s+gesamt{VOR}({NUM})",
+        "(?im)^\\s*Gesamtergebnis\\s+Anlage\\s+KAP{VOR}({NUM})"
+      ],
+      "form": "betrag2",
+      "vergleich": "kennzahlen.kapitalertraege",
+      "toleranz": "0.01"
+    },
+    {
+      "label": "Anlage SO Z. 47 (§ 23)",
+      "muster": [
+        "(?im)^\\s*Summe\\s+(?:der\\s+)?privaten\\s+Ver(?:ä|ae)u(?:ß|ss)erungsgesch(?:ä|ae)fte{VOR}({NUM})",
+        "(?im)^\\s*Private\\s+Ver(?:ä|ae)u(?:ß|ss)erungsgesch(?:ä|ae)fte\\s+gesamt{VOR}({NUM})",
+        "(?im)^\\s*Gesamtergebnis\\s+Anlage\\s+SO{VOR}({NUM})"
+      ],
+      "form": "betrag2",
+      "vergleich": "paragraph_23.netto_ergebnis_eur",
+      "toleranz": "0.01"
+    }
+  ],
+  "elster": [
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 19",
+      "bezeichnung": "Ausländische Kapitalerträge (eToro)",
+      "pfad": "kap_zeilen.19"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 20",
+      "bezeichnung": "Gewinne aus Aktienveräußerungen § 20 Abs. 2 Nr. 1 (eToro)",
+      "pfad": "kap_zeilen.20"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 21",
+      "bezeichnung": "Gewinne aus Termingeschäften/Stillhalterprämien (eToro)",
+      "pfad": "kap_zeilen.21"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 22",
+      "bezeichnung": "Verluste (ohne Aktien) (eToro)",
+      "pfad": "kap_zeilen.22"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 23",
+      "bezeichnung": "Verluste aus Aktienveräußerungen (eToro)",
+      "pfad": "kap_zeilen.23"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 24",
+      "bezeichnung": "Verluste aus Termingeschäften (eToro)",
+      "pfad": "kap_zeilen.24"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 25",
+      "bezeichnung": "Verluste Ausfall/Ausbuchung (eToro)",
+      "pfad": "kap_zeilen.25"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 41",
+      "bezeichnung": "Anrechenbare ausländische Steuer (eToro)",
+      "pfad": "kap_zeilen.41"
+    }
+  ],
+  "zusatz": {
+    "quelle_beschreibung": "eToro-Steuerbericht (vorberechnet, FIFO)",
+    "methode": "Summenausweis übernommen (eToro hat die deutsche Klassifizierung gerechnet).",
+    "paragraph_23": {
+      "hinweis": "Wert = Anlage SO Zeile 47 (eToro, bereits FIFO/§ 23-saldiert). Rohwert ohne Freigrenze — build_taxreport.py wendet sie einmal auf die Summe aller Broker an."
+    }
+  },
+  "hinweise": [
+    "Werte aus eToro-Summenausweis übernommen — gegen Steuerbescheinigung/Original prüfen.",
+    "Anlage KAP Z. 20-25 sind 'In den Zeilen 18 und 19 enthaltene …', also davon-Zeilen: sie stecken bereits in kennzahlen.kapitalertraege und dienen nur der Zuordnung zu den Verlustverrechnungstöpfen. Sie dürfen NICHT zur Bruttosumme addiert werden.",
+    "etoro_extra.netto_nach_verlustverrechnung ist eToros eigenes Ergebnis und wird NICHT verrechnet: § 20 Abs. 6 gilt personenbezogen über alle Depots — das rechnet build_taxreport über alle Quellen.",
+    "Freigrenzen (§ 23: 1.000/600 €, § 22 Nr. 3: 256 €) sind hier bewusst NICHT angewendet — sie gelten pro Person und Jahr über alle Broker; build_taxreport.py rechnet sie einmal auf die Summe.",
+    "§ 23 (Anlage SO Z. 47): Krypto-Spot, bereits FIFO-saldiert. Verlust -> Verlustfeststellung; nur mit § 23-Gewinnen verrechenbar.",
+    "Termingeschäfte (CFDs, § 20 Abs. 2): Verluste (KAP Z. 24) nur mit Termingeschäfts-Gewinnen/Stillhalterprämien verrechenbar; Sonderverlusttopf, Verrechnung pro Jahr betraglich begrenzt.",
+    "Aktienverluste (KAP Z. 23) nur mit Aktiengewinnen verrechenbar (eigener Topf).",
+    "Bei mehreren Brokern/Tools: § 23-Ergebnisse addieren, KAP-Töpfe getrennt führen.",
+    "Endkontrolle durch Steuerberater — keine Steuerberatung."
+  ],
+  "status": "geprueft",
+  "geprueft_am": "2026-08-30",
+  "fixture": "tests/fixtures/etoro-de.txt"
+}

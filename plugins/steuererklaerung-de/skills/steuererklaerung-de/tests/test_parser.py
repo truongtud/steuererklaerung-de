@@ -274,15 +274,19 @@ def test_etoro_ohne_zuordnungen_bricht_ab():
 
 @case
 def test_etoro_abgleich_gegen_ausgewiesene_summe():
+    # Anlage KAP Z. 20-25 sind "In den Zeilen 18 und 19 enthaltene …", also
+    # davon-Zeilen: die ausgewiesene Summe der Kapitalerträge ist die Bruttozeile
+    # (Z. 19), nicht Brutto + Unterzeile. Verglichen wird gegen genau den Wert,
+    # den build_taxreport als 'kapitalertraege' weiterrechnet.
     zeilen = [
-        "Ausländische Kapitalerträge (Anlage KAP Zeile 19) 1.000,00",
+        "Ausländische Kapitalerträge (Anlage KAP Zeile 19) 1.500,00",
         "Gewinne aus Aktienveräußerungen (Anlage KAP Zeile 20) 500,00",
         "Summe der Kapitalerträge 1.500,00",
     ]
     r = pe.build_result(etoro_report(zeilen), 2024, quelle="x")
     assert any("Abweichung 0,00" in z for z in r["abgleich"]), r["abgleich"]
-    # Fehlt eine Position, muss der Abgleich anschlagen.
-    kaputt = [z for z in zeilen if "Zeile 20" not in z]
+    # Fehlt die Bruttoposition, muss der Abgleich anschlagen.
+    kaputt = [z for z in zeilen if "Zeile 19" not in z]
     wirft(sl.PlausibilityError, pe.build_result, etoro_report(kaputt), 2024,
           label="fehlende KAP-Position")
 
