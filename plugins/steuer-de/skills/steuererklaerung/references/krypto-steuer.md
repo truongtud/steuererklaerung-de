@@ -1,13 +1,13 @@
 # Krypto-Besteuerung in Deutschland — Referenz
 
 Maßgeblich: EStG sowie die BMF-Schreiben vom 10.05.2022 und 06.03.2025 zu „Einzelfragen
-zur ertragsteuerrechtlichen Behandlung bestimmter Kryptowerte". Diese Datei fasst die
+zur ertragsteuerrechtlichen Behandlung bestimmter Kryptowerte“. Diese Datei fasst die
 Regeln zusammen, die `krypto_fifo.py` umsetzt. **Keine Steuerberatung.** Rechtslage vor
 jeder Einreichung verifizieren.
 
 ## 1. Private Veräußerungsgeschäfte — § 23 EStG
 
-Kryptowerte sind „andere Wirtschaftsgüter". Gewinne aus einer Veräußerung **innerhalb der
+Kryptowerte sind „andere Wirtschaftsgüter“. Gewinne aus einer Veräußerung **innerhalb der
 Jahresfrist** sind steuerpflichtig (§ 23 Abs. 1 Nr. 2 EStG); danach steuerfrei.
 
 Als Veräußerung gilt:
@@ -16,15 +16,15 @@ Als Veräußerung gilt:
   EUR-Marktwert im Zeitpunkt des Tauschs, zugleich Anschaffung des erhaltenen Coins
 - Bezahlen mit Krypto (Waren, Dienstleistungen)
 
-### Die Jahresfrist ist taggenau — und endet später, als „365 Tage" nahelegt
+### Die Jahresfrist ist taggenau — und endet später, als „365 Tage“ nahelegt
 
 Die Frist berechnet sich nach § 108 Abs. 1 AO i. V. m. § 188 Abs. 2 BGB: Sie endet **mit
 Ablauf des Tages im Folgejahr, der dem Anschaffungstag entspricht**.
 
 - Kauf 10.01.2023 → Verkauf **10.01.2024 ist noch steuerpflichtig**. Steuerfrei erst ab
   dem 11.01.2024.
-- Kauf 01.03.2023 → Verkauf 29.02.2024 sind zwar 365 Tage, aber der Jahrestag ist der
-  01.03.2024: **steuerpflichtig**.
+- Kauf 01.03.2023 → Verkauf 29.02.2024 — das sind zwar 365 Tage, aber der Jahrestag ist
+  der 01.03.2024: **steuerpflichtig**.
 - Kauf am 29.02. eines Schaltjahres → die Frist endet am 28.02. des Folgejahres
   (§ 188 Abs. 3 BGB).
 - Die **Uhrzeit spielt keine Rolle** — Fristen laufen tageweise.
@@ -56,7 +56,7 @@ nicht enthalten.
 - ab 2024: **1.000 €** pro Jahr · bis 2023: **600 €**
 - Sie gilt für die **Summe aller** privaten Veräußerungsgewinne einer Person im
   Kalenderjahr — über alle Börsen, Broker und Tools hinweg, und einschließlich
-  nicht-Krypto-Veräußerungsgeschäften.
+  Nicht-Krypto-Veräußerungsgeschäften.
 - Unter der Freigrenze: komplett steuerfrei. Erreicht oder überschritten: der **gesamte**
   Gewinn ist steuerpflichtig, nicht nur der übersteigende Teil.
 
@@ -67,7 +67,7 @@ aller Quellen** an. `parse_koinly.py` und `parse_etoro.py` sind nur noch dünne 
 dieselbe Engine und haben dazu keine eigene Logik mehr — die Regel gilt damit auch für
 jedes neu geschriebene Profil, ohne dass jemand daran denken muss. Zwei Reports mit je
 800 € sind zusammen 1.600 € und damit voll steuerpflichtig — würde jede Quelle für sich
-prüfen, bliebe beides „steuerfrei".
+prüfen, bliebe beides „steuerfrei“.
 
 ### Verlustverrechnung und Verlustvortrag
 
@@ -84,7 +84,7 @@ verbraucht keinen Vortrag. Eingabe: `anlage_so.verlustvortrag_23_vorjahr`.
 Laufende Erträge sind **sonstige Leistungen**, bewertet mit dem EUR-Marktwert **bei
 Zufluss**.
 - **Freigrenze 256 €** pro Jahr für alle § 22-Nr.-3-Leistungen zusammen — also auch für
-  nicht-Krypto-Einkünfte aus `anlage_so.sonstige_einkuenfte`.
+  Nicht-Krypto-Einkünfte aus `anlage_so.sonstige_einkuenfte`.
 - Die erhaltenen Coins bekommen ein **neues Anschaffungsdatum** (Zufluss) und
   **Anschaffungskosten = Marktwert bei Zufluss**. Eine spätere Veräußerung läuft wieder
   über § 23, mit einer neuen Jahresfrist ab Zufluss.
@@ -132,7 +132,7 @@ Euro-Wert, schreiben `parse_inputs.py` und die Profil-Engine `"eur_value": null`
 zusätzlich das Feld `_needs_fmv`. **`krypto_fifo.py` verweigert dann die Rechnung**, nennt
 den Datensatz und sagt, was zu tun ist.
 
-Früher lief so eine Zeile mit 0 € durch. Das ist die teuerste Sorte Fehler, die dieses
+Früher lief so eine Zeile mit 0 € durch. Das ist die teuerste Sorte Fehler, die dieser
 Skill kennt, weil sie in beide Richtungen wirkt: als Erlös eines Tauschs erzeugt die 0 ein
 Ergebnis, das es nie gab; als Anschaffungskosten des erhaltenen Coins macht sie später den
 **gesamten** Verkaufserlös zum Gewinn. Eine 0 ist eine Aussage über den Markt — die hat
@@ -151,7 +151,7 @@ Anschaffungskosten 0 —, wird das im Datensatz festgehalten:
 ```
 
 Damit läuft die Zeile still durch. Der Unterschied zwischen „ich habe nachgesehen, es war
-nichts wert" und „ich habe nicht nachgesehen" bleibt so im Datensatz erhalten, statt im
+nichts wert“ und „ich habe nicht nachgesehen“ bleibt so im Datensatz erhalten, statt im
 Ergebnis zu verschwinden. Ohne diese Bestätigung erzeugt eine glatte 0 bei Erlös oder
 Kostenbasis eine Warnung und ein `nullwert_ungeklaert` bzw. `nullkosten_ungeklaert` an der
 betroffenen Position — auch dann, wenn die Zeile gar nicht `_needs_fmv` trug und deshalb
@@ -163,7 +163,7 @@ nicht abgebrochen wurde.
   und setzt `acquisition_date: "UNBEKANNT"`, `held_days: -1`).
 - Tausch nicht als Veräußerung erfasst → zu niedriger Gewinn.
 - Freigrenze als Freibetrag missverstanden — oder je Broker getrennt geprüft.
-- Haltefrist mit „365 Tagen" statt taggenau gerechnet (Schaltjahr, Jahrestag).
+- Haltefrist mit „365 Tagen“ statt taggenau gerechnet (Schaltjahr, Jahrestag).
 - Staking-Zufluss vergessen ODER doppelt gewertet: einmal als Ertrag (§ 22 Nr. 3) **und**
   als Anschaffung mit Kostenbasis — beides ist korrekt und gewollt.
 - Gebühren nicht berücksichtigt oder beim Tausch doppelt abgezogen.

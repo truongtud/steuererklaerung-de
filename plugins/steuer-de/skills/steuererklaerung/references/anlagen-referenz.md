@@ -2,7 +2,7 @@
 
 Beschreibt das Eingabeschema von `build_taxreport.py` und die Zuordnung zu den
 ELSTER-Anlagen. **Zeilennummern sind Orientierung** — ELSTER ändert die Layouts jährlich;
-vor der Eingabe in „Mein ELSTER" prüfen. **Keine Steuerberatung.**
+vor der Eingabe in „Mein ELSTER“ prüfen. **Keine Steuerberatung.**
 
 ## Eingabeschema `steuerdaten.json`
 
@@ -99,8 +99,8 @@ erzeugen und mindert die übrigen Einkünfte.
 
 ### Anlage KAP — Kapitalerträge
 Meist über die **Abgeltungsteuer 25 %** an der Quelle erledigt; die Anlage KAP wird
-gebraucht bei nicht versteuerten Erträgen (typisch: ausländische Broker), Verlust-
-verrechnung, Günstigerprüfung oder fehlerhaftem Steuerabzug. Sparer-Pauschbetrag
+gebraucht bei nicht versteuerten Erträgen (typisch: ausländische Broker),
+Verlustverrechnung, Günstigerprüfung oder fehlerhaftem Steuerabzug. Sparer-Pauschbetrag
 1.000 € / 2.000 €.
 
 > **Rechtsstand seit dem Jahressteuergesetz 2024:** § 20 Abs. 6 **Sätze 5 und 6** EStG —
@@ -111,10 +111,10 @@ verrechnung, Günstigerprüfung oder fehlerhaftem Steuerabzug. Sparer-Pauschbetr
 > Verluste aus der Veräußerung von Aktien nur gegen Gewinne aus Aktien.
 > Ältere Anleitungen, die zwei getrennte Töpfe führen, sind überholt.
 
-#### Die Zeilen 20–25 sind „davon"-Zeilen — die folgenreichste Annahme des Reports
+#### Die Zeilen 20–25 sind „davon“-Zeilen — die folgenreichste Annahme des Reports
 
 Im Formular stehen die Zeilen 20 bis 25 unter **einer** gemeinsamen Überschrift:
-*„In den Zeilen 18 und 19 enthaltene …"* bzw. *„In Zeile 7 enthaltene …"*. Sie sind damit
+*„In den Zeilen 18 und 19 enthaltene …“* bzw. *„In Zeile 7 enthaltene …“*. Sie sind damit
 Teilmengen der Summenzeilen und dienen allein der Zuordnung zu den Verrechnungskreisen.
 
 `build_taxreport.py` liest daraus eine Konsequenz, die alle sechs Zeilen gleich behandelt:
@@ -147,7 +147,7 @@ verlustvortraege.aktien                   1.500,00   (Feststellung beantragen)
 ```
 
 **Was zu prüfen ist — und nur der Steuerpflichtige kann es:** ob die eigene
-Bescheinigung ihre „Höhe der Kapitalerträge" **netto** (nach Verlustverrechnung) oder
+Bescheinigung ihre „Höhe der Kapitalerträge“ **netto** (nach Verlustverrechnung) oder
 **brutto** ausweist. Deutsche Steuerbescheinigungen sind in aller Regel netto; ein
 ausländischer Broker-Export kann brutto sein. Ist er brutto, ist die hier ausgewiesene
 Bemessungsgrundlage **zu hoch** — dann sind die Verluste der Zeilen 22–25 von
@@ -163,7 +163,7 @@ unversteuert.
 
 **Vorzeichen im ELSTER-Mapping:** Die Verlustzeilen 22–25 werden als **positiver Betrag**
 ausgegeben, gleich welches Vorzeichen die Quelle benutzt hat — die Formularzeile heißt
-bereits „Verluste …", und ELSTER erwartet dort eine Zahl ohne Minus. Die wörtliche
+bereits „Verluste …“, und ELSTER erwartet dort eine Zahl ohne Minus. Die wörtliche
 Abschrift der Bescheinigung bleibt vorzeichengetreu unter `anlagen.KAP.kap_zeilen` stehen;
 weicht beides voneinander ab, sagt der Report das ausdrücklich. Andernfalls stünde im
 Mapping die Anweisung, ein Minus in ein Betragsfeld zu tippen — und je nachdem, ob ELSTER
@@ -200,15 +200,15 @@ verrechnet sich nur mit § 23-Gewinnen. Reihenfolge im Report — erst die **Fre
 das Ergebnis des Jahres selbst**, dann der Vortrag; ein Jahr unterhalb der Freigrenze ist
 ohnehin steuerfrei und verbraucht deshalb nichts. Der Report weist aus:
 `verlustvortrag_23_verbraucht`, `verlustvortrag_23_rest` und
-`verlustvortrag_23_neu_gesamt` — letzterer ist der Wert, der im Folgejahr wieder unter
+`verlustvortrag_23_neu_gesamt` — Letzterer ist der Wert, der im Folgejahr wieder unter
 `anlage_so.verlustvortrag_23_vorjahr` eingetragen wird.
 
 ### Anlage V — Vermietung und Verpachtung
 Einnahmen minus Werbungskosten (AfA, Zinsen, Instandhaltung). Hier nur die Netto-Einkünfte.
 
 ### Anlage S / Anlage G — selbständige Arbeit / Gewerbebetrieb
-Gewinn aus EÜR oder Bilanz (jeweils Z. 4). Bei Gewerbe zusätzlich die Gewerbesteuer-
-anrechnung (§ 35 EStG) — hier nicht abgebildet.
+Gewinn aus EÜR oder Bilanz (jeweils Z. 4). Bei Gewerbe zusätzlich die
+Gewerbesteueranrechnung (§ 35 EStG) — hier nicht abgebildet.
 
 ### Anlage Vorsorgeaufwand
 Renten-, Kranken-, Pflege-, Arbeitslosenversicherung. Erfasst werden die **gezahlten**

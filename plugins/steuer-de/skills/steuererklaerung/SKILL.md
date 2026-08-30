@@ -12,8 +12,8 @@ Solidaritätszuschlag, Kirchensteuer und Abgeltungsteuer, rechnet einbehaltene S
 und exportiert **HTML**, **PDF** und ein **ELSTER-Feld-Mapping**.
 
 > **Keine Steuerberatung.** Der Skill erzeugt eine Arbeitsgrundlage. Die verbindliche
-> Berechnung liefert ELSTER, die Endkontrolle gehört in die Hände des Steuerberaters. Diesen Hinweis im
-> Ergebnis **immer** mitgeben.
+> Berechnung liefert ELSTER, die Endkontrolle gehört in die Hände des Steuerberaters.
+> Diesen Hinweis im Ergebnis **immer** mitgeben.
 
 ## Pipeline
 
@@ -35,12 +35,12 @@ Codes: **bei unlesbarer Eingabe wird abgebrochen, nie still 0 angenommen.**
 
 ## Slash-Befehle
 
-Als Plugin bringt dieses Skill vier vom Nutzer aufrufbare Einstiege mit, die alle hierher
+Als Plugin bringt dieser Skill vier vom Nutzer aufrufbare Einstiege mit, die alle hierher
 zurückführen: `/steuererklaerung` (ganzer Durchlauf), `/krypto-check` (Einzelfrage ohne
 Report), `/broker-profil` (neuen Broker anbinden), `/steuer-pruefen` (fertigen Report
 gegenprüfen). Wird einer davon aufgerufen, gilt zusätzlich dessen eigene Schrittfolge.
 
-## Was rein geht, was raus kommt
+## Was reingeht, was rauskommt
 
 | Eingabe | Weg |
 |---|---|
@@ -131,7 +131,7 @@ achten; die vom Skript gemeldeten übersprungenen Tabellen ansehen. Details:
   eintragen; Vorlage: `assets/steuerdaten_vorlage.json`. Liegt eine
   **Lohnsteuerbescheinigung** als PDF vor: Nr. 3 → `bruttoarbeitslohn`, Nr. 4 →
   `lohnsteuer`, Nr. 5 → `soli`, Nr. 6 → `kirchensteuer`.
-- Unbekannte Feldnamen werden gemeldet („meintest du …?") und **ignoriert** — die Warnung
+- Unbekannte Feldnamen werden gemeldet („meintest du …?“) und **ignoriert** — die Warnung
   ernst nehmen, ein Tippfehler ist sonst stillschweigend 0 € wert. `--strict` schreibt den
   Report weiterhin, endet aber mit Rückgabecode 3, damit der Fehler nicht untergeht.
 - **Krypto aus CSV**: `python3 scripts/parse_inputs.py datei.csv --format kraken -o transactions.json`
@@ -157,7 +157,7 @@ python3 scripts/krypto_fifo.py transactions.json <steuerjahr> krypto_result.json
 
 Rechnet per-Asset-FIFO über die **gesamte** Historie, weist aber nur das Steuerjahr aus.
 Prüft die Jahresfrist taggenau nach § 108 AO / § 188 BGB (der Jahrestag selbst ist noch
-steuerpflichtig — „365 Tage" ist falsch), die Freigrenze und Staking nach § 22 Nr. 3.
+steuerpflichtig — „365 Tage“ ist falsch), die Freigrenze und Staking nach § 22 Nr. 3.
 Details und Edge-Cases: `references/krypto-steuer.md`. `build_taxreport.py` ruft die Engine
 sonst selbst auf.
 
@@ -167,8 +167,8 @@ sonst selbst auf.
 python3 scripts/build_taxreport.py steuerdaten.json --transactions transactions.json -o taxreport.json
 # mehrere Quellen, Krypto und Wertpapiere gemischt:
 python3 scripts/build_taxreport.py steuerdaten.json \
-    --krypto-result koinly.krypto_result.json taxReport.kap_result.json \
-    --kap-result    taxReport.kap_result.json \
+    --krypto-result koinly.krypto_result.json etoro.kap_result.json \
+    --kap-result    etoro.kap_result.json \
     -o taxreport.json
 ```
 

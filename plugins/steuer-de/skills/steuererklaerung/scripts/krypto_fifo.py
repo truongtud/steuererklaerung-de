@@ -317,7 +317,7 @@ class Lot:
     amount: Decimal           # noch verfügbare Menge
     cost_per_unit: Decimal    # Anschaffungskosten pro Einheit in EUR (inkl. anteiliger Gebühr)
     # Kostenbasis 0, ohne dass sie jemand so angegeben hat (fehlender Marktwert):
-    # der Verbrauch dieses Los muss beim Verkauf gemeldet werden.
+    # der Verbrauch dieses Loses muss beim Verkauf gemeldet werden.
     nullkosten_ungeklaert: bool = False
     herkunft: str = ""        # Bezeichner des Datensatzes, aus dem das Los stammt
 

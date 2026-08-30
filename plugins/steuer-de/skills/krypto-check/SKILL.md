@@ -21,7 +21,7 @@ Häufige Fälle und worauf es jeweils ankommt:
   statt Tage im Kopf zu zählen — genau dort entstehen die Fehler.
 - **Freigrenze.** Kein Freibetrag: ab Erreichen ist der *gesamte* Gewinn steuerpflichtig.
   Sie gilt pro Person und Jahr über alle Broker — also nachfragen, ob es weitere Konten
-  gibt, bevor „steuerfrei" gesagt wird.
+  gibt, bevor „steuerfrei“ gesagt wird.
 - **Tausch Krypto-zu-Krypto** ist eine Veräußerung zum EUR-Marktwert und zugleich eine
   Anschaffung.
 - **Staking/Lending** ist § 22 Nr. 3 mit 256-€-Freigrenze, bewertet zum Zuflusswert; die

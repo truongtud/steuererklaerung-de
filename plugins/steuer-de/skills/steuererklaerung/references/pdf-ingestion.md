@@ -12,7 +12,7 @@ Extraktion immer gegen das Original prüfen.
 
 1. **Ein Zahlenparser für alles.** `steuerlib.to_decimal` liest deutsche *und* englische
    Notation, Unicode-Minus (−), Klammer-Notation `(1.234,56)`, nachgestelltes Minus und
-   Währungssuffixe. Bei Unlesbarem wirft er — er gibt **nie still 0 zurück**. Ein
+   Währungssuffixe. Bei Unlesbarem wirft er einen Fehler — er gibt **nie still 0 zurück**. Ein
    stiller 0-Wert ist der teuerste Fehler in einer Steuerberechnung.
 2. **Summenabgleich statt Vertrauen.** Die Profil-Engine liest zusätzlich die im Report
    **selbst ausgewiesenen** Summen (und die Anzahl der Veräußerungen) und vergleicht sie mit
@@ -57,12 +57,12 @@ Ausgaben in `--outdir`:
 
 Das Skript meldet außerdem, **wie viele Tabellen es übersprungen hat** (kein Header
 erkannt) und markiert Zellen, deren Zahlennotation mehrdeutig ist (`_ambig_spalten`).
-Summen-/„Gesamt"-Zeilen werden erkannt und nicht als Transaktionen mitgezählt.
+Summen-/„Gesamt“-Zeilen werden erkannt und nicht als Transaktionen mitgezählt.
 
 ## Spalten- und Typ-Erkennung
 
 Header-Synonyme werden auf kanonische Felder gemappt; dabei wird **je Spalte der beste
-Treffer** gewählt statt des ersten. Das verhindert, dass „Gebührenwährung" als `asset`
+Treffer** gewählt statt des ersten. Das verhindert, dass „Gebührenwährung“ als `asset`
 gelesen wird.
 
 | kanonisch | erkannte Header (DE/EN) |
@@ -78,7 +78,7 @@ gelesen wird.
 
 Der Typ wird aus der **Typ-Spalte** klassifiziert, wenn es eine gibt — erst ohne sie aus der
 ganzen Zeile (mit niedrigerer `confidence`). Sonst wird jede Zeile eines Handelsblatts mit
-dem Wort „Trade" zum `swap` und ein Verkauf aus einer Wallet namens „Kraken Earn" zum
+dem Wort „Trade“ zum `swap` und ein Verkauf aus einer Wallet namens „Kraken Earn“ zum
 `reward`. Fehlt `eur_value`, aber `price` und `amount` sind da, wird multipliziert.
 
 ## Verifikations-Checkliste (vor der Steuerberechnung)
@@ -123,8 +123,8 @@ Anlage-KAP-Kennzahlen *und* das § 23-/§ 22-Ergebnis. `--krypto-result` liest n
 Krypto-Hälfte, `--kap-result` nur die KAP-Hälfte. Wird sie nur einer Liste übergeben,
 verschwindet die andere Hälfte — bei `--krypto-result` allein also sämtliche
 Kapitalerträge, anrechenbare Kapitalertragsteuer und Verlustzeilen. `build_taxreport.py`
-warnt in diesem Fall und nennt, was ignoriert wurde; übergeben an beide Listen, wird jede
-Hälfte genau einmal verbraucht. Details: `references/broker-profile.md`.
+warnt in diesem Fall und nennt, was ignoriert wurde; bei Übergabe an beide Listen wird
+jede Hälfte genau einmal verbraucht. Details: `references/broker-profile.md`.
 
 **Koinly**: liest § 23-Veräußerungen mit Kostenbasis, Einnahmen (§ 22 Nr. 3, inkl. Airdrops
 und Forks), das Futures-Ergebnis (→ Anlage KAP, Termingeschäfte § 20 Abs. 2) und Gebühren.

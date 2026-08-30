@@ -1088,7 +1088,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     # Eine Datei kann BEIDE Hälften tragen (die Broker-Profile schreiben je nach
     # Report Kennzahlen und § 23 in dieselbe JSON). Wird sie nur einem Leser
     # übergeben, verschwindet die andere Hälfte lautlos — genau der stille
-    # Nullwert, den dieses Skill an keiner Stelle zulassen darf. Wird sie beiden
+    # Nullwert, den dieser Skill an keiner Stelle zulassen darf. Wird sie beiden
     # übergeben, verbraucht jeder Leser seine Hälfte genau einmal; dann ist alles
     # gut und es gibt keine Meldung.
     kap_dateien = {q["datei"] for q in kapq}
@@ -1587,7 +1587,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
             if isinstance(row, dict):
                 row.pop("_quelle_id", None)
 
-    # Vier fast gleichlautende Sätze fuer vier Zeilen derselben Quelle sind Rauschen
+    # Vier fast gleichlautende Sätze für vier Zeilen derselben Quelle sind Rauschen
     # — zusammengefasst zu EINEM Satz, und ebenfalls nur im Protokoll.
     if doppelte_extra:
         orte = []

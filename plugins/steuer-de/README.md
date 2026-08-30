@@ -14,11 +14,11 @@ Das Plugin liest die Broker-Reports, rechnet Krypto nach FIFO/§ 23 EStG und die
 Kapitalerträge nach § 20/§ 32d, setzt daraus einen TaxReport über alle Anlagen zusammen
 (N, KAP, SO, V, S, G, Vorsorgeaufwand, Sonderausgaben, außergewöhnliche Belastungen, Kind),
 schätzt Einkommensteuer, Solidaritätszuschlag, Kirchensteuer und Abgeltungsteuer samt
-Nachzahlung oder Erstattung — und gibt ein Feld-für-Feld-Mapping aus, das in „Mein ELSTER"
+Nachzahlung oder Erstattung — und gibt ein Feld-für-Feld-Mapping aus, das in „Mein ELSTER“
 abgetippt wird.
 
-Es reicht **nicht** bei ELSTER ein und schickt keine Daten fort: alles läuft lokal, Ausgabe
-sind Dateien. Veranlagungszeiträume 2022–2026, nur deutsches Steuerrecht.
+Es reicht **nicht** bei ELSTER ein und schickt keine Daten fort: alles läuft lokal, die
+Ausgabe sind Dateien. Veranlagungszeiträume 2022–2026, nur deutsches Steuerrecht.
 
 ## Eingabeformate
 
@@ -79,7 +79,7 @@ sagst, was du brauchst:
 > 📎 *koinly-2024.pdf, etoro-taxreport-2024.pdf*
 >
 > „Mach mir daraus die Steuererklärung 2024. Ledig, 9 % Kirchensteuer, Bruttoarbeitslohn
-> 78.500 €, Lohnsteuer 18.420 €. Aus 2023 habe ich noch 900 € § 23-Verlustvortrag."
+> 78.500 €, Lohnsteuer 18.420 €. Aus 2023 habe ich noch 900 € § 23-Verlustvortrag.“
 
 Claude liest die Reports, zeigt den Summenabgleich, fragt nach dem, was fehlt
 (Vorsorgeaufwendungen, Werbungskosten, anrechenbare KESt), und liefert HTML, PDF und die
@@ -87,8 +87,8 @@ ELSTER-CSV. Eine `steuerdaten.json` musst du nicht schreiben — Claude füllt d
 dem Gespräch. Voraussetzung ist aktivierte Code-Ausführung.
 
 Genauso gehen kleine Fragen („BTC am 10.01.2023 gekauft, am 10.01.2024 verkauft —
-steuerfrei?") und das Anbinden eines neuen Brokers („Baue mir ein Profil für diese
-Erträgnisaufstellung").
+steuerfrei?“) und das Anbinden eines neuen Brokers („Baue mir ein Profil für diese
+Erträgnisaufstellung“).
 
 Mit den Ergebnissen kommen die **Warnungen** — knapp verfehlte Freigrenzen, fehlende
 Anschaffungshistorie, Haltefrist-Konflikte, ungeprüfte Profile. Scheitert ein
@@ -97,7 +97,7 @@ Summenabgleich, bricht der Lauf ab, statt eine plausible Zahl zu liefern.
 ## Wichtig
 
 **Keine Steuerberatung, keine verbindliche Berechnung.** Verbindlich rechnet ELSTER; die
-Endkontrolle gehört zu einem Steuerberater.
+Endkontrolle gehört in die Hände eines Steuerberaters.
 
 - **Die Schätzung fällt systematisch zu niedrig aus:** Vorsorgeaufwendungen werden in
   voller Höhe abgezogen, die Höchstbetragsberechnung nach § 10 Abs. 3/4 EStG ist nicht

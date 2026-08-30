@@ -85,15 +85,15 @@ die ESt-Schätzung entfällt — und mit ihr alles, was auf ihr aufbaut:
 
 | | Verhalten |
 |---|---|
-| ESt, Soli, Kirchensteuer (Tarif) | `null`; `ergebnis.status` ist `"nicht berechenbar"` mit Begründung, es gibt kein Nachzahlung/Erstattung-Saldo |
-| Arbeitnehmer-Pauschbetrag, Sparer-Pauschbetrag, Freigrenze § 23 | **Wert des nächstgelegenen hinterlegten Jahres**, plus Warnung: *„Für 2030 ist kein § 32a-Tarif hinterlegt; Pauschbeträge und Freigrenzen wurden ersatzweise mit den Werten für 2026 angesetzt."* |
+| ESt, Soli, Kirchensteuer (Tarif) | `null`; `ergebnis.status` ist `"nicht berechenbar"` mit Begründung, es gibt keinen Nachzahlung/Erstattung-Saldo |
+| Arbeitnehmer-Pauschbetrag, Sparer-Pauschbetrag, Freigrenze § 23 | **Wert des nächstgelegenen hinterlegten Jahres**, plus Warnung: *„Für 2030 ist kein § 32a-Tarif hinterlegt; Pauschbeträge und Freigrenzen wurden ersatzweise mit den Werten für 2026 angesetzt.“* |
 | Sonderausgaben-Pauschbetrag, Freigrenze § 22 Nr. 3 | 36 € bzw. 256 € — im Gesetz jahresunabhängig, daher unberührt |
 | zvE, Einkünfte je Anlage, Abgeltungsteuer, Verlusttöpfe, ELSTER-Mapping | werden normal gerechnet |
 
-Grund für die Zweiteilung: der Tarif lässt sich nicht extrapolieren — jede Zahl daraus wäre
+Grund für die Zweiteilung: Der Tarif lässt sich nicht extrapolieren — jede Zahl daraus wäre
 erfunden. Die Freigrenze § 23 dagegen entscheidet, ob ein Ergebnis überhaupt
 steuerpflichtig ist; ohne sie stünde im Report ein deutlich **zu hoher**
-steuerpflichtiger Betrag, und das ist die schlechtere Auskunft als ein um ein Jahr
+steuerpflichtiger Betrag, und das ist eine schlechtere Auskunft als ein um ein Jahr
 veralteter Pauschbetrag mit Warnung. Der Ausweichwert wird auf den hinterlegten Bereich
 gekappt, also nach oben wie nach unten.
 

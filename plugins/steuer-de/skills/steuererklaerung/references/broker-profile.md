@@ -85,7 +85,7 @@ nicht umgehen lässt.
 | `notation` | `de`, `en` oder `auto` — steuert `steuerlib.to_decimal` |
 | `datum` | `de`, `en`, `iso` oder `auto` |
 | `jahr.muster` | Regexe, aus denen das Steuerjahr gelesen wird |
-| `bereiche` | benannte Textabschnitte `{start, ende[], warnung_wenn_fehlt}`; ohne sie trifft ein Muster wie `Cost` auch „Cost basis" irgendwo im Dokument |
+| `bereiche` | benannte Textabschnitte `{start, ende[], warnung_wenn_fehlt}`; ohne sie trifft ein Muster wie `Cost` auch „Cost basis“ irgendwo im Dokument |
 | `kennzahlen` | nur `ergebnis: "kap"`: normierte Kennzahlen aus den Abschriftpfaden — **Pflicht**, s. u. |
 | `zusatz` | statisches JSON, das ins Ergebnis gemischt wird (z. B. `methode`) |
 | `hinweise` | Texte, die als `hinweise` durchgereicht werden |
@@ -121,7 +121,7 @@ Gesetz:** liegen beide Daten vor, rechnet die Engine die Frist nach § 108 AO / 
 selbst und benutzt dieses Ergebnis. Weicht das Label ab, wird es als
 `holding_period_laut_report` mitgeführt und eine `HALTEFRIST-KONFLIKT`-Warnung erzeugt.
 Grund für diese Reihenfolge: die Frist ist aus zwei Pflichtfeldern eindeutig bestimmbar,
-und ein falsches „Langfristig" senkt die Steuer — das ist die Fehlerrichtung mit
+und ein falsches „Langfristig“ senkt die Steuer — das ist die Fehlerrichtung mit
 Konsequenzen. Ein einziger Konflikt heißt meist, dass der ganze Report unter einer
 365-Tage- oder ausländischen Regel erzeugt wurde; dann ist jede Zeile verdächtig, nicht
 nur die markierte.
@@ -146,9 +146,9 @@ im CSV-Block). Kein mitgeliefertes Profil braucht ihn.
 | Feld | Wirkung |
 |---|---|
 | `tabellen[].typen` | `{kanonisches Feld: "betrag"\|"menge"\|"ganzzahl"\|"datum"\|"text"}` — überschreibt die Typableitung aus dem Feldnamen (Standard: `*_date`/`timestamp` → Datum, `amount`/`counter_amount` → Menge, `*_eur` → Betrag, sonst Text) |
-| `tabellen[].suche` | `true` sucht das `zeile`-Muster irgendwo in der Zeile statt es zu verankern. Nur wenn die Zeile einen variablen Vorspann hat — ein unverankertes Muster trifft leichter das Falsche |
+| `tabellen[].suche` | `true` sucht das `zeile`-Muster irgendwo in der Zeile, statt es zu verankern. Nur wenn die Zeile einen variablen Vorspann hat — ein unverankertes Muster trifft leichter das Falsche |
 | `tabellen[].darf_leer_sein` | erlaubt 0 gelesene Zeilen (s. o.) |
-| `tabellen[].notiz_suffix` | Text, der an das `note`-Feld jeder Veräußerung angehängt wird (`koinly-de`: „Quelle: Koinly") — macht im zusammengeführten Report sichtbar, aus welchem Tool eine Position stammt |
+| `tabellen[].notiz_suffix` | Text, der an das `note`-Feld jeder Veräußerung angehängt wird (`koinly-de`: „Quelle: Koinly“) — macht im zusammengeführten Report sichtbar, aus welchem Tool eine Position stammt |
 | `csv.ignoriere_asset` | Ticker (Großschreibung), deren Zeilen bewusst übersprungen werden; die Anzahl steht in den Warnungen. `bitpanda` schließt so EUR-Ein-/Auszahlungen aus, die steuerlich kein Vorgang sind |
 | `csv.darf_leer_sein` | wie `tabellen[].darf_leer_sein`, für den CSV-Zweig |
 | `werte[].typ` | `betrag` (Standard), `menge`, `ganzzahl`, `text` |
@@ -182,7 +182,7 @@ Verhalten bei Nichttreffer.
 
 **Kein `default: "0.00"` auf Report-Zeilen.** Ohne Treffer wird der Pfad weggelassen, nicht
 auf null gesetzt — eine nicht berichtete Zeile ist etwas anderes als eine Zeile mit dem
-Wert 0,00, und nachgelagerte Logik entscheidet daran (etwa ob ein abgeleiteter Betrag nach
+Wert 0,00, und nachgelagerte Logik entscheidet danach (etwa ob ein abgeleiteter Betrag nach
 Z. 7 oder Z. 19 gehört). Wer eine explizite Null braucht, setzt `"leer": "null"`.
 In `kennzahlen` ist 0 dagegen in Ordnung: dort ist es ein Rechenergebnis, keine Aussage
 über den Report.
@@ -234,7 +234,7 @@ Objekt mit `vorzeichen`:
 **Der Brutto-/davon-Wächter schaut genau hier hin.** Aggregiert ein Eintrag — oder ein
 `werte[].summiere_in` — eine Bruttozeile (7, 18, 19) zusammen mit einer davon-Zeile
 (20–25) in **einen** Topf, wird das Profil beim Laden abgelehnt. Warum, steht unten unter
-„Ausgabeschemata → `kap`".
+„Ausgabeschemata → `kap`“.
 
 ### `summen` — das Sicherheitsnetz
 
@@ -273,7 +273,7 @@ Vergleichspfade liefert die Engine unter `summen_basis`, u. a.
 `optional: true` lässt den Lauf ohne Vergleichswert durchgehen. Die `begruendung` ist
 dabei **Pflicht** — ohne sie lehnt `pruefe_profil` das Profil ab. Grund: der Verzicht auf
 eine Gegenprüfung ist eine inhaltliche Aussage über den Report („diese Summe existiert
-dort nicht"), keine Bequemlichkeit beim Regex-Schreiben. Wer sie begründen muss, merkt,
+dort nicht“), keine Bequemlichkeit beim Regex-Schreiben. Wer sie begründen muss, merkt,
 wenn er sie nicht begründen kann.
 
 Aus demselben Grund wird ein Profil abgelehnt, dessen `summen`-Einträge **alle** optional
@@ -285,7 +285,7 @@ Anlage-SO-Z.-47-Summe. Ein reines Aktien-/CFD-Depot bei eToro erzeugt gar keinen
 Anlage-SO-Block; der Wert wäre dann korrekt 0,00 €, ohne dass es etwas gegenzuprüfen gibt.
 Verbindlich bleibt dort der Abgleich der Kapitalerträge (Anlage KAP).
 
-Unsichtbar wird ein opt-out dabei nicht. Im Abgleichsbericht trägt die Zeile ein
+Unsichtbar wird ein Opt-out dabei nicht. Im Abgleichsbericht trägt die Zeile ein
 `!!`-Präfix, und `parse_broker.py` wiederholt sie danach auf **stderr**:
 
 ```
@@ -340,7 +340,7 @@ Deutsche Steuerbescheinigungen und Erträgnisaufstellungen sind bereits nach
 > werden.** Mitgeliefert ist bisher genau ein `kap`-Profil: `etoro-de`. Für die
 > Erträgnisaufstellung der eigenen Bank existiert keines, und `parse_broker.py` rät
 > nicht — ohne passendes Profil bricht es ab und listet auf, welche es geprüft hat.
-> Der Weg dorthin steht unten unter „Ein neues Profil anlegen".
+> Der Weg dorthin steht unten unter „Ein neues Profil anlegen“.
 
 ```json
 {
@@ -371,7 +371,7 @@ Deutsche Steuerbescheinigungen und Erträgnisaufstellungen sind bereits nach
 
 - `kap_zeilen` ist die **wörtliche Abschrift** dessen, was der Report druckt. Deutsche
   Bescheinigungen weisen Verluste als positive Beträge aus, und genau so will ELSTER sie in
-  den „Verluste"-Zeilen. Keine Vorzeichenkorrektur, keine Plausibilitätsprüfung.
+  den „Verluste“-Zeilen. Keine Vorzeichenkorrektur, keine Plausibilitätsprüfung.
 - `kennzahlen` ist die **normierte, vorzeichenbehaftete** Fassung, die
   `build_taxreport.py` verrechnet: Gewinne positiv, Verluste negativ.
 
@@ -379,7 +379,7 @@ Alle Kennzahlen sind einzeln optional (fehlend = 0); der Block selbst ist Pflich
 Verlusttöpfe, Verrechnung und Freigrenzen rechnet der Report-Bauer, nicht der Parser —
 § 20 Abs. 6 gilt personenbezogen über alle Depots hinweg.
 
-**Zeilen 20–25 sind „davon"-Zeilen** („In den Zeilen 18 und 19 enthaltene …"). Ein Profil
+**Zeilen 20–25 sind „davon“-Zeilen** („In den Zeilen 18 und 19 enthaltene …“). Ein Profil
 muss die Beträge daher **zusätzlich** in `kapitalertraege` enthalten haben —
 `gewinn_aktien`, `gewinn_termingeschaefte`, `verluste_ohne_aktien` und `verluste_ausfall`
 ordnen nur den Verrechnungskreisen zu und erhöhen die Bemessungsgrundlage nicht. Weist ein
@@ -478,7 +478,7 @@ positiv) und mehrdeutigen Datumsformaten.
 **Zirkuläre Abgleiche markiert er als `TODO` und meldet sie als Fehler.** Zirkulär heißt:
 der `summen`-Eintrag liest seinen Vergleichswert aus derselben Report-Zeile, aus der
 `werte` den geprüften Wert liest. Ein solcher Abgleich prüft nichts — er meldet für jeden
-Report „Abweichung 0,00 €", auch für einen, dem der halbe Inhalt fehlt, und macht damit
+Report „Abweichung 0,00 €“, auch für einen, dem der halbe Inhalt fehlt, und macht damit
 genau die Garantie wertlos, auf der das Profil-Format ruht. Ein echter Abgleich stellt eine
 über **mehrere** Zeilen geparste Aggregation einem im Report **unabhängig** ausgewiesenen
 Gesamtwert gegenüber. Lässt sich die Zeilenherkunft nicht bestimmen, gilt der Eintrag
@@ -513,7 +513,7 @@ falsche Spalten und meldet Erfolg; das ist schlimmer als ein sauberer Abbruch.
 | `kraken-ledger` | krypto_transaktionen | csv | geprüft |
 | `coinbase` | krypto_transaktionen | csv | **ungeprüft** — `Convert` bewusst nicht abgebildet, das erhaltene Asset steht nur im Freitext |
 | `bitpanda` | krypto_transaktionen | csv | **ungeprüft** — `transfer` bewusst nicht abgebildet (Verkauf, Eigentransfer oder Schenkung ist aus der Spalte nicht entscheidbar) |
-| `binance` | krypto_transaktionen | csv | **ungeprüft** — der Export enthält **keine EUR-Spalte**, jede Transaktion wird `_needs_fmv` markiert; als Startpunkt brauchbar, nicht als fertige Anbindung |
+| `binance` | krypto_transaktionen | csv | **ungeprüft** — der Export enthält **keine EUR-Spalte**, jede Transaktion wird mit `_needs_fmv` markiert; als Startpunkt brauchbar, nicht als fertige Anbindung |
 
 Die drei ungeprüften Profile wurden gegen die **dokumentierten** Spaltenüberschriften
 gebaut, nicht gegen echte Exporte. Vor dem ersten Einsatz mit einer eigenen Datei prüfen
