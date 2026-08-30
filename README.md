@@ -6,7 +6,8 @@ Ein Claude-Plugin für die **deutsche Einkommensteuererklärung**.
 > Name lässt später Platz für weitere Steuer-Plugins daneben. Zum Hinzufügen zählt der
 > Repository-Name, zum Installieren der Plugin-Name; beide Kommandos stehen unten.
 
-[![tests](https://github.com/truongtud/steuererklaerung-de/actions/workflows/tests.yml/badge.svg)](https://github.com/truongtud/steuererklaerung-de/actions/workflows/tests.yml)
+[![tests](https://github.com/truongtud/steuererklaerung-de/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/truongtud/steuererklaerung-de/actions/workflows/tests.yml?query=branch%3Amain)
+[![Python](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.14-blue)](https://github.com/truongtud/steuererklaerung-de/blob/main/.github/workflows/tests.yml)
 
 ## Worum es geht
 
@@ -252,7 +253,7 @@ Skills: das Hauptskill mit der ganzen Logik und vier schlanke Einstiege, die es 
 ```
 steuererklaerung-de/                        das Repository (= der Marketplace)
 ├── .claude-plugin/marketplace.json         Katalog: welche Plugins liegen hier
-├── .github/workflows/tests.yml             CI auf Python 3.10–3.12
+├── .github/workflows/tests.yml             CI auf Python 3.10–3.14 (+ 3.15-Beta)
 └── plugins/steuer-de/                      das Plugin
     ├── .claude-plugin/plugin.json          Name, Version, Autor, Lizenz
     └── skills/
@@ -310,12 +311,24 @@ cd plugins/steuer-de/skills/steuererklaerung
 python3 tests/run_tests.py
 ```
 
-368 Fälle in 10 Dateien: Tarif-Stützpunkte und Zonenstetigkeit (findet falsch
-abgeschriebene Konstanten), Zahlenparser in deutscher und englischer Notation,
-Fristen-Grenzfälle inklusive Schaltjahr, FIFO mit Teillosen und Gebühren, Freigrenzen- und
-Verlusttopf-Aggregation über mehrere Quellen, KAP-Quellen, Profil-Validierung, den Wizard
-samt Anonymisierung, ELSTER-Export und die Schnittstellen zwischen den Skripten. CI läuft
-auf Python 3.10–3.12.
+[368 Fälle in 10 Dateien](plugins/steuer-de/skills/steuererklaerung/tests) — jede Datei ist
+einzeln lauffähig, wenn nur ein Bereich interessiert:
+
+| Datei | prüft |
+|---|---|
+| [`test_steuerlib.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_steuerlib.py) | Zahlenparser (DE/EN, Vorzeichen), Fristen-Grenzfälle inkl. Schaltjahr, Tarif-Stützpunkte und **Zonenstetigkeit** — findet falsch abgeschriebene § 32a-Konstanten |
+| [`test_krypto_fifo.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_krypto_fifo.py) | FIFO mit Teillosen und Gebühren, Jahresfilter, Haltefrist, Freigrenzen |
+| [`test_build_taxreport.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_build_taxreport.py) | Tarif, Soli, Abgeltungsteuer, Nachzahlung/Erstattung |
+| [`test_kap.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_kap.py) | KAP-Quellen, davon-Zeilen, Verlusttöpfe über mehrere Depots |
+| [`test_eingabepruefung.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_eingabepruefung.py) | unbekannte Felder, `--strict`, Verlustvorträge |
+| [`test_brokerprofile.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_brokerprofile.py) | Profil-Validierung, Erkennung, Summenabgleich |
+| [`test_parser.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_parser.py) | Koinly, eToro, CSV-Import, Layout-Varianten |
+| [`test_profile_wizard.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_profile_wizard.py) | Entwurfserzeugung, zirkuläre Abgleiche, Anonymisierung |
+| [`test_export.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_export.py) | Disclaimer in jedem Format, CSV-Notation, Escaping |
+| [`test_integration.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_integration.py) | Pipeline end-to-end, Schnittstellen zwischen den Skripten |
+
+CI läuft bei jedem Push auf **Python 3.10 bis 3.14**, dazu ein Vorschau-Lauf auf der
+3.15-Beta, der fehlschlagen darf ([Workflow](.github/workflows/tests.yml)).
 
 ## Ein neues Steuerjahr ergänzen
 

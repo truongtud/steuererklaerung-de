@@ -8,11 +8,12 @@ on:
 
 jobs:
   test:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,6 +21,26 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Abhängigkeiten (nur für den PDF-Export nötig)
         run: pip install fpdf2
+      - name: Testsuite
+        working-directory: plugins/steuer-de/skills/steuererklaerung
+        run: python3 tests/run_tests.py
+
+  # Vorschau auf die nächste Python-Version. Darf fehlschlagen, ohne den Build rot zu
+  # machen: 3.15 ist bis zum Release am 01.10.2026 eine Beta, und ein rotes Badge wegen
+  # einer Vorabversion würde nur dazu führen, dass niemand mehr hinsieht. Sobald 3.15
+  # final ist, gehört sie in die Matrix oben und dieser Job kann weg.
+  test-vorschau:
+    name: Python 3.15 (Beta, darf fehlschlagen)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.15-dev"
+          allow-prereleases: true
+      - name: Abhängigkeiten (nur für den PDF-Export nötig)
+        run: pip install fpdf2 || echo "fpdf2 hat noch kein Rad für 3.15 — PDF-Tests werden übersprungen"
       - name: Testsuite
         working-directory: plugins/steuer-de/skills/steuererklaerung
         run: python3 tests/run_tests.py
