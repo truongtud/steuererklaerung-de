@@ -554,8 +554,8 @@ def test_rohzeile_verdraengt_die_deckungsgleiche_abgeleitete_zeile():
     z7 = [z for z in zeilen(r) if z["zeile"] == "Z. 7"]
     eq(len(z7), 1, "Zeile 7 darf nicht doppelt im Mapping stehen")
     eq(z7[0]["quelle"], "Musterbank (kap_zeilen)", "es gilt die Rohzeile")
-    assert any("Rohzeile" in h and "Zeile 7" in h for h in r["hinweise"]), \
-        f"Hinweis auf den Vorrang der Rohzeile fehlt: {r['hinweise']}"
+    assert any("Rohzeile" in h and "Zeile 7" in h for h in r["protokoll"]), \
+        f"Protokollzeile zum Vorrang der Rohzeile fehlt: {r['protokoll']}"
 
 
 @case
@@ -568,8 +568,8 @@ def test_bei_zwei_quellen_bleibt_die_summenzeile_stehen():
     summen = [z for z in z7 if "kap_zeilen" not in z["quelle"]]
     eq(len(summen), 1)
     eq(summen[0]["wert"], "1500.00")
-    assert any("Zeile 7" in h and "Summe" in h for h in r["hinweise"]), \
-        f"Hinweis zur Summenbildung fehlt: {r['hinweise']}"
+    assert any("Zeile 7" in h and "Summe" in h for h in r["protokoll"]), \
+        f"Protokollzeile zur Summenbildung fehlt: {r['protokoll']}"
 
 
 @case
@@ -833,8 +833,8 @@ def test_elster_extra_das_eine_rohzeile_wiederholt_wird_entdoppelt():
     z19 = [z for z in zeilen(r) if z["zeile"] == "Z. 19"]
     eq(len(z19), 1, f"Zeile 19 darf nur einmal im Mapping stehen: {z19}")
     assert "kap_zeilen" in z19[0]["quelle"], "die Rohzeile hat Vorrang"
-    assert any("doppelte Erklärung" in h for h in r["hinweise"]), \
-        f"Hinweis auf die entfernte Wiederholung fehlt: {r['hinweise']}"
+    assert any("doppelte Erklärung" in h for h in r["protokoll"]), \
+        f"Protokollzeile zur entfernten Wiederholung fehlt: {r['protokoll']}"
 
 
 @case
@@ -871,8 +871,8 @@ def test_zwei_depots_mit_gleichem_betrag_behalten_beide_ihre_zeile():
     assert "Depot A (elster_extra)" in quellen and "Depot B (elster_extra)" in quellen, \
         f"beide Belegzeilen müssen erhalten bleiben: {quellen}"
     eq(kap_block(r)["auslaendische_quellensteuer"], "500.00", "Summe stimmt weiterhin")
-    assert not [h for h in r["hinweise"] if "doppelte Erklärung" in h], \
-        f"hier wurde nichts wiederholt, also kein Doppelungs-Hinweis: {r['hinweise']}"
+    assert not [h for h in r["protokoll"] if "doppelte Erklärung" in h], \
+        f"hier wurde nichts wiederholt, also kein Doppelungs-Eintrag: {r['protokoll']}"
 
 
 @case
@@ -1372,6 +1372,157 @@ def test_zeile_20_hat_eine_eigene_bezeichnung():
     eq(len(z20), 1, f"Rohzeile 20 fehlt im Mapping: {zeilen(r)}")
     assert "Aktienveräußerungen" in z20[0]["bezeichnung"], z20[0]
     assert "Betrag laut Bescheinigung" not in z20[0]["bezeichnung"], z20[0]
+
+
+# ── Das Mapping muss abtippbar sein ──────────────────────────────────────────
+# Drei Regeln, alle gegen denselben Fehler: den falschen von mehreren Beträgen in
+# dasselbe Formularfeld zu tippen.
+
+def _beide_haelften_etoro():
+    """Dieselbe Quelle als KAP- UND Krypto-Hälfte — der Weg, auf dem eine Quelle
+    ihre 'elster_extra'-Zeilen zweimal ins Mapping schickt."""
+    q = kap_quelle(quelle="eToro", kapitalertraege="2000.00", gewinn_aktien="800.00",
+                   verlust_aktien="-150.00", verlust_termingeschaefte="-450.00",
+                   kap_zeilen={"19": "2000.00", "20": "800.00",
+                               "23": "-150.00", "24": "-450.00"},
+                   elster_extra=[
+                       {"anlage": "Anlage KAP", "zeile": "Z. 19",
+                        "bezeichnung": "Ausländische Kapitalerträge (eToro)",
+                        "wert": "2000.00"},
+                       {"anlage": "Anlage KAP", "zeile": "Z. 23",
+                        "bezeichnung": "Verluste aus Aktienveräußerungen (eToro)",
+                        "wert": "-150.00"},
+                       {"anlage": "Anlage KAP", "zeile": "Z. 24",
+                        "bezeichnung": "Verluste aus Termingeschäften (eToro)",
+                        "wert": "-450.00"}])
+    q.update(krypto_haelfte(netto="640.00"))
+    return q
+
+
+def _bau_beide(sd=None):
+    with tempfile.TemporaryDirectory() as tmp:
+        pfad = schreibe(tmp, "etoro.json", _beide_haelften_etoro())
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            return bau(sd if sd is not None else steuerdaten(anlage_kap={
+                "kapitalertraege": "1450.00"}),
+                bt.lade_kap_quellen([pfad]), krypto=bt.lade_krypto_quellen([pfad]))
+
+
+@case
+def test_keine_negative_verlustzeile_irgendwo_im_mapping():
+    """Die Vorzeichenregel gilt für JEDEN Weg ins Mapping — Rohzeile, abgeleitete
+    Zeile UND 'elster_extra' des Profils. ELSTER erwartet in den Zeilen 22–25 einen
+    Betrag; ein Minuszeichen dort kostet je nach Verhalten von ELSTER den ganzen
+    Verlustabzug."""
+    r = _bau_beide()
+    schlecht = []
+    for z in r["elster_mapping"]:
+        nr = bt._einzelzeile(z["zeile"])
+        if str(z["anlage"]).strip() == "Anlage KAP" and nr in bt.KAP_ZEILEN_VERLUST:
+            if str(z["wert"]).strip().startswith("-"):
+                schlecht.append(z)
+    assert not schlecht, f"negative Beträge in Verlust-Betragsfeldern: {schlecht}"
+    # und die Beträge stimmen weiterhin
+    werte = {(z["zeile"], z["art"]): str(z["wert"]) for z in r["elster_mapping"]
+             if str(z["anlage"]).strip() == "Anlage KAP"}
+    eq(werte[("Z. 23", "eintragen")], "150.00")
+    eq(werte[("Z. 24", "eintragen")], "450.00")
+
+
+@case
+def test_genau_eine_einzutragende_zeile_je_formularzeile():
+    """Wer das Mapping von oben abtippt, darf nie zwischen zwei Beträgen für
+    dasselbe Feld wählen müssen. Bereichsangaben („Z. 41–47") sind ausgenommen:
+    dort stehen mehrere Felder hinter einer Angabe."""
+    r = _bau_beide()
+    zaehler: dict = {}
+    for z in r["elster_mapping"]:
+        nr = bt._einzelzeile(z["zeile"])
+        if nr is None or z.get("art") != "eintragen":
+            continue
+        schluessel = (str(z["anlage"]), nr)
+        zaehler.setdefault(schluessel, []).append(z)
+    mehrfach = {k: v for k, v in zaehler.items() if len(v) > 1}
+    assert not mehrfach, f"mehrere einzutragende Werte für dieselbe Zeile: {mehrfach}"
+    # Zeile 19 kommt aus Handeingabe + Datei: einzutragen ist die SUMME, die
+    # Rohzeile der einen Quelle ist Beleg.
+    z19 = [z for z in r["elster_mapping"]
+           if z["zeile"] == "Z. 19" and str(z["anlage"]).strip() == "Anlage KAP"]
+    eintragen = [z for z in z19 if z["art"] == "eintragen"]
+    eq(len(eintragen), 1, f"Zeile 19: {z19}")
+    eq(str(eintragen[0]["wert"]), "3450.00", "1.450 Handeingabe + 2.000 aus der Datei")
+    assert len(z19) > 1 and all(z["art"] == "nachrichtlich" for z in z19
+                                if z is not eintragen[0]), z19
+
+
+@case
+def test_belege_stehen_geschlossen_unter_einer_trennzeile():
+    """Die Reihenfolge trägt die Aussage: wer bis zur Trennzeile tippt, ist fertig
+    und kann keinen Belegbetrag erwischt haben."""
+    r = _bau_beide()
+    arten = [z.get("art") for z in r["elster_mapping"]]
+    assert "trenner" in arten, f"keine Trennzeile im Mapping: {arten}"
+    i = arten.index("trenner")
+    assert all(a == "eintragen" for a in arten[:i]), arten[:i]
+    assert all(a == "nachrichtlich" for a in arten[i + 1:]), arten[i + 1:]
+    trenner = r["elster_mapping"][i]
+    assert "NICHT in ELSTER eintragen" in trenner["bezeichnung"], trenner
+    for z in r["elster_mapping"][i + 1:]:
+        assert z["bezeichnung"].startswith("nachrichtlich"), z
+
+
+@case
+def test_ohne_belege_gibt_es_keine_trennzeile():
+    """Kein Rauschen, wo nichts zu trennen ist."""
+    r = bau(steuerdaten(anlage_kap={"kapitalertraege": "5000.00"}))
+    arten = {z.get("art") for z in r["elster_mapping"]}
+    assert "trenner" not in arten, r["elster_mapping"]
+    assert arten <= {"eintragen", "nachrichtlich"}, arten
+
+
+@case
+def test_interne_buchhaltung_steht_im_protokoll_und_nicht_in_der_csv():
+    """Aus der CSV wird abgetippt — dort gehört nur hin, was dabei gebraucht wird.
+
+    Entdopplungs- und Herkunftsnotizen bleiben vollständig im Report unter
+    'protokoll' erhalten, belegen aber nicht mehr den Kommentarkopf.
+    """
+    r = _bau_beide()
+    intern = ("Wiederholung wurde entfernt", "Es gilt die Rohzeile",
+              "Entdopplung im ELSTER-Mapping")
+    for marker in intern:
+        assert not [h for h in r["hinweise"] if marker in h], \
+            f"interne Notiz '{marker}' steht noch unter 'hinweise': {r['hinweise']}"
+    assert any(m in h for h in r["protokoll"] for m in intern), \
+        f"die Notizen fehlen auch im Protokoll — sie sind verloren: {r['protokoll']}"
+    # Die Entdopplung derselben Quelle wird zu EINEM Satz zusammengefasst.
+    entdoppelt = [h for h in r["protokoll"] if "Entdopplung im ELSTER-Mapping" in h]
+    eq(len(entdoppelt), 1, f"je Zeile ein eigener Satz statt einer Zusammenfassung: "
+                           f"{entdoppelt}")
+
+    # Gegenprobe an der echten CSV: Kommentarkopf frei von interner Buchhaltung,
+    # Pflichtinhalte weiterhin drin, und die Kommentare überwiegen die Daten nicht.
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
+    import export_report as er
+    with tempfile.TemporaryDirectory() as tmp:
+        csv_p = os.path.join(tmp, "m.csv")
+        er.render_elster(r, __import__("pathlib").Path(csv_p),
+                         __import__("pathlib").Path(os.path.join(tmp, "m.json")))
+        with open(csv_p, encoding="utf-8-sig") as f:
+            zeilen_csv = [z.rstrip("\n") for z in f]
+    kommentare = [z for z in zeilen_csv if z.startswith('#') or z.startswith('"#')]
+    daten = [z for z in zeilen_csv if z and not z.startswith(("#", '"#', "Anlage;"))]
+    for marker in intern:
+        assert not [k for k in kommentare if marker in k], \
+            f"interne Buchhaltung im CSV-Kopf: {[k for k in kommentare if marker in k]}"
+    for pflicht in ("KEINE Steuerberatung", "ELSTER ändert die Layouts",
+                    "ANNAHME zur Anlage KAP", "positive Zahl ohne Minuszeichen"):
+        assert any(pflicht in k for k in kommentare), \
+            f"'{pflicht}' fehlt im CSV-Kopf: {kommentare}"
+    assert len(kommentare) <= len(daten), \
+        (f"{len(kommentare)} Kommentarzeilen auf {len(daten)} Datenzeilen — der "
+         f"Kopf verdeckt die Tabelle: {kommentare}")
 
 
 if __name__ == "__main__":

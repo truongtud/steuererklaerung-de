@@ -42,6 +42,7 @@ from __future__ import annotations
 import argparse
 import difflib
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from decimal import Decimal, getcontext
@@ -1022,6 +1023,11 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
 
     hinweise = [ELSTER_CAVEAT, JSTG_2024_HINWEIS]
     warnungen: list = []
+    # Verarbeitungsprotokoll: Entdopplung, Herkunft je Zeile, interne Buchhaltung.
+    # Bewusst NICHT unter 'hinweise' — export_report.py schreibt jeden Hinweis als
+    # Kommentarzeile in die ELSTER-CSV, und dort steht nur, was beim Ausfüllen
+    # gebraucht wird. Nachlesbar bleibt alles im Report selbst.
+    protokoll: list = []
 
     # Unbekannte Schlüssel zuerst melden: ihr Wert geht in KEINE der folgenden
     # Rechnungen ein, und ohne Meldung sähe der Report exakt so aus, als wäre das
@@ -1218,7 +1224,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
             or verluste_ausfall > 0):
         hinweise.insert(0, KAP_DAVON_ANNAHME_HINWEIS)
 
-    # ── § 20 Abs. 6 EStG ─────────────────────────────────────────────────────
+    # ── § 20 Abs. 6 EStG ────────────────────────────────────────────────
     # GRUNDANNAHME (siehe KAP_DAVON_ANNAHME_HINWEIS, steht auch im Report):
     # 'kapitalertraege' ist der SALDO der Anlage-KAP-Zeile 7 bzw. 18/19 und enthält
     # die Verluste der Zeilen 22–25 BEREITS. Die Zeilen 20–25 stehen im Formular
@@ -1544,9 +1550,12 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
         abgeleitete_kap_zeilen["42"] = fiktive_quellensteuer
     kap_unterdrueckt, kap_zeilen_hinweise = _kap_zeilen_abgleich(
         kapd["kap_zeilen"], abgeleitete_kap_zeilen)
-    for h in kap_zeilen_hinweise:
-        if h not in hinweise:
-            hinweise.append(h)
+    # Buchhaltung über die Herkunft je Zeile: Der Filer braucht sie im Moment des
+    # Eintippens nicht mehr — welcher Betrag in ELSTER gehört, sagt jetzt die
+    # Struktur des Mappings (art='eintragen' oben, Belege unter der Trennzeile).
+    # Sie bleibt vollständig im Report unter 'protokoll' nachlesbar, belegt aber
+    # nicht mehr den Kommentarkopf der CSV, aus der abgetippt wird.
+    protokoll.extend(h for h in kap_zeilen_hinweise if h not in protokoll)
     # Wird von build_elster_mapping gefüllt: 'elster_extra'-Zeilen, die eine bereits
     # vorhandene Zeile (Rohzeile oder abgeleitete Zeile) betragsgleich wiederholen.
     doppelte_extra: list = []
@@ -1578,13 +1587,35 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
             if isinstance(row, dict):
                 row.pop("_quelle_id", None)
 
-    for d in doppelte_extra:
-        h = (f"{d['anlage']} {d['zeile']}: die Quelle '{d['quelle']}' liefert denselben "
-             f"Betrag ({d['wert']}) sowohl als Rohzeile/abgeleiteten Wert als auch über "
-             f"'elster_extra'. Die Wiederholung wurde aus dem ELSTER-Mapping entfernt — "
-             f"zweimal eingetragen wäre es eine doppelte Erklärung.")
-        if h not in hinweise:
-            hinweise.append(h)
+    # Vier fast gleichlautende Sätze fuer vier Zeilen derselben Quelle sind Rauschen
+    # — zusammengefasst zu EINEM Satz, und ebenfalls nur im Protokoll.
+    if doppelte_extra:
+        orte = []
+        for d in doppelte_extra:
+            ort = f"{d['anlage']} {d['zeile']} ({d['wert']})"
+            if ort not in orte:
+                orte.append(ort)
+        quellen_d = []
+        for d in doppelte_extra:
+            if str(d["quelle"]) not in quellen_d:
+                quellen_d.append(str(d["quelle"]))
+        h = ("Entdopplung im ELSTER-Mapping: " + ", ".join(orte)
+             + " wurden von " + ", ".join(f"'{q}'" for q in quellen_d)
+             + " sowohl als Rohzeile/abgeleiteter Wert als auch über 'elster_extra' "
+               "geliefert. Die Wiederholung wurde entfernt — zweimal eingetragen "
+               "wäre es eine doppelte Erklärung.")
+        if h not in protokoll:
+            protokoll.append(h)
+
+    # EIN Zeiger statt der Protokollzeilen selbst: sonst wäre die Information zwar
+    # aus der CSV verschwunden, aber auch aus dem Blickfeld dessen, der eine Zahl im
+    # Mapping nicht versteht.
+    if protokoll:
+        hinweise.append(
+            f"Zur Herkunft einzelner Mapping-Zeilen (Entdopplung, welche Quelle "
+            f"welchen Betrag geliefert hat): {len(protokoll)} Eintrag(e) im Report "
+            f"unter 'protokoll'. Zum Ausfüllen wird davon nichts gebraucht — "
+            f"einzutragen sind die Zeilen oberhalb der Trennzeile im Mapping.")
 
     report = {
         "meta": {
@@ -1716,6 +1747,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
         "elster_mapping": elster,
         "eingabepruefung": {"unbekannte_felder": unbekannte_felder},
         "hinweise": hinweise,
+        "protokoll": protokoll,
         "warnungen": warnungen,
         "disclaimer": [
             "Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung.",
@@ -1799,6 +1831,103 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+_ZEILE_NUMMER = re.compile(r"^Z\.\s*(\d+)$")
+
+# Trennzeile zwischen dem Eingabeteil und dem Belegteil des Mappings. Sie ist im
+# CSV die Stelle, an der man aufhört zu tippen.
+MAPPING_TRENNER_TEXT = ("— ab hier nur Belege je Quelle: NICHT in ELSTER eintragen "
+                        "(die einzutragenden Werte stehen oberhalb) —")
+
+# Genau eine Zeile je (Anlage, Zeile) trägt den Wert, der ins Formular gehört —
+# aber nur, wo 'zeile' EINE Formularzeile benennt. Bereichsangaben wie „Z. 41–47"
+# oder „Z. 31 ff." fassen mehrere Felder zusammen; dort sind mehrere Eingabewerte
+# richtig und die Eindeutigkeit wäre eine falsche Zusage.
+def _einzelzeile(zeile) -> str | None:
+    t = _ZEILE_NUMMER.match(str(zeile).strip())
+    return t.group(1) if t else None
+
+
+def _kap_verlust_betrag(anlage, zeile, wert, bezeichnung):
+    """Verlustzeilen der Anlage KAP tragen im Mapping IMMER den Betrag.
+
+    ELSTER erwartet in den Zeilen 22–25 eine positive Zahl; das Minus steckt schon
+    in der Zeilenbeschriftung. Quellen drucken den Verlust mal so, mal so — hier
+    wird das einheitlich gemacht, damit im Mapping nie die Anweisung steht, ein
+    Minuszeichen in ein Betragsfeld zu tippen.
+    """
+    if str(anlage).strip() != "Anlage KAP":
+        return wert, bezeichnung
+    nr = _einzelzeile(zeile)
+    if nr not in KAP_ZEILEN_VERLUST:
+        return wert, bezeichnung
+    try:
+        betrag = q2(abs(to_decimal(wert)))
+    except ParseError:
+        return wert, bezeichnung
+    if "positiven Betrag" not in str(bezeichnung):
+        bezeichnung = f"{bezeichnung} (als positiven Betrag eintragen)".lstrip()
+    return betrag, bezeichnung
+
+
+def _ordne_mapping(mapping: list) -> list:
+    """Macht aus der Zeilensammlung eine Liste, die man von oben nach unten abtippt.
+
+    Zwei Regeln, beide gegen denselben Fehler — den falschen von mehreren Beträgen
+    in dasselbe Formularfeld zu tippen:
+
+    1. Je (Anlage, Formularzeile) trägt GENAU EINE Zeile art='eintragen'. Das ist
+       die Summe über alle Quellen und die Handeingabe; Rohzeilen und
+       'elster_extra' einzelner Quellen sind Belege. Deckt ein Beleg den Wert
+       vollständig ab, wurde die abgeleitete Zeile vorher unterdrückt — dann wird
+       der Beleg selbst zur Eingabezeile befördert, sonst stünde für diese Zeile
+       gar kein Wert mehr da.
+    2. Alle Eingabezeilen stehen oben, danach eine Trennzeile, danach die Belege.
+       Die Reihenfolge trägt die Aussage, nicht nur eine Spalte: wer von oben nach
+       unten tippt und an der Trennzeile aufhört, kann keinen Belegbetrag
+       erwischen. Eine fünfte Spalte müsste dagegen gelesen und verstanden werden,
+       und die CSV-Kopfzeile des Exporters hat ohnehin nur vier Spalten.
+    """
+    # Zeilen, die sich selbst schon als nachrichtlich bezeichnen (festgestellte
+    # Verlustvorträge aus Feststellungsbescheiden), gehören ebenfalls in den
+    # Belegteil — sie werden nirgends eingetragen.
+    for row in mapping:
+        if str(row.get("bezeichnung") or "").startswith("nachrichtlich"):
+            row["art"] = "nachrichtlich"
+
+    belegt: dict = {}
+    for row in mapping:
+        nr = _einzelzeile(row.get("zeile"))
+        if nr is None:
+            continue
+        schluessel = (str(row.get("anlage")), nr)
+        if row.get("art") == "eintragen":
+            if schluessel in belegt:
+                row["art"] = "nachrichtlich"    # zweiter Eingabewert derselben Zeile
+            else:
+                belegt[schluessel] = row
+    # Zeilen, für die nur noch Belege übrig sind: den ersten Beleg befördern.
+    for row in mapping:
+        nr = _einzelzeile(row.get("zeile"))
+        if nr is None or row.get("art") == "eintragen":
+            continue
+        schluessel = (str(row.get("anlage")), nr)
+        if schluessel not in belegt:
+            row["art"] = "eintragen"
+            belegt[schluessel] = row
+
+    eintragen = [r for r in mapping if r.get("art") == "eintragen"]
+    belege = [r for r in mapping if r.get("art") != "eintragen"]
+    for row in belege:
+        text = str(row.get("bezeichnung") or "")
+        if not text.startswith("nachrichtlich"):
+            row["bezeichnung"] = f"nachrichtlich (nicht eintragen): {text}".rstrip(": ")
+    if not belege:
+        return eintragen
+    trenner = {"anlage": "—", "zeile": "—", "bezeichnung": MAPPING_TRENNER_TEXT,
+               "wert": "", "quelle": "build_taxreport.py", "art": "trenner"}
+    return eintragen + [trenner] + belege
+
+
 def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sparer_pb,
                          verlust_aktien, verlust_termin, anrechenbare_kest, krypto,
                          so_extra, so_sonstige, v, s, g, eink_s, eink_g, vorsorge,
@@ -1820,9 +1949,9 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
     """
     m = []
 
-    def add(anlage, zeile, bezeichnung, wert, quelle):
+    def add(anlage, zeile, bezeichnung, wert, quelle, art="eintragen"):
         m.append({"anlage": anlage, "zeile": zeile, "bezeichnung": bezeichnung,
-                  "wert": str(wert), "quelle": quelle})
+                  "wert": str(wert), "quelle": quelle, "art": art})
 
     # 'elster_extra' aus den Parsern wiederholt regelmäßig eine Zeile, die schon als
     # Rohzeile im Mapping steht — und dieselbe Datei kann zudem beiden Lesern
@@ -1853,6 +1982,13 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
         zeile = row.get("zeile", "—")
         wert = row.get("wert", "")
         quelle = row.get("quelle", standard_quelle)
+        bezeichnung = row.get("bezeichnung", "")
+        # Die Vorzeichenregel der Verlustzeilen gilt für JEDE Zeile im Mapping, egal
+        # auf welchem Weg sie hereinkommt. Ein Profil, das seine 'elster_extra'-Zeile
+        # mit −450,00 liefert, würde sonst genau den Fehler wieder einschleusen, den
+        # die Rohzeilen-Normierung verhindert — und außerdem nicht mehr gegen die
+        # (positiv normierte) Rohzeile entdoppelt, weil der Betrag anders aussieht.
+        wert, bezeichnung = _kap_verlust_betrag(anlage, zeile, wert, bezeichnung)
         # '_quelle_id' setzen die Aggregatoren, damit die Herkunft auch dann
         # feststeht, wenn das Profil in 'quelle' etwas anderes geschrieben hat.
         ident = row.get("_quelle_id", quelle)
@@ -1863,7 +1999,9 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
                 doppelte_extra_zeilen.append({"anlage": anlage, "zeile": zeile,
                                               "wert": str(wert), "quelle": quelle})
             return
-        add(anlage, zeile, row.get("bezeichnung", ""), wert, quelle)
+        # 'elster_extra' ist immer der Beleg EINER Quelle, nie die Summe, die ELSTER
+        # sehen will — deshalb nachrichtlich (siehe _ordne_mapping).
+        add(anlage, zeile, bezeichnung, wert, quelle, art="nachrichtlich")
 
     add("Hauptvordruck", "—", "Steuerjahr", jahr, "steuerjahr")
     steuer_id = (tp.get("steuer_id") or tp.get("steueridentifikationsnummer")
@@ -1915,7 +2053,8 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
         "steuerlib.sparer_pauschbetrag")
     if verluste_ohne_aktien > 0:
         add_kap("22", "Z. 22", "Verluste aus Kapitalvermögen ohne Verluste aus "
-                "Aktienveräußerungen (unbeschränkt verrechenbar; als positiven Betrag eintragen)",
+                "Aktienveräußerungen (unbeschränkt verrechenbar; als positiven "
+                "Betrag eintragen)",
                 q2(verluste_ohne_aktien), f"{kap_herkunft}.verluste_ohne_aktien")
     if verlust_aktien > 0:
         add_kap("23", "Z. 23", "Verluste aus Aktienveräußerungen (§ 20 Abs. 6 Satz 4; als "
@@ -1990,13 +2129,14 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
     # Verlustabzug. Die wörtliche Abschrift bleibt in anlagen.KAP.kap_zeilen stehen.
     for z in roh_zeilen:
         label = KAP_ZEILEN_LABEL.get(z["zeile"], "Betrag laut Bescheinigung")
-        wert = z["wert"]
-        if z["zeile"] in KAP_ZEILEN_VERLUST:
-            wert = q2(abs(to_decimal(wert)))
-            label = f"{label} (als positiven Betrag eintragen)"
-        add("Anlage KAP", f"Z. {z['zeile']}",
+        zeile = f"Z. {z['zeile']}"
+        wert, label = _kap_verlust_betrag("Anlage KAP", zeile, z["wert"], label)
+        # Rohzeilen sind der Beleg EINER Bescheinigung. Einzutragen ist die Summe
+        # über alle Quellen — es sei denn, es gibt nur diese eine Quelle; dann
+        # befördert _ordne_mapping die Rohzeile zur Eingabezeile.
+        add("Anlage KAP", zeile,
             f"{label} — Rohzeile aus der Bescheinigung", wert,
-            f"{z['quelle']} (kap_zeilen)")
+            f"{z['quelle']} (kap_zeilen)", art="nachrichtlich")
     for row in kap_extra or []:
         add_extra(row, "Anlage KAP", "kap-quelle (elster_extra)")
 
@@ -2025,7 +2165,13 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
             "dieses Jahres)", q2(vv_23_neu_gesamt), "berechnet")
     ke = krypto.get("koinly_extra")
     if ke and _betrag(ke.get("futures_nettoergebnis_eur"), "koinly_extra") != 0:
-        add("Anlage KAP", "Z. 21 ff.", "Termingeschäfte/Futures § 20 Abs. 2 (gesondert)",
+        # Der Betrag ist oben bereits in die Termingeschäfts-Kennzahlen und damit in
+        # Z. 21 bzw. Z. 24 eingeflossen. Er darf hier NICHT als eigene einzutragende
+        # Zeile erscheinen — sonst stünden zwei verschiedene Zahlen für dieselbe
+        # Formularzeile im Mapping und der Betrag würde doppelt erklärt.
+        add("Anlage KAP", "Z. 21 ff.",
+            "nachrichtlich (nicht eintragen): Termingeschäfte/Futures § 20 Abs. 2 aus der "
+            "Krypto-Quelle — bereits in den Zeilen 21/24 oben enthalten",
             q2(_betrag(ke["futures_nettoergebnis_eur"], "koinly_extra")), "koinly_extra")
     p22 = krypto.get("paragraph_22_nr3", {})
     if _betrag(p22.get("summe_eur"), "§22") > 0:
@@ -2075,7 +2221,7 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
     # dann liefert sie ihre elster_extra-Zeilen zweimal.
     for row in krypto.get("elster_extra", []) or []:
         add_extra(row, "—", "krypto-quelle (elster_extra)")
-    return m
+    return _ordne_mapping(m)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
