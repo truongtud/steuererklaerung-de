@@ -11,7 +11,7 @@
     {
       "name": "steuererklaerung-de",
       "source": "./plugins/steuererklaerung-de",
-      "description": "Deutsche Einkommensteuererklärung: TaxReport über alle Anlagen, Krypto-FIFO nach § 23 EStG mit taggenauer Haltefrist, Broker-PDF-Import (Koinly, eToro), Export als HTML, PDF und ELSTER-Feld-Mapping. Orientierung, keine Steuerberatung."
+      "description": "Deutsche Einkommensteuererklärung: TaxReport über alle Anlagen, Krypto-FIFO nach § 23 EStG mit taggenauer Haltefrist, Kapitalerträge mit Verlusttöpfen, Broker- und Börsen-Import über Profildateien (Koinly, eToro, Kraken, Coinbase, Bitpanda, Binance), Export als HTML, PDF und ELSTER-Feld-Mapping. Orientierung, keine Steuerberatung."
     }
   ]
 }
