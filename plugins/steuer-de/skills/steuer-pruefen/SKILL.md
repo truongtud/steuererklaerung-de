@@ -12,7 +12,7 @@ Zu prüfender Report (falls angegeben): **$ARGUMENTS** — sonst den zuletzt erz
 `taxreport.json` im Arbeitsverzeichnis nehmen oder danach fragen.
 
 Dieser Befehl rechnet nichts neu. Er ist der letzte Blick, bevor jemand Zahlen in ein
-Formular tippt. Der Abschnitt „Plausibilitätsschritt" in der `SKILL.md` des Skills `steuererklaerung-de`
+Formular tippt. Der Abschnitt „Plausibilitätsschritt" in der `SKILL.md` des Skills `steuererklaerung`
 beschreibt die Haltung dazu.
 
 Durchgehen und **jeden Punkt beantworten**, auch die unauffälligen:

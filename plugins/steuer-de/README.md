@@ -70,7 +70,7 @@ Vier Slash-Befehle stehen nach der Installation bereit:
 | `/broker-profil [id]` | einen neuen Broker anbinden |
 | `/steuer-pruefen [datei]` | einen fertigen TaxReport gegenprüfen |
 
-Bei Namenskollision greift die lange Form (`/steuererklaerung-de:steuererklaerung`). Die
+Bei Namenskollision greift die lange Form (`/steuer-de:steuererklaerung`). Die
 Befehle löst nur der Nutzer aus, nicht Claude.
 
 Die Skripte rufst du nicht selbst auf — das macht Claude. Du hängst deine Reports an und
@@ -116,12 +116,12 @@ Progressionsvorbehalt, Gewerbesteueranrechnung, Vorauszahlungen.
 
 Python 3.10+ mit aktivierter Code-Ausführung. Optional `fpdf2` (PDF-Export),
 `pdfplumber`/`pymupdf` (PDF-Import), Tesseract mit deutschem Sprachpaket (gescannte PDFs).
-Die genauen Installationskommandos stehen in `skills/steuererklaerung-de/SKILL.md`.
+Die genauen Installationskommandos stehen in `skills/steuererklaerung/SKILL.md`.
 
 ## Tests
 
 ```bash
-cd skills/steuererklaerung-de && python3 tests/run_tests.py
+cd skills/steuererklaerung && python3 tests/run_tests.py
 ```
 
 368 Fälle in 10 Dateien; CI auf Python 3.10–3.12.

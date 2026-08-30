@@ -10,7 +10,7 @@ license: MIT — NUR Orientierung, KEINE Steuerberatung.
 
 Gewünschte Profil-ID (falls angegeben): **$ARGUMENTS**
 
-**Zuerst `references/broker-profile.md` im Skill `steuererklaerung-de` lesen** — dort stehen
+**Zuerst `references/broker-profile.md` im Skill `steuererklaerung` lesen** — dort stehen
 Schema, Ausgabeschemata und Vorzeichenregeln. Alle Skripte unten liegen in dessen `scripts/`.
 
 Ablauf:

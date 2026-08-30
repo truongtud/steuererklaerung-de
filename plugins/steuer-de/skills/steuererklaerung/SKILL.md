@@ -1,5 +1,5 @@
 ---
-name: steuererklaerung-de
+name: steuererklaerung
 description: Erstellt einen TaxReport für die deutsche Einkommensteuererklärung über alle Anlagen (N, KAP, SO, V, S, G, Vorsorge, Sonderausgaben, agB, Kind), rechnet Krypto exakt nach FIFO/§ 23 EStG (taggenaue Haltefrist, Freigrenze, Staking § 22 Nr. 3) und Kapitalerträge inkl. Verlusttöpfen, liest Broker- und Börsen-Reports als PDF oder CSV über Profildateien ein (Koinly, eToro, Kraken, Coinbase, Bitpanda, Binance; weitere Broker und Steuerbescheinigungen über eigene Profile) und exportiert HTML, PDF und ELSTER-Feld-Mapping. Use whenever the user mentions Steuererklärung, Einkommensteuer, Krypto-Steuer, crypto tax, Anlage N/KAP/SO/V, Veräußerungsgeschäfte, Staking-Steuer, ELSTER, Lohnsteuerbescheinigung, Steuerbescheinigung, Erträgnisaufstellung, Freigrenze, FIFO, Verlustvortrag, Termingeschäfte, or wants a tax report from broker/exchange PDFs, exchange CSVs or income data in Germany. Nicht für Steuerrecht anderer Länder.
 license: MIT — NUR Orientierung, KEINE Steuerberatung.
 ---

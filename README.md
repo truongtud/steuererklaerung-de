@@ -1,6 +1,10 @@
-# steuererklaerung-de
+# steuer-de
 
 Ein Claude-Plugin für die **deutsche Einkommensteuererklärung**.
+
+> Das Repository heißt `steuererklaerung-de`, das Plugin darin `steuer-de` — der kürzere
+> Name lässt später Platz für weitere Steuer-Plugins daneben. Zum Hinzufügen zählt der
+> Repository-Name, zum Installieren der Plugin-Name; beide Kommandos stehen unten.
 
 [![tests](https://github.com/DEIN-GITHUB-USER/steuererklaerung-de/actions/workflows/tests.yml/badge.svg)](https://github.com/DEIN-GITHUB-USER/steuererklaerung-de/actions/workflows/tests.yml)
 
@@ -106,7 +110,7 @@ sich das Skill von selbst.
 | `/steuer-pruefen [datei]` | einen fertigen TaxReport gegenprüfen, bevor die Zahlen nach ELSTER wandern |
 
 Falls ein Name schon belegt ist, funktioniert immer die lange Form, etwa
-`/steuererklaerung-de:steuererklaerung`. Die Befehle starten nur, wenn **du** sie aufrufst
+`/steuer-de:steuererklaerung`. Die Befehle starten nur, wenn **du** sie aufrufst
 — Claude löst sie nicht von sich aus aus.
 
 **Ein Steuerjahr durchrechnen**
@@ -212,7 +216,7 @@ Netz. Ohne `docling` braucht das Plugin überhaupt keine Netzverbindung.
 
 ```
 /plugin marketplace add DEIN-GITHUB-USER/steuererklaerung-de
-/plugin install steuererklaerung-de@steuererklaerung-de
+/plugin install steuer-de@steuer-de
 ```
 
 Danach löst das Skill automatisch aus, sobald es um Steuererklärung, Einkommensteuer,
@@ -236,7 +240,7 @@ Tesseract mit deutschem Sprachpaket — die SKILL.md nennt die genauen Kommandos
 ## Wie es aufgebaut ist
 
 ```
-skills/steuererklaerung-de/
+skills/steuererklaerung/
 ├── SKILL.md                    Ablauf und Regeln
 ├── assets/                     Vorlage für steuerdaten.json
 ├── references/                 Steuerwerte, Krypto-Recht, Anlagen-Schema,
@@ -274,7 +278,7 @@ nicht: dort gibt es keine Summe zum Vergleichen, nur `confidence` und `_needs_re
 ## Tests
 
 ```bash
-cd plugins/steuererklaerung-de/skills/steuererklaerung-de
+cd plugins/steuer-de/skills/steuererklaerung
 python3 tests/run_tests.py
 ```
 

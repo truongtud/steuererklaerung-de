@@ -1,16 +1,16 @@
 {
-  "name": "steuererklaerung-de",
+  "name": "steuer-de",
   "owner": {
     "name": "Tien Truong Nguyen"
   },
   "metadata": {
     "description": "Werkzeuge für die deutsche Einkommensteuererklärung: TaxReport über alle Anlagen, Krypto nach FIFO/§ 23 EStG, ELSTER-Feld-Mapping.",
-    "version": "1.4.0"
+    "version": "2.0.0"
   },
   "plugins": [
     {
-      "name": "steuererklaerung-de",
-      "source": "./plugins/steuererklaerung-de",
+      "name": "steuer-de",
+      "source": "./plugins/steuer-de",
       "description": "Deutsche Einkommensteuererklärung: TaxReport über alle Anlagen, Krypto-FIFO nach § 23 EStG mit taggenauer Haltefrist, Kapitalerträge mit Verlusttöpfen, Broker- und Börsen-Import über Profildateien (Koinly, eToro, Kraken, Coinbase, Bitpanda, Binance), Export als HTML, PDF und ELSTER-Feld-Mapping. Orientierung, keine Steuerberatung."
     }
   ]

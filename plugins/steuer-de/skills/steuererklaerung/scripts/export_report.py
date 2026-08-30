@@ -317,7 +317,7 @@ footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
 
 <div class="note"><strong>Wichtige Hinweise</strong><ul>{disc_html}</ul></div>
 {hinweis_block}
-<footer>Erstellt mit dem Skill „steuererklaerung-de" · keine Steuerberatung · Endkontrolle durch Steuerberater</footer>
+<footer>Erstellt mit dem Skill „Steuererklärung Deutschland" · keine Steuerberatung · Endkontrolle durch Steuerberater</footer>
 </div></body></html>"""
 
 

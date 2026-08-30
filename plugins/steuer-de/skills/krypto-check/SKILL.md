@@ -10,7 +10,7 @@ license: MIT — NUR Orientierung, KEINE Steuerberatung.
 
 Frage des Nutzers: **$ARGUMENTS**
 
-Für die Regeln `references/krypto-steuer.md` im Skill `steuererklaerung-de` lesen. Das ist der
+Für die Regeln `references/krypto-steuer.md` im Skill `steuererklaerung` lesen. Das ist der
 schnelle Weg: **keinen** vollständigen TaxReport bauen, keine `steuerdaten.json` anlegen.
 
 Häufige Fälle und worauf es jeweils ankommt:

@@ -21,5 +21,5 @@ jobs:
       - name: Abhängigkeiten (nur für den PDF-Export nötig)
         run: pip install fpdf2
       - name: Testsuite
-        working-directory: plugins/steuererklaerung-de/skills/steuererklaerung-de
+        working-directory: plugins/steuer-de/skills/steuererklaerung
         run: python3 tests/run_tests.py
