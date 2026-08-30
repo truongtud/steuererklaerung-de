@@ -132,6 +132,13 @@ achten; die vom Skript gemeldeten übersprungenen Tabellen ansehen. Details:
 - **Verlustvorträge aus Vorjahren** eintragen (`anlage_so.verlustvortrag_23_vorjahr`,
   `anlage_kap.verlustvortrag_aktien_vorjahr`), sonst verfallen sie faktisch.
 
+**Der Nutzer schreibt die `steuerdaten.json` nicht selbst.** Er hängt Reports an und
+beschreibt seine Lage in Prosa. Die Vorlage aus `assets/` mit dem füllen, was er gesagt
+hat, und die verbleibenden Lücken **gezielt erfragen** statt eine JSON-Datei anzufordern —
+typischerweise fehlen Vorsorgeaufwendungen, Werbungskosten, anrechenbare
+Kapitalertragsteuer und offene Verlustfeststellungen. Die ausgefüllte Datei am Ende
+mitliefern, damit er sie im Folgejahr wiederverwenden kann.
+
 Vor dem Rechnen kurz abgleichen: Steuerjahr, Veranlagung, Kirchensteuer, Vollständigkeit
 der Anschaffungshistorie, offene Verlustfeststellungen.
 

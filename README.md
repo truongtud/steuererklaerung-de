@@ -85,6 +85,61 @@ prüfen, bliebe beides „steuerfrei".
 
 **Schritt 4 — ausgeben.** `export_report.py` schreibt HTML, PDF und das ELSTER-Mapping.
 
+## So benutzt du es
+
+Die Kommandos oben und unten tippst du **nicht** selbst — das macht Claude. Du hängst deine
+Dateien an und sagst, was du willst. Voraussetzung ist nur, dass die Code-Ausführung
+aktiviert ist; das Plugin arbeitet dann in Claudes Arbeitsumgebung und gibt die fertigen
+Dateien zurück (bzw. legt sie in einen verbundenen Ordner, wenn du einen freigegeben hast).
+
+**Ein Steuerjahr durchrechnen**
+
+> 📎 *koinly-2024.pdf, etoro-taxreport-2024.pdf*
+>
+> „Mach mir daraus die Steuererklärung 2024. Ledig, 9 % Kirchensteuer, keine Kinder.
+> Bruttoarbeitslohn 78.500 €, Lohnsteuer 18.420 €, Kirchensteuer 1.658 €. Aus 2023 habe ich
+> noch 900 € § 23-Verlustvortrag."
+
+Claude liest beide Reports, zeigt dir den Summenabgleich gegen die im Report ausgewiesenen
+Beträge, **fragt nach dem, was noch fehlt** — Vorsorgeaufwendungen, Werbungskosten,
+anrechenbare Kapitalertragsteuer — und liefert am Ende HTML, PDF und die ELSTER-CSV. Du
+musst keine `steuerdaten.json` schreiben; Claude füllt die Vorlage aus dem Gespräch.
+
+**Eine einzelne Frage klären**
+
+> „Ich habe am 10.01.2023 BTC gekauft und am 10.01.2024 verkauft. Steuerfrei?"
+
+Nein — die Jahresfrist endet mit Ablauf des 10.01.2024, steuerfrei wäre erst der 11.01.
+Dafür braucht es keinen ganzen Report; das Plugin kennt die Regel.
+
+**Einen Broker anbinden, für den es noch kein Profil gibt**
+
+> 📎 *ertraegnisaufstellung-2025.pdf*
+>
+> „Baue mir ein Profil für diesen Broker."
+
+Claude erzeugt mit dem Wizard einen Entwurf, prüft ihn gegen den Report, löst die
+`TODO`-Stellen mit dir auf und legt ein Fixture für die Tests an.
+
+**Das Folgejahr**
+
+> 📎 *koinly-2025.pdf*
+>
+> „Wie letztes Jahr, aber für 2025 — den Verlustvortrag aus dem alten Report bitte
+> übernehmen."
+
+**Was du zurückbekommst.** Die Dateien aus dem Abschnitt „Was herauskommt", dazu die
+Kernzahlen im Klartext und — wichtiger — die **Warnungen**: knapp verfehlte Freigrenzen,
+fehlende Anschaffungshistorie, Haltefrist-Konflikte, ungeprüfte Profile. Wenn ein
+Summenabgleich scheitert, bricht der Lauf ab und Claude sagt es dir, statt eine plausible
+Zahl zu liefern. Diese Meldungen sind der eigentliche Wert des Plugins — nicht wegklicken.
+
+**Wo deine Daten liegen.** Die angehängten Dateien landen in Claudes Arbeitsumgebung und
+werden dort verarbeitet; das Plugin selbst schickt nichts an Dritte und reicht nichts bei
+ELSTER ein. Wenn dir das für echte Steuerunterlagen zu weit geht, ist der lokale Weg
+derselbe: Repository klonen, `python3 scripts/…` selbst ausführen — die Kommandos in diesem
+README sind vollständig.
+
 ### Einen neuen Broker anbinden
 
 Ein **Profil** beschreibt deklarativ, wie ein Report gelesen wird — Erkennungsmuster,

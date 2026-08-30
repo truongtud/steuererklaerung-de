@@ -59,6 +59,29 @@ steuerdaten.json ────────────────────┘
 Freigrenzen und Verlusttöpfe werden **einmal auf die Summe aller Quellen** angewandt, nicht
 je Report — § 23, § 22 Nr. 3 und § 20 Abs. 6 gelten personenbezogen über alle Broker.
 
+## So benutzt du es
+
+Die Skripte rufst du nicht selbst auf — das macht Claude. Du hängst deine Reports an und
+sagst, was du brauchst:
+
+> 📎 *koinly-2024.pdf, etoro-taxreport-2024.pdf*
+>
+> „Mach mir daraus die Steuererklärung 2024. Ledig, 9 % Kirchensteuer, Bruttoarbeitslohn
+> 78.500 €, Lohnsteuer 18.420 €. Aus 2023 habe ich noch 900 € § 23-Verlustvortrag."
+
+Claude liest die Reports, zeigt den Summenabgleich, fragt nach dem, was fehlt
+(Vorsorgeaufwendungen, Werbungskosten, anrechenbare KESt), und liefert HTML, PDF und die
+ELSTER-CSV. Eine `steuerdaten.json` musst du nicht schreiben — Claude füllt die Vorlage aus
+dem Gespräch. Voraussetzung ist aktivierte Code-Ausführung.
+
+Genauso gehen kleine Fragen („BTC am 10.01.2023 gekauft, am 10.01.2024 verkauft —
+steuerfrei?") und das Anbinden eines neuen Brokers („Baue mir ein Profil für diese
+Erträgnisaufstellung").
+
+Mit den Ergebnissen kommen die **Warnungen** — knapp verfehlte Freigrenzen, fehlende
+Anschaffungshistorie, Haltefrist-Konflikte, ungeprüfte Profile. Scheitert ein
+Summenabgleich, bricht der Lauf ab, statt eine plausible Zahl zu liefern.
+
 ## Wichtig
 
 **Keine Steuerberatung, keine verbindliche Berechnung.** Verbindlich rechnet ELSTER; die
