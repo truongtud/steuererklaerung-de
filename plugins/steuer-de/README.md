@@ -59,7 +59,7 @@ steuerdaten.json ────────────────────┘
 Freigrenzen und Verlusttöpfe werden **einmal auf die Summe aller Quellen** angewandt, nicht
 je Report — § 23, § 22 Nr. 3 und § 20 Abs. 6 gelten personenbezogen über alle Broker.
 
-## So benutzt du es
+## So verwendest du es
 
 Vier Slash-Befehle stehen nach der Installation bereit:
 

@@ -20,8 +20,8 @@ pro Broker gelten, Verlusttöpfe mit unterschiedlichen Regeln, Verlustvorträge 
 Genau das macht dieses Plugin. Es liest die Broker-Reports, rechnet Krypto nach
 FIFO/§ 23 EStG und die Kapitalerträge nach § 20/§ 32d, setzt daraus einen TaxReport über
 alle Anlagen zusammen, schätzt Einkommensteuer, Solidaritätszuschlag, Kirchensteuer und
-Abgeltungsteuer samt Nachzahlung oder Erstattung — und gibt am Ende ein **Feld-für-Feld-
-Mapping** aus, das man in „Mein ELSTER“ abtippt.
+Abgeltungsteuer samt Nachzahlung oder Erstattung — und gibt am Ende ein
+**Feld-für-Feld-Mapping** aus, das man in „Mein ELSTER“ abtippt.
 
 Was es **nicht** tut: bei ELSTER einreichen und deine Daten irgendwohin schicken. Alles
 läuft lokal, die Ausgabe sind Dateien auf deiner Platte.
@@ -90,7 +90,7 @@ prüfen, bliebe beides „steuerfrei“.
 
 **Schritt 4 — ausgeben.** `export_report.py` schreibt HTML, PDF und das ELSTER-Mapping.
 
-## So benutzt du es
+## So verwendest du es
 
 Die Kommandos oben und unten tippst du **nicht** selbst — das macht Claude. Du hängst deine
 Dateien an und sagst, was du willst. Voraussetzung ist nur, dass die Code-Ausführung

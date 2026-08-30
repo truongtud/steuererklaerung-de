@@ -7,9 +7,9 @@ export_report.py — Rendert einen TaxReport (taxreport.json) in:
 
 Grundregeln dieses Exporters:
   * Der Disclaimer steht in **jedem** Format — auch in den ELSTER-Dateien, aus denen
-    abgetippt wird (SKILL.md: „Diesen Hinweis nicht weglassen.").
+    abgetippt wird (SKILL.md: „Diesen Hinweis nicht weglassen.“).
   * Es wird gerendert, was im Report steht — kein festes Zeilen-Set, keine stillen
-    Auslassungen. Fehlende/kaputte Felder erzeugen „—", keinen Absturz.
+    Auslassungen. Fehlende/kaputte Felder erzeugen „—“, keinen Absturz.
   * Beträge in der CSV in deutscher Notation (Komma), damit deutsches Excel sie als
     Zahl und nicht als Text importiert.
 
@@ -317,7 +317,7 @@ footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
 
 <div class="note"><strong>Wichtige Hinweise</strong><ul>{disc_html}</ul></div>
 {hinweis_block}
-<footer>Erstellt mit dem Skill „Steuererklärung Deutschland" · keine Steuerberatung · Endkontrolle durch Steuerberater</footer>
+<footer>Erstellt mit dem Skill „Steuererklärung Deutschland“ · keine Steuerberatung · Endkontrolle durch Steuerberater</footer>
 </div></body></html>"""
 
 
@@ -351,7 +351,7 @@ def _finde_unicode_font() -> tuple[str, str] | None:
 class _Text:
     """Text für das PDF aufbereiten.
 
-    Mit eingebettetem Unicode-Font bleibt „Ayşe Öztürk" stehen. Ohne ihn muss auf
+    Mit eingebettetem Unicode-Font bleibt „Ayşe Öztürk“ stehen. Ohne ihn muss auf
     latin-1 reduziert werden — dann wird protokolliert, *welche* Zeichen ersetzt
     wurden, statt sie stillschweigend zu verstümmeln.
     """

@@ -610,7 +610,7 @@ def vorberechnete_quelle(netto, steuerpflichtig, vortrag="0.00", quelle="fifo"):
 def test_vorberechnete_quellen_werden_beim_zusammenfuehren_neu_gerechnet():
     """Zwei je Börse gerechnete FIFO-Läufe mit je 600 € sind zusammen 1.200 € und
     damit voll steuerpflichtig. Würden ihre vorberechneten Nullen addiert, wiese der
-    Report zugleich „Freigrenze überschritten: ja" und „steuerpflichtig 0,00 €" aus."""
+    Report zugleich „Freigrenze überschritten: ja“ und „steuerpflichtig 0,00 €“ aus."""
     p_sd_daten = dict(STEUERDATEN, anlage_so={})
     with tempfile.TemporaryDirectory() as tmp:
         p_sd = schreibe(os.path.join(tmp, "sd.json"), p_sd_daten)

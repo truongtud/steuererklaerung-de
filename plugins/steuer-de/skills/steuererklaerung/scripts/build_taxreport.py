@@ -121,10 +121,10 @@ KAP_ZEILEN_LABEL = {
 }
 
 # Anlage-KAP-Zeilen, die den BETRAG eines Verlustes aufnehmen. ELSTER erwartet dort
-# eine positive Zahl (die Zeilenbeschriftung lautet „Verluste …", das Minus steckt
+# eine positive Zahl (die Zeilenbeschriftung lautet „Verluste …“, das Minus steckt
 # schon im Wort). Eine Quelle, die ihre Verluste negativ druckt, darf deshalb nicht
 # unverändert ins Mapping durchgereicht werden: der Steuerpflichtige tippt sonst
-# „−450,00" in ein Feld, das die 450 € als Betrag will.
+# „−450,00“ in ein Feld, das die 450 € als Betrag will.
 KAP_ZEILEN_VERLUST = {"22", "23", "24", "25"}
 
 KAP_VERLUST_POSITIV_HINWEIS = (
@@ -590,7 +590,7 @@ def aggregiere_krypto(quellen: list, jahr: int, werte_jahr: int) -> dict:
         # Beträge nicht mehr addierbar: § 23 bildet je Person und Jahr EINEN Topf.
         # Gewinne und Verluste saldieren sich über alle Quellen, und die Freigrenze
         # entscheidet über den Saldo — sonst weist der Report zugleich
-        # „Freigrenze überschritten: ja" und „steuerpflichtig 0,00 €" aus.
+        # „Freigrenze überschritten: ja“ und „steuerpflichtig 0,00 €“ aus.
         neu_pflichtig = netto_gesamt if netto_gesamt >= fg else NULL
         neu_vortrag = -netto_gesamt if netto_gesamt < 0 else NULL
         if neu_pflichtig != steuerpflichtig or neu_vortrag != verlustvortrag:
@@ -676,13 +676,13 @@ def aggregiere_krypto(quellen: list, jahr: int, werte_jahr: int) -> dict:
 def normiere_kap_quelle(roh, herkunft: str = "kap-result") -> dict:
     """Prüft eine KAP-Quell-JSON gegen das Schema `kap` und normiert sie.
 
-    Contract: references/broker-profile.md → „Ausgabeschemata → `kap`".
+    Contract: references/broker-profile.md → „Ausgabeschemata → `kap`“.
 
     VORZEICHENREGEL — die beiden Blöcke folgen bewusst verschiedenen Konventionen:
 
     * `kap_zeilen` ist die **wörtliche Abschrift** dessen, was der Report druckt.
       Deutsche Steuerbescheinigungen drucken Verluste als positive Beträge (und
-      genau so will ELSTER sie in den „Verluste"-Zeilen haben). Diese Werte werden
+      genau so will ELSTER sie in den „Verluste“-Zeilen haben). Diese Werte werden
       deshalb UNVERÄNDERT durchgereicht — kein Vorzeichenwechsel, keine
       Vorzeichenwarnung, keine Plausibilisierung.
     * `kennzahlen` ist die **normierte, vorzeichenbehaftete** Fassung: Verluste
@@ -1228,7 +1228,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     # GRUNDANNAHME (siehe KAP_DAVON_ANNAHME_HINWEIS, steht auch im Report):
     # 'kapitalertraege' ist der SALDO der Anlage-KAP-Zeile 7 bzw. 18/19 und enthält
     # die Verluste der Zeilen 22–25 BEREITS. Die Zeilen 20–25 stehen im Formular
-    # unter derselben Überschrift „In den Zeilen 18 und 19 enthaltene …"; sie werden
+    # unter derselben Überschrift „In den Zeilen 18 und 19 enthaltene …“; sie werden
     # deshalb ALLE gleich behandelt — als davon-Zeilen, die nur den Verrechnungskreis
     # bestimmen und die Bemessungsgrundlage nicht ein zweites Mal mindern.
     #
@@ -1361,7 +1361,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     # REIHENFOLGE (wichtig): Zuerst greift die Freigrenze des § 23 Abs. 3 Satz 5 auf
     # den EIGENEN Jahressaldo — 'krypto_23_pflichtig' ist bereits das Ergebnis dieser
     # Prüfung —, erst danach der Verlustvortrag. Begründung: Die Freigrenze bezieht
-    # sich auf den „Gesamtgewinn" des Veranlagungszeitraums, also auf das Ergebnis des
+    # sich auf den „Gesamtgewinn“ des Veranlagungszeitraums, also auf das Ergebnis des
     # Jahres vor dem Verlustabzug aus anderen Jahren. Ein Jahr, dessen eigener Saldo
     # unter der Freigrenze bleibt, ist ohnehin in voller Höhe steuerfrei; es darf
     # deshalb auch nichts vom Vortrag verbrauchen — sonst ginge festgestelltes
@@ -1839,8 +1839,8 @@ MAPPING_TRENNER_TEXT = ("— ab hier nur Belege je Quelle: NICHT in ELSTER eintr
                         "(die einzutragenden Werte stehen oberhalb) —")
 
 # Genau eine Zeile je (Anlage, Zeile) trägt den Wert, der ins Formular gehört —
-# aber nur, wo 'zeile' EINE Formularzeile benennt. Bereichsangaben wie „Z. 41–47"
-# oder „Z. 31 ff." fassen mehrere Felder zusammen; dort sind mehrere Eingabewerte
+# aber nur, wo 'zeile' EINE Formularzeile benennt. Bereichsangaben wie „Z. 41–47“
+# oder „Z. 31 ff.“ fassen mehrere Felder zusammen; dort sind mehrere Eingabewerte
 # richtig und die Eindeutigkeit wäre eine falsche Zusage.
 def _einzelzeile(zeile) -> str | None:
     t = _ZEILE_NUMMER.match(str(zeile).strip())
@@ -2120,10 +2120,10 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
 
     # Rohzeilen der Bescheinigungen: genau das, was in ELSTER eingetippt wird.
     #
-    # Einzige Ausnahme vom „wörtlich durchreichen": die Verlustzeilen 22–25. Sie
+    # Einzige Ausnahme vom „wörtlich durchreichen“: die Verlustzeilen 22–25. Sie
     # nehmen den BETRAG des Verlustes auf, ELSTER erwartet dort eine positive Zahl.
     # Quellen drucken Verluste aber mal positiv (deutsche Steuerbescheinigung), mal
-    # negativ (eToro: „−450,00"). Unverändert durchgereicht stünde im Mapping die
+    # negativ (eToro: „−450,00“). Unverändert durchgereicht stünde im Mapping die
     # Anweisung, ein Minus in ein Betragsfeld zu tippen — je nachdem, ob ELSTER das
     # Zeichen verwirft oder den Verlust umdreht, kostet das den vollen
     # Verlustabzug. Die wörtliche Abschrift bleibt in anlagen.KAP.kap_zeilen stehen.

@@ -166,9 +166,10 @@ def _normalisieren(transactions, warnungen: list) -> list:
       die abgegebene Seite häufig negativ. Bleibt danach eine Menge <= 0, wird der
       Datensatz mit Warnung übersprungen (nie stillschweigend).
     * 'swap' wird in eine Sell-Leg (abgegebenes Asset) und eine Buy-Leg
-      (erhaltenes Asset) zerlegt. Die Tauschgebühr wird als Anschaffungs-
-      nebenkosten des erhaltenen Assets aktiviert und deshalb bei der Sell-Leg
-      NICHT nochmals als Werbungskosten abgezogen (keine Doppelerfassung).
+      (erhaltenes Asset) zerlegt. Die Tauschgebühr wird als
+      Anschaffungsnebenkosten des erhaltenen Assets aktiviert und deshalb bei
+      der Sell-Leg NICHT nochmals als Werbungskosten abgezogen (keine
+      Doppelerfassung).
     """
     if isinstance(transactions, dict) and "transactions" in transactions:
         transactions = transactions["transactions"]

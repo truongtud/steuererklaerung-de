@@ -148,7 +148,7 @@ im CSV-Block). Kein mitgeliefertes Profil braucht ihn.
 | `tabellen[].typen` | `{kanonisches Feld: "betrag"\|"menge"\|"ganzzahl"\|"datum"\|"text"}` — überschreibt die Typableitung aus dem Feldnamen (Standard: `*_date`/`timestamp` → Datum, `amount`/`counter_amount` → Menge, `*_eur` → Betrag, sonst Text) |
 | `tabellen[].suche` | `true` sucht das `zeile`-Muster irgendwo in der Zeile, statt es zu verankern. Nur wenn die Zeile einen variablen Vorspann hat — ein unverankertes Muster trifft leichter das Falsche |
 | `tabellen[].darf_leer_sein` | erlaubt 0 gelesene Zeilen (s. o.) |
-| `tabellen[].notiz_suffix` | Text, der an das `note`-Feld jeder Veräußerung angehängt wird (`koinly-de`: „Quelle: Koinly“) — macht im zusammengeführten Report sichtbar, aus welchem Tool eine Position stammt |
+| `tabellen[].notiz_suffix` | Text, der an das `note`-Feld jeder Veräußerung angehängt wird (`koinly-de`: `Quelle: Koinly`) — macht im zusammengeführten Report sichtbar, aus welchem Tool eine Position stammt |
 | `csv.ignoriere_asset` | Ticker (Großschreibung), deren Zeilen bewusst übersprungen werden; die Anzahl steht in den Warnungen. `bitpanda` schließt so EUR-Ein-/Auszahlungen aus, die steuerlich kein Vorgang sind |
 | `csv.darf_leer_sein` | wie `tabellen[].darf_leer_sein`, für den CSV-Zweig |
 | `werte[].typ` | `betrag` (Standard), `menge`, `ganzzahl`, `text` |
@@ -267,7 +267,7 @@ Vergleichspfade liefert die Engine unter `summen_basis`, u. a.
 { "label": "Anlage SO Z. 47 (§ 23)", "muster": [ … ],
   "vergleich": "paragraph_23.netto_ergebnis_eur",
   "optional": true,
-  "begruendung": "eToro ist in erster Linie Aktien-/CFD-Broker: enthaelt ein Depot keine privaten Veraeusserungsgeschaefte (kein Krypto-Spot), fehlt im Report der gesamte Anlage-SO-Block und damit auch jede Summenzeile dazu. …" }
+  "begruendung": "eToro ist in erster Linie Aktien-/CFD-Broker: enthält ein Depot keine privaten Veräußerungsgeschäfte (kein Krypto-Spot), fehlt im Report der gesamte Anlage-SO-Block und damit auch jede Summenzeile dazu. …" }
 ```
 
 `optional: true` lässt den Lauf ohne Vergleichswert durchgehen. Die `begruendung` ist

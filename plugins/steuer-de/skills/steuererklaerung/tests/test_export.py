@@ -269,7 +269,7 @@ def test_html_card_wert_escaped():
 @case
 def test_html_ist_self_contained():
     r = fixture()
-    # URL aus den Nutzdaten entfernen, damit „kein http" hier die *Datei* meint
+    # URL aus den Nutzdaten entfernen, damit „kein http“ hier die *Datei* meint
     r["elster_mapping"][4]["bezeichnung"] = "Kind 1"
     rc, outdir, _o, _e = _export(r, formats=("html",))
     eq(rc, 0)

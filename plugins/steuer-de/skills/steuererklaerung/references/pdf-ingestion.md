@@ -109,16 +109,17 @@ durch `krypto_fifo.py` schicken — die Kaufhistorie fehlt, die Kostenbasis wür
 
 ```bash
 python scripts/parse_koinly.py koinly_report.pdf   # -> koinly_report.krypto_result.json
-python scripts/parse_etoro.py  taxReport.pdf       # -> taxReport.kap_result.json
+python scripts/parse_etoro.py  etoro.pdf           # -> etoro.kap_result.json
 python scripts/build_taxreport.py steuerdaten.json \
-    --krypto-result koinly_report.krypto_result.json taxReport.kap_result.json \
-    --kap-result    taxReport.kap_result.json \
+    --krypto-result koinly_report.krypto_result.json etoro.kap_result.json \
+    --kap-result    etoro.kap_result.json \
     -o taxreport.json
 ```
 
 **Die eToro-Datei steht absichtlich in beiden Listen.** `parse_etoro.py` liefert seit dem
 Umbau auf die Profil-Engine das Ausgabeschema **`kap`** (Standardname
-`<pdf-name>.kap_result.json`), und diese eine Datei trägt **beide** Hälften: die
+`<pdf-name>.kap_result.json`; der eToro-Download heißt meist `taxReport.pdf` und ergäbe
+entsprechend `taxReport.kap_result.json`), und diese eine Datei trägt **beide** Hälften: die
 Anlage-KAP-Kennzahlen *und* das § 23-/§ 22-Ergebnis. `--krypto-result` liest nur die
 Krypto-Hälfte, `--kap-result` nur die KAP-Hälfte. Wird sie nur einer Liste übergeben,
 verschwindet die andere Hälfte — bei `--krypto-result` allein also sämtliche

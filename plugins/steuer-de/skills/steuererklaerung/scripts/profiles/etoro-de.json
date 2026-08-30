@@ -333,7 +333,7 @@
       "vergleich": "paragraph_23.netto_ergebnis_eur",
       "toleranz": "0.01",
       "optional": true,
-      "begruendung": "eToro ist in erster Linie Aktien-/CFD-Broker: enthaelt ein Depot keine privaten Veraeusserungsgeschaefte (kein Krypto-Spot), fehlt im Report der gesamte Anlage-SO-Block und damit auch jede Summenzeile dazu. Der Wert waere dann korrekt 0,00 EUR, ohne dass es etwas gegenzupruefen gibt. Der verbindliche Abgleich dieses Profils ist die Summe der Kapitalertraege (Anlage KAP); dieser Eintrag bleibt als 'OHNE GEGENPRUEFUNG' im Abgleichsbericht sichtbar."
+      "begruendung": "eToro ist in erster Linie Aktien-/CFD-Broker: enthält ein Depot keine privaten Veräußerungsgeschäfte (kein Krypto-Spot), fehlt im Report der gesamte Anlage-SO-Block und damit auch jede Summenzeile dazu. Der Wert wäre dann korrekt 0,00 EUR, ohne dass es etwas gegenzuprüfen gibt. Der verbindliche Abgleich dieses Profils ist die Summe der Kapitalerträge (Anlage KAP); dieser Eintrag bleibt als 'OHNE GEGENPRÜFUNG' im Abgleichsbericht sichtbar."
     }
   ],
   "elster": [

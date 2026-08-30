@@ -231,11 +231,12 @@ def test_positives_vorzeichen_bei_verlusten_wird_gemeldet_aber_richtig_gerechnet
 @case
 def test_gewinn_termingeschaefte_ist_eine_davon_zeile():
     """Anlage KAP Z. 20–25 stehen unter der Überschrift „In den Zeilen 18 und 19
-    enthaltene …" bzw. „In Zeile 7 enthaltene …". Zeile 21 weist die Termin-
-    geschäftsgewinne also nur ihrem Verrechnungskreis zu; sie sind im Gesamtbetrag
-    bereits enthalten. Die Regel, die hier gilt: die Davon-Zeile ändert die
-    Bemessungsgrundlage NICHT — sonst würde jeder Gewinn, den eine Steuer-
-    bescheinigung ohnehin schon in Zeile 7 ausweist, ein zweites Mal versteuert.
+    enthaltene …“ bzw. „In Zeile 7 enthaltene …“. Zeile 21 weist die
+    Termingeschäftsgewinne also nur ihrem Verrechnungskreis zu; sie sind im
+    Gesamtbetrag bereits enthalten. Die Regel, die hier gilt: die Davon-Zeile
+    ändert die Bemessungsgrundlage NICHT — sonst würde jeder Gewinn, den eine
+    Steuerbescheinigung ohnehin schon in Zeile 7 ausweist, ein zweites Mal
+    versteuert.
     """
     ohne = kap_block(bau(steuerdaten(), [kap_quelle(kapitalertraege="5000.00")]))
     mit = kap_block(bau(steuerdaten(), [kap_quelle(
@@ -441,7 +442,7 @@ def test_neue_kennzahlen_lassen_sich_auch_von_hand_tippen():
     eq(k["fiktive_quellensteuer"], "50.00")
     # DIE REGEL, nicht die Arithmetik: Z. 21 (Gewinn), Z. 22 und Z. 25 (Verluste)
     # stehen im Formular unter EINER Überschrift („In den Zeilen 18 und 19
-    # enthaltene …"). Sie werden deshalb alle gleich behandelt — keine von ihnen
+    # enthaltene …“). Sie werden deshalb alle gleich behandelt — keine von ihnen
     # verschiebt die Bemessungsgrundlage. 'kapitalertraege' ist der Saldo, der die
     # 300 € und die 200 € bereits enthält; ein zweiter Abzug wäre eine doppelte
     # Berücksichtigung desselben Verlustes.
@@ -1221,8 +1222,8 @@ def test_cli_meldet_fehlende_datei_und_kaputtes_json():
 
 
 # ── Zeilen 20–25: EINE Überschrift, EINE Behandlung ──────────────────────────
-# Im Formular stehen alle sechs Zeilen unter „In den Zeilen 18 und 19 enthaltene …"
-# (bzw. „In Zeile 7 enthaltene …"). Der Report legt sie deshalb als davon-Zeilen
+# Im Formular stehen alle sechs Zeilen unter „In den Zeilen 18 und 19 enthaltene …“
+# (bzw. „In Zeile 7 enthaltene …“). Der Report legt sie deshalb als davon-Zeilen
 # aus: 'kapitalertraege' ist der Saldo, der sie bereits enthält. Diese Auslegung
 # entscheidet über tausende Euro Abgeltungsteuer — sie wird hier als REGEL geprüft.
 
@@ -1364,7 +1365,7 @@ def test_abgeleitete_verlustzeile_ist_immer_positiv():
 
 @case
 def test_zeile_20_hat_eine_eigene_bezeichnung():
-    """Ohne Label rendert Z. 20 als generisches „Betrag laut Bescheinigung"."""
+    """Ohne Label rendert Z. 20 als generisches „Betrag laut Bescheinigung“."""
     q = kap_quelle(quelle="eToro", kapitalertraege="2000.00", gewinn_aktien="800.00",
                    kap_zeilen={"19": "2000.00", "20": "800.00"})
     r = bau(steuerdaten(), [q])
@@ -1433,7 +1434,7 @@ def test_keine_negative_verlustzeile_irgendwo_im_mapping():
 @case
 def test_genau_eine_einzutragende_zeile_je_formularzeile():
     """Wer das Mapping von oben abtippt, darf nie zwischen zwei Beträgen für
-    dasselbe Feld wählen müssen. Bereichsangaben („Z. 41–47") sind ausgenommen:
+    dasselbe Feld wählen müssen. Bereichsangaben („Z. 41–47“) sind ausgenommen:
     dort stehen mehrere Felder hinter einer Angabe."""
     r = _bau_beide()
     zaehler: dict = {}
