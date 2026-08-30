@@ -11,8 +11,8 @@ Anlagen, rechnet Krypto nach FIFO/§ 23 EStG, schätzt Einkommensteuer (§ 32a),
 Solidaritätszuschlag, Kirchensteuer und Abgeltungsteuer, rechnet einbehaltene Steuern an
 und exportiert **HTML**, **PDF** und ein **ELSTER-Feld-Mapping**.
 
-> **Keine Steuerberatung.** Das Skill erzeugt eine Arbeitsgrundlage. Die verbindliche
-> Berechnung liefert ELSTER, die Endkontrolle gehört zum Steuerberater. Diesen Hinweis im
+> **Keine Steuerberatung.** Der Skill erzeugt eine Arbeitsgrundlage. Die verbindliche
+> Berechnung liefert ELSTER, die Endkontrolle gehört in die Hände des Steuerberaters. Diesen Hinweis im
 > Ergebnis **immer** mitgeben.
 
 ## Pipeline
@@ -253,6 +253,6 @@ falsch abgeschriebene Konstanten, die Kontrakt-Tests auseinanderlaufende Schlüs
 Höchstbetragsberechnung Vorsorgeaufwand (**größte Vereinfachung** — die Schätzung fällt
 dadurch zu niedrig aus), zumutbare Belastung bei agB, Günstigerprüfung (KAP/Kind),
 Progressionsvorbehalt, Gewerbesteueranrechnung, Vorauszahlungen, wallet-bezogenes FIFO.
-Diese überlässt das Skill ELSTER bzw. dem Steuerberater. Eine automatische
+Diese überlässt der Skill ELSTER bzw. dem Steuerberater. Eine automatische
 ELSTER-Einreichung erfolgt **nicht** — ausgegeben wird ein Feld-Mapping zur manuellen
 Eingabe.

@@ -21,10 +21,10 @@ Genau das macht dieses Plugin. Es liest die Broker-Reports, rechnet Krypto nach
 FIFO/§ 23 EStG und die Kapitalerträge nach § 20/§ 32d, setzt daraus einen TaxReport über
 alle Anlagen zusammen, schätzt Einkommensteuer, Solidaritätszuschlag, Kirchensteuer und
 Abgeltungsteuer samt Nachzahlung oder Erstattung — und gibt am Ende ein **Feld-für-Feld-
-Mapping** aus, das man in „Mein ELSTER" abtippt.
+Mapping** aus, das man in „Mein ELSTER“ abtippt.
 
-Was es **nicht** tut: bei ELSTER einreichen, und deine Daten irgendwohin schicken. Alles
-läuft lokal, Ausgabe sind Dateien auf deiner Platte.
+Was es **nicht** tut: bei ELSTER einreichen und deine Daten irgendwohin schicken. Alles
+läuft lokal, die Ausgabe sind Dateien auf deiner Platte.
 
 Veranlagungszeiträume **2022 bis 2026**. Nur deutsches Steuerrecht.
 
@@ -40,7 +40,7 @@ Veranlagungszeiträume **2022 bis 2026**. Nur deutsches Steuerrecht.
 | **`steuerdaten.json`** | von Hand, Vorlage liegt bei | Lohn, Werbungskosten, Vorsorge, Kapitalerträge, Kinder, Verlustvorträge |
 | **Lohnsteuerbescheinigung** | Arbeitgeber (PDF) | wird gelesen, die vier Kennziffern werden nach `steuerdaten.json` übertragen |
 
-Neue Broker sind **eine JSON-Datei**, kein neues Skript — siehe „Wie es funktioniert".
+Neue Broker sind **eine JSON-Datei**, kein neues Skript — siehe „Wie es funktioniert“.
 
 ## Was herauskommt
 
@@ -86,7 +86,7 @@ diesen Schritt nicht noch einmal — deren FIFO ist bereits wallet-übergreifend
 und nur hier — werden die Freigrenzen angewandt und die Verlusttöpfe verrechnet, weil § 23,
 § 22 Nr. 3 und § 20 Abs. 6 **personenbezogen über alle Broker** gelten. Zwei Reports mit je
 800 € sind zusammen 1.600 € und damit voll steuerpflichtig; würde jeder Parser für sich
-prüfen, bliebe beides „steuerfrei".
+prüfen, bliebe beides „steuerfrei“.
 
 **Schritt 4 — ausgeben.** `export_report.py` schreibt HTML, PDF und das ELSTER-Mapping.
 
@@ -101,7 +101,7 @@ Dateien zurück (bzw. legt sie in einen verbundenen Ordner, wenn du einen freige
 
 Vier Befehle stehen nach der Installation im `/`-Menü. Sie sind der direkte Weg, wenn du
 weißt, was du willst — sonst reicht es, dein Anliegen normal zu beschreiben, dann meldet
-sich das Skill von selbst.
+sich der Skill von selbst.
 
 | Befehl | Wofür |
 |---|---|
@@ -112,7 +112,7 @@ sich das Skill von selbst.
 
 Falls ein Name schon belegt ist, funktioniert immer die lange Form, etwa
 `/steuer-de:steuererklaerung`. Die Befehle starten nur, wenn **du** sie aufrufst
-— Claude löst sie nicht von sich aus aus.
+— Claude startet sie nicht von sich aus.
 
 **Ein Steuerjahr durchrechnen**
 
@@ -120,7 +120,7 @@ Falls ein Name schon belegt ist, funktioniert immer die lange Form, etwa
 >
 > „Mach mir daraus die Steuererklärung 2024. Ledig, 9 % Kirchensteuer, keine Kinder.
 > Bruttoarbeitslohn 78.500 €, Lohnsteuer 18.420 €, Kirchensteuer 1.658 €. Aus 2023 habe ich
-> noch 900 € § 23-Verlustvortrag."
+> noch 900 € § 23-Verlustvortrag.“
 
 Claude liest beide Reports, zeigt dir den Summenabgleich gegen die im Report ausgewiesenen
 Beträge, **fragt nach dem, was noch fehlt** — Vorsorgeaufwendungen, Werbungskosten,
@@ -129,7 +129,7 @@ musst keine `steuerdaten.json` schreiben; Claude füllt die Vorlage aus dem Gesp
 
 **Eine einzelne Frage klären**
 
-> „Ich habe am 10.01.2023 BTC gekauft und am 10.01.2024 verkauft. Steuerfrei?"
+> „Ich habe am 10.01.2023 BTC gekauft und am 10.01.2024 verkauft. Steuerfrei?“
 
 Nein — die Jahresfrist endet mit Ablauf des 10.01.2024, steuerfrei wäre erst der 11.01.
 Dafür braucht es keinen ganzen Report; das Plugin kennt die Regel.
@@ -138,7 +138,7 @@ Dafür braucht es keinen ganzen Report; das Plugin kennt die Regel.
 
 > 📎 *ertraegnisaufstellung-2025.pdf*
 >
-> „Baue mir ein Profil für diesen Broker."
+> „Baue mir ein Profil für diesen Broker.“
 
 Claude erzeugt mit dem Wizard einen Entwurf, prüft ihn gegen den Report, löst die
 `TODO`-Stellen mit dir auf und legt ein Fixture für die Tests an.
@@ -148,9 +148,9 @@ Claude erzeugt mit dem Wizard einen Entwurf, prüft ihn gegen den Report, löst 
 > 📎 *koinly-2025.pdf*
 >
 > „Wie letztes Jahr, aber für 2025 — den Verlustvortrag aus dem alten Report bitte
-> übernehmen."
+> übernehmen.“
 
-**Was du zurückbekommst.** Die Dateien aus dem Abschnitt „Was herauskommt", dazu die
+**Was du zurückbekommst.** Die Dateien aus dem Abschnitt „Was herauskommt“, dazu die
 Kernzahlen im Klartext und — wichtiger — die **Warnungen**: knapp verfehlte Freigrenzen,
 fehlende Anschaffungshistorie, Haltefrist-Konflikte, ungeprüfte Profile. Wenn ein
 Summenabgleich scheitert, bricht der Lauf ab und Claude sagt es dir, statt eine plausible
@@ -179,11 +179,11 @@ so tun, als sei die Anbindung fertig. Details: `references/broker-profile.md`.
 
 ---
 
-## Bevor du es benutzt — bitte einmal lesen
+## Was du vorher wissen solltest
 
 **Das ist keine Steuerberatung und keine verbindliche Berechnung.** Verbindlich rechnet
-ELSTER; die Endkontrolle gehört zu einem Steuerberater. Darüber hinaus vier konkrete
-Punkte, die du kennen solltest, bevor du einer Zahl aus diesem Plugin glaubst:
+ELSTER; die Endkontrolle gehört in die Hände eines Steuerberaters. Darüber hinaus vier
+konkrete Punkte, die du kennen solltest, bevor du einer Zahl aus diesem Plugin glaubst:
 
 1. **Die Steuerschätzung fällt systematisch zu niedrig aus.** Vorsorgeaufwendungen werden
    in voller Höhe abgezogen — die Höchstbetragsberechnung nach § 10 Abs. 3/4 EStG ist
@@ -196,7 +196,7 @@ Punkte, die du kennen solltest, bevor du einer Zahl aus diesem Plugin glaubst:
    erwarte einen Startpunkt, keine fertige Anbindung.
 3. **Bei Kapitalerträgen gilt eine Annahme, die du prüfen musst.** Das Plugin liest
    `kapitalertraege` als den **Saldo**, der die Verluste der Anlage-KAP-Zeilen 22–25 bereits
-   enthält — so, wie die Zeilenüberschrift „In den Zeilen 18 und 19 enthaltene …" es nahelegt.
+   enthält — so, wie die Zeilenüberschrift „In den Zeilen 18 und 19 enthaltene …“ es nahelegt.
    Weist deine Bescheinigung stattdessen einen Bruttobetrag aus, musst du vorher saldieren,
    sonst wird zu wenig Steuer ausgewiesen. Der Report stellt diesen Hinweis an den Anfang.
 4. **Die Krypto-Berechnung ist nur so gut wie die Eingabedaten.** Fehlt eine Anschaffung in
@@ -220,7 +220,7 @@ Netz. Ohne `docling` braucht das Plugin überhaupt keine Netzverbindung.
 /plugin install steuer-de@steuer-de
 ```
 
-Danach löst das Skill automatisch aus, sobald es um Steuererklärung, Einkommensteuer,
+Danach löst der Skill automatisch aus, sobald es um Steuererklärung, Einkommensteuer,
 Krypto-Steuer, ELSTER, Anlage N/KAP/SO/V, Freigrenze, Termingeschäfte oder Verlustvortrag
 geht.
 
@@ -232,7 +232,7 @@ Zum Ausprobieren oder Weiterentwickeln geht es auch ohne GitHub — geklont oder
 ```
 
 Voraussetzung ist eine Python-3.10-Umgebung mit aktivierter Code-Ausführung. Für den
-PDF-Export zusätzlich `fpdf2`, für PDF-Import `pdfplumber`/`pymupdf`, für gescannte PDFs
+PDF-Export zusätzlich `fpdf2`, für den PDF-Import `pdfplumber`/`pymupdf`, für gescannte PDFs
 Tesseract mit deutschem Sprachpaket — die SKILL.md nennt die genauen Kommandos.
 
 ## Was es rechnet
@@ -248,7 +248,7 @@ Tesseract mit deutschem Sprachpaket — die SKILL.md nennt die genauen Kommandos
 ## Wie es aufgebaut ist
 
 Das Repository ist ein **Marketplace** mit einem Plugin darin. Das Plugin bündelt fünf
-Skills: das Hauptskill mit der ganzen Logik und vier schlanke Einstiege, die es aufrufen.
+Skills: den Hauptskill mit der ganzen Logik und vier schlanke Einstiege, die ihn aufrufen.
 
 ```
 steuererklaerung-de/                        das Repository (= der Marketplace)
@@ -257,16 +257,16 @@ steuererklaerung-de/                        das Repository (= der Marketplace)
 └── plugins/steuer-de/                      das Plugin
     ├── .claude-plugin/plugin.json          Name, Version, Autor, Lizenz
     └── skills/
-        ├── steuererklaerung/               ← das Hauptskill, alles Weitere unten
+        ├── steuererklaerung/               ← der Hauptskill, alles Weitere unten
         ├── krypto-check/                   Einzelfrage ohne kompletten Report
         ├── broker-profil/                  neuen Broker anbinden
         └── steuer-pruefen/                 fertigen Report gegenprüfen
 ```
 
-Die vier Einstiege sind bewusst dünn: sie laden das Hauptskill und ergänzen nur ihre eigene
+Die vier Einstiege sind bewusst dünn: sie laden den Hauptskill und ergänzen nur ihre eigene
 Schrittfolge. Zwei Beschreibungen desselben Ablaufs würden auseinanderlaufen.
 
-Das Hauptskill:
+Der Hauptskill:
 
 ```
 skills/steuererklaerung/
@@ -294,9 +294,9 @@ Zwei Konstruktionsprinzipien, die den Unterschied machen:
 
 **Bei unlesbarer Eingabe wird abgebrochen, nie still 0 angenommen.** In einer
 Steuerberechnung ist ein stiller Nullwert die teuerste Fehlerart — nichts danach fällt noch
-auf. Deshalb wirft der gemeinsame Zahlenparser, statt zu raten; ein Tausch ohne
+auf. Deshalb wirft der gemeinsame Zahlenparser einen Fehler, statt zu raten; ein Tausch ohne
 EUR-Marktwert bricht ab, statt als Null durchzulaufen; und unbekannte Feldnamen in den
-Eingabedaten werden gemeldet („meintest du …?") statt ignoriert.
+Eingabedaten werden gemeldet („meintest du …?“) statt ignoriert.
 
 **Jeder profilgesteuerte Import wird gegen die Summe geprüft, die der Report selbst
 ausweist.** Weicht sie ab — oder findet das Summenmuster gar nichts — bricht der Lauf ab
