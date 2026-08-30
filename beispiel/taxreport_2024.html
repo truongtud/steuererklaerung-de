@@ -1,0 +1,79 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaxReport 2024 — Beispiel Muster</title>
+<style>
+:root{color-scheme:dark light;
+--bg:#0b0f17;--panel:#131a26;--panel2:#1a2436;--line:#243044;
+--txt:#e6edf6;--mut:#8aa0bd;--acc:#4da3ff;--good:#3fd17a;--bad:#ff6b6b;--warn:#ffb454;}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;
+background:var(--bg);color:var(--txt);line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
+header{display:flex;justify-content:space-between;align-items:flex-end;
+border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+h1{font-size:24px;margin:0}h2{font-size:17px;margin:28px 0 12px;color:var(--acc)}
+.muted{color:var(--mut);font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:18px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card .lbl{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.card .val{font-size:22px;font-weight:600;margin-top:6px}
+.card .sub{color:var(--mut);font-size:12px;margin-top:4px}
+table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase}
+td:last-child,th:last-child{text-align:right}
+tr.sum td{font-weight:700;border-top:2px solid var(--line);background:var(--panel2)}
+.badge{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.tax{background:rgba(255,107,107,.15);color:var(--bad)}
+.badge.free{background:rgba(63,209,122,.15);color:var(--good)}
+.note{background:var(--panel);border-left:3px solid var(--warn);padding:12px 16px;
+border-radius:8px;margin:16px 0;font-size:13px;color:var(--mut)}
+.note ul{margin:6px 0 0;padding-left:18px}
+footer{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}
+@media print{
+  :root{color-scheme:light;--bg:#fff;--panel:#fff;--panel2:#f2f4f8;--line:#9aa4b2;
+  --txt:#000;--mut:#333;--acc:#000;--good:#065f36;--bad:#8a1414;--warn:#7a4b00;}
+  body{background:#fff;color:#000;font-size:11pt}
+  .wrap{max-width:none;padding:0}
+  h2{color:#000;border-bottom:1px solid #000;padding-bottom:2px}
+  .muted,.card .lbl,.card .sub,.note{color:#333}
+  .card{border:1px solid #9aa4b2;break-inside:avoid}
+  table,.note{border:1px solid #9aa4b2}
+  th{color:#000;background:#f2f4f8}
+  th,td{border-bottom:1px solid #9aa4b2}
+  tr,li{break-inside:avoid}
+  thead{display:table-header-group}
+  .badge{border:1px solid #333;background:none !important}
+  .badge.tax{color:#8a1414}.badge.free{color:#065f36}
+  footer{color:#333}
+}
+</style></head><body><div class="wrap">
+<header><div><h1>Steuererklärung 2024</h1>
+<div class="muted">Beispiel Muster · Einzelveranlagung · erstellt 2026-08-30</div></div>
+<div class="muted">TaxReport · alle Anlagen + Krypto</div></header>
+
+<div class="cards">
+<div class="card"><div class="lbl">Zu versteuerndes Einkommen</div><div class="val">65.162,00 €</div></div>
+<div class="card"><div class="lbl">Einkommensteuer (Schätzung)</div><div class="val">16.736,00 €</div><div class="sub">Grundtarif</div></div>
+<div class="card"><div class="lbl">Krypto § 23 steuerpflichtig</div><div class="val">582,00 €</div><div class="sub">nach Freigrenze</div></div>
+<div class="card"><div class="lbl">Krypto steuerfrei (&gt; 1 J.)</div><div class="val">10.759,00 €</div></div>
+</div>
+
+<h2>Einkünfte nach Anlagen</h2>
+<table><tr><th>Anlage</th><th>Einkünfte / Betrag</th></tr><tr><td>Anlage N — Nichtselbständige Arbeit</td><td>76.200,00 €</td></tr><tr><td>Anlage KAP — Kapitalerträge (nicht in der Summe — Abgeltungsteuer)</td><td>850,00 €</td></tr><tr><td>Anlage SO — Sonstige Einkünfte (Krypto)</td><td>1.282,00 €</td></tr><tr class="sum"><td>Summe der Einkünfte (ohne Anlage KAP)</td><td>77.482,00 €</td></tr></table>
+
+<h2>Krypto — Private Veräußerungsgeschäfte (§ 23 EStG)</h2>
+<div class="cards">
+<div class="card"><div class="lbl">Netto-Ergebnis § 23</div><div class="val">1.482,00 €</div></div>
+<div class="card"><div class="lbl">Freigrenze</div><div class="val">1.000,00 €</div><div class="sub">überschritten: ja</div></div>
+<div class="card"><div class="lbl">Staking § 22 Nr. 3</div><div class="val">700,00 €</div><div class="sub">Zufluss 700,00 €</div></div>
+
+</div>
+<table><tr><th>Asset</th><th>Menge</th><th>Anschaffung</th><th>Veräußerung</th><th>Haltedauer</th><th>Gewinn/Verlust</th><th>Status</th></tr><tr><td>BTC</td><td>0.4</td><td>2022-05-10</td><td>2024-03-15</td><td>675 T</td><td>10.759,00 €</td><td><span class="badge free">steuerfrei</span></td></tr><tr><td>ETH</td><td>1.5</td><td>2024-01-10</td><td>2024-08-01</td><td>204 T</td><td>1.482,00 €</td><td><span class="badge tax">steuerpfl.</span></td></tr></table>
+
+<h2>ELSTER-Feld-Mapping (manuelle Eingabe)</h2>
+<table><tr><th>Anlage</th><th>Zeile</th><th>Bezeichnung</th><th>Wert</th></tr><tr><td>Hauptvordruck</td><td>—</td><td>Steuerjahr</td><td>2024</td></tr><tr><td>Hauptvordruck</td><td>Z. 8</td><td>Name</td><td>Beispiel Muster</td></tr><tr><td>Anlage N</td><td>Z. 6</td><td>Bruttoarbeitslohn (lt. Lohnsteuerbescheinigung Nr. 3)</td><td>78500.00</td></tr><tr><td>Anlage N</td><td>Z. 7</td><td>Einbehaltene Lohnsteuer</td><td>18420.00</td></tr><tr><td>Anlage N</td><td>Z. 8</td><td>Solidaritätszuschlag</td><td>0.00</td></tr><tr><td>Anlage N</td><td>Z. 9</td><td>Einbehaltene Kirchensteuer</td><td>1658.00</td></tr><tr><td>Anlage N</td><td>Z. 31 ff.</td><td>Werbungskosten (Summe)</td><td>2300.00</td></tr><tr><td>Anlage KAP</td><td>Z. 7</td><td>Kapitalerträge (ohne Steuerabzug bzw. lt. Steuerbescheinigung)</td><td>850.00</td></tr><tr><td>Anlage KAP</td><td>Z. 16/17</td><td>Sparer-Pauschbetrag (Antrag)</td><td>1000</td></tr><tr><td>Anlage KAP</td><td>Z. 37</td><td>Anrechenbare Kapitalertragsteuer</td><td>212.50</td></tr><tr><td>Anlage KAP</td><td>Z. 38</td><td>Einbehaltener Solidaritätszuschlag (Kapitalerträge)</td><td>11.68</td></tr><tr><td>Anlage SO</td><td>Z. 41–47</td><td>Private Veräußerungsgeschäfte § 23 — Gewinn/Verlust</td><td>1482.00</td></tr><tr><td>Anlage SO</td><td>Z. 41–47</td><td>davon steuerpflichtig (Freigrenze einmalig geprüft)</td><td>1482.00</td></tr><tr><td>Anlage SO</td><td>Z. 54–59</td><td>Festgestellter Verlustvortrag § 23 aus Vorjahren (Antrag auf Verrechnung)</td><td>900.00</td></tr><tr><td>Anlage SO</td><td>Z. 54–59</td><td>davon mit § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG)</td><td>900.00</td></tr><tr><td>Anlage SO</td><td>Z. 54–59</td><td>verbleibender Verlustvortrag § 23 aus Vorjahren (Feststellung fortschreiben)</td><td>0.00</td></tr><tr><td>Anlage SO</td><td>Z. 10–13</td><td>Leistungen § 22 Nr. 3 (Staking/Lending u. a., Freigrenze 256 € auf die Gesamtsumme)</td><td>700.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Rentenversicherung</td><td>7300.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Krankenversicherung</td><td>3200.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Pflegeversicherung</td><td>550.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Arbeitslosenversicherung</td><td>1030.00</td></tr><tr><td>Anlage Sonderausgaben</td><td>Z. 5–12</td><td>Spenden</td><td>240.00</td></tr></table>
+
+<div class="note"><strong>Wichtige Hinweise</strong><ul><li>Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung.</li><li>Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Günstigerprüfung, kein Progressionsvorbehalt, keine Kinderfreibeträge im Tarif, keine Vorauszahlungen).</li><li>GRÖSSTE VEREINFACHUNG: Vorsorgeaufwendungen werden hier in voller Höhe abgezogen — die Höchstbetragsberechnung nach § 10 Abs. 3 und 4 EStG (Deckelung der Altersvorsorgeaufwendungen, eigener Höchstbetrag für Kranken-/Pflege- und übrige sonstige Vorsorgeaufwendungen, Kürzung um den Arbeitgeberanteil) ist NICHT umgesetzt. Tatsächlich abziehbar ist regelmäßig deutlich weniger; das zu versteuernde Einkommen ist damit hier zu niedrig und die ausgewiesene Steuer ZU NIEDRIG (bzw. eine Erstattung zu hoch). Bei nennenswerten Vorsorgeaufwendungen ist die Abweichung die mit Abstand größte Fehlerquelle dieser Schätzung.</li><li>Zeilennummern sind Orientierung — ELSTER ändert die Layouts jährlich. Jede Zeile vor dem Absenden im Formular gegenprüfen.</li><li>Krypto-Endkontrolle durch Steuerberater und Abgleich mit der ELSTER-Berechnung vor Einreichung.</li><li>§ 23-Verlustvortrag aus Vorjahren: 900,00 € von 900,00 € wurden mit den § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG). Der verbrauchte Betrag muss in Anlage SO beantragt werden und steht künftig nicht mehr zur Verfügung.</li></ul></div>
+<div class="note"><strong>Weitere Hinweise</strong><ul><li>§ 20 Abs. 6 Sätze 5 und 6 EStG (eigener Verrechnungskreis und 20.000-€-Deckel für Termingeschäfte) wurden durch das Jahressteuergesetz 2024 aufgehoben — anwendbar in allen offenen Fällen. Verluste aus Termingeschäften sind daher mit sämtlichen Kapitalerträgen verrechenbar; beschränkt bleibt nur der Aktien-Verlusttopf (§ 20 Abs. 6 Satz 4 EStG).</li><li>Alle Kennzahlen betreffen ausschließlich das Steuerjahr; die Vorjahres-Historie geht nur in das FIFO ein (siehe alle_veraeusserungen).</li><li>Freigrenze (kein Freibetrag): bei Überschreiten ist der GESAMTE § 23-Gewinn steuerpflichtig.</li><li>Coins &gt; 1 Jahr gehalten sind steuerfrei (§ 23 Abs. 1 Nr. 2 EStG); die Jahresfrist endet taggenau nach § 108 AO / § 188 BGB.</li><li>Staking/Lending: Zufluss als sonstige Leistung § 22 Nr. 3, Freigrenze 256 €.</li><li>Krypto-zu-Krypto-Tausch = Veräußerung des abgegebenen Coins zum EUR-Marktwert; die Tauschgebühr wird als Anschaffungsnebenkosten des erhaltenen Coins aktiviert.</li><li>Endkontrolle durch Steuerberater — dies ist keine Steuerberatung.</li><li>§ 23-Verlustvortrag aus Vorjahren (900,00 €): 900,00 € wurden mit den steuerpflichtigen § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG), 0,00 € bleiben vortragsfähig.</li></ul></div>
+<footer>Erstellt mit dem Skill „Steuererklärung Deutschland“ · keine Steuerberatung · Endkontrolle durch Steuerberater</footer>
+</div></body></html>

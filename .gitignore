@@ -9,6 +9,10 @@ arbeit/
 steuerdaten.json
 transactions.json
 taxreport.json
+# Ausnahme: das synthetische Beispiel (erfundene Daten, siehe beispiel/README.md)
+!beispiel/steuerdaten.json
+!beispiel/transactions.json
+!beispiel/taxreport.json
 *.krypto_result.json
 *.kap_result.json
 *.transactions.json

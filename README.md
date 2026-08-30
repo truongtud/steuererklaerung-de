@@ -60,6 +60,9 @@ In der ELSTER-CSV steht **pro Formularzeile genau eine einzutragende Zahl**. Dar
 trennt eine Zeile die Belege je Quelle ab, die ausdrücklich *nicht* eingetragen werden —
 sonst tippt man denselben Betrag zweimal.
 
+Ein vollständiger Durchlauf mit synthetischen Daten — Eingaben, alle Ausgaben und die
+Kommandos zum Selbst-Erzeugen — liegt in [`beispiel/`](beispiel/).
+
 ## Wie es funktioniert
 
 ```

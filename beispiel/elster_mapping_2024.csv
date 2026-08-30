@@ -1,0 +1,39 @@
+﻿# ELSTER-Feld-Mapping Steuerjahr 2024 - manuelle Eingabe in Mein ELSTER
+# Hinweis: Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung.
+# Hinweis: Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Günstigerprüfung, kein Progressionsvorbehalt, keine Kinderfreibeträge im Tarif, keine Vorauszahlungen).
+"# Hinweis: GRÖSSTE VEREINFACHUNG: Vorsorgeaufwendungen werden hier in voller Höhe abgezogen — die Höchstbetragsberechnung nach § 10 Abs. 3 und 4 EStG (Deckelung der Altersvorsorgeaufwendungen, eigener Höchstbetrag für Kranken-/Pflege- und übrige sonstige Vorsorgeaufwendungen, Kürzung um den Arbeitgeberanteil) ist NICHT umgesetzt. Tatsächlich abziehbar ist regelmäßig deutlich weniger; das zu versteuernde Einkommen ist damit hier zu niedrig und die ausgewiesene Steuer ZU NIEDRIG (bzw. eine Erstattung zu hoch). Bei nennenswerten Vorsorgeaufwendungen ist die Abweichung die mit Abstand größte Fehlerquelle dieser Schätzung."
+# Hinweis: Zeilennummern sind Orientierung — ELSTER ändert die Layouts jährlich. Jede Zeile vor dem Absenden im Formular gegenprüfen.
+# Hinweis: Krypto-Endkontrolle durch Steuerberater und Abgleich mit der ELSTER-Berechnung vor Einreichung.
+# Hinweis: § 23-Verlustvortrag aus Vorjahren: 900,00 € von 900,00 € wurden mit den § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG). Der verbrauchte Betrag muss in Anlage SO beantragt werden und steht künftig nicht mehr zur Verfügung.
+"# Hinweis: § 20 Abs. 6 Sätze 5 und 6 EStG (eigener Verrechnungskreis und 20.000-€-Deckel für Termingeschäfte) wurden durch das Jahressteuergesetz 2024 aufgehoben — anwendbar in allen offenen Fällen. Verluste aus Termingeschäften sind daher mit sämtlichen Kapitalerträgen verrechenbar; beschränkt bleibt nur der Aktien-Verlusttopf (§ 20 Abs. 6 Satz 4 EStG)."
+"# Hinweis: Alle Kennzahlen betreffen ausschließlich das Steuerjahr; die Vorjahres-Historie geht nur in das FIFO ein (siehe alle_veraeusserungen)."
+# Hinweis: Freigrenze (kein Freibetrag): bei Überschreiten ist der GESAMTE § 23-Gewinn steuerpflichtig.
+"# Hinweis: Coins > 1 Jahr gehalten sind steuerfrei (§ 23 Abs. 1 Nr. 2 EStG); die Jahresfrist endet taggenau nach § 108 AO / § 188 BGB."
+# Hinweis: Staking/Lending: Zufluss als sonstige Leistung § 22 Nr. 3, Freigrenze 256 €.
+"# Hinweis: Krypto-zu-Krypto-Tausch = Veräußerung des abgegebenen Coins zum EUR-Marktwert; die Tauschgebühr wird als Anschaffungsnebenkosten des erhaltenen Coins aktiviert."
+# Hinweis: Endkontrolle durch Steuerberater — dies ist keine Steuerberatung.
+# Hinweis: § 23-Verlustvortrag aus Vorjahren (900,00 €): 900,00 € wurden mit den steuerpflichtigen § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG), 0,00 € bleiben vortragsfähig.
+
+Anlage;Zeile;Bezeichnung;Wert
+Hauptvordruck;—;Steuerjahr;2024
+Hauptvordruck;Z. 8;Name;Beispiel Muster
+Anlage N;Z. 6;Bruttoarbeitslohn (lt. Lohnsteuerbescheinigung Nr. 3);78500,00
+Anlage N;Z. 7;Einbehaltene Lohnsteuer;18420,00
+Anlage N;Z. 8;Solidaritätszuschlag;0,00
+Anlage N;Z. 9;Einbehaltene Kirchensteuer;1658,00
+Anlage N;Z. 31 ff.;Werbungskosten (Summe);2300,00
+Anlage KAP;Z. 7;Kapitalerträge (ohne Steuerabzug bzw. lt. Steuerbescheinigung);850,00
+Anlage KAP;Z. 16/17;Sparer-Pauschbetrag (Antrag);1000
+Anlage KAP;Z. 37;Anrechenbare Kapitalertragsteuer;212,50
+Anlage KAP;Z. 38;Einbehaltener Solidaritätszuschlag (Kapitalerträge);11,68
+Anlage SO;Z. 41–47;Private Veräußerungsgeschäfte § 23 — Gewinn/Verlust;1482,00
+Anlage SO;Z. 41–47;davon steuerpflichtig (Freigrenze einmalig geprüft);1482,00
+Anlage SO;Z. 54–59;Festgestellter Verlustvortrag § 23 aus Vorjahren (Antrag auf Verrechnung);900,00
+Anlage SO;Z. 54–59;davon mit § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG);900,00
+Anlage SO;Z. 54–59;verbleibender Verlustvortrag § 23 aus Vorjahren (Feststellung fortschreiben);0,00
+Anlage SO;Z. 10–13;Leistungen § 22 Nr. 3 (Staking/Lending u. a., Freigrenze 256 € auf die Gesamtsumme);700,00
+Anlage Vorsorgeaufwand;—;Rentenversicherung;7300,00
+Anlage Vorsorgeaufwand;—;Krankenversicherung;3200,00
+Anlage Vorsorgeaufwand;—;Pflegeversicherung;550,00
+Anlage Vorsorgeaufwand;—;Arbeitslosenversicherung;1030,00
+Anlage Sonderausgaben;Z. 5–12;Spenden;240,00

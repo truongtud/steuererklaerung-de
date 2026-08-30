@@ -1,0 +1,199 @@
+{
+  "steuerjahr": 2024,
+  "disclaimer": [
+    "Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung.",
+    "Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Günstigerprüfung, kein Progressionsvorbehalt, keine Kinderfreibeträge im Tarif, keine Vorauszahlungen).",
+    "GRÖSSTE VEREINFACHUNG: Vorsorgeaufwendungen werden hier in voller Höhe abgezogen — die Höchstbetragsberechnung nach § 10 Abs. 3 und 4 EStG (Deckelung der Altersvorsorgeaufwendungen, eigener Höchstbetrag für Kranken-/Pflege- und übrige sonstige Vorsorgeaufwendungen, Kürzung um den Arbeitgeberanteil) ist NICHT umgesetzt. Tatsächlich abziehbar ist regelmäßig deutlich weniger; das zu versteuernde Einkommen ist damit hier zu niedrig und die ausgewiesene Steuer ZU NIEDRIG (bzw. eine Erstattung zu hoch). Bei nennenswerten Vorsorgeaufwendungen ist die Abweichung die mit Abstand größte Fehlerquelle dieser Schätzung.",
+    "Zeilennummern sind Orientierung — ELSTER ändert die Layouts jährlich. Jede Zeile vor dem Absenden im Formular gegenprüfen.",
+    "Krypto-Endkontrolle durch Steuerberater und Abgleich mit der ELSTER-Berechnung vor Einreichung.",
+    "§ 23-Verlustvortrag aus Vorjahren: 900,00 € von 900,00 € wurden mit den § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG). Der verbrauchte Betrag muss in Anlage SO beantragt werden und steht künftig nicht mehr zur Verfügung."
+  ],
+  "hinweise": [
+    "§ 20 Abs. 6 Sätze 5 und 6 EStG (eigener Verrechnungskreis und 20.000-€-Deckel für Termingeschäfte) wurden durch das Jahressteuergesetz 2024 aufgehoben — anwendbar in allen offenen Fällen. Verluste aus Termingeschäften sind daher mit sämtlichen Kapitalerträgen verrechenbar; beschränkt bleibt nur der Aktien-Verlusttopf (§ 20 Abs. 6 Satz 4 EStG).",
+    "Alle Kennzahlen betreffen ausschließlich das Steuerjahr; die Vorjahres-Historie geht nur in das FIFO ein (siehe alle_veraeusserungen).",
+    "Freigrenze (kein Freibetrag): bei Überschreiten ist der GESAMTE § 23-Gewinn steuerpflichtig.",
+    "Coins > 1 Jahr gehalten sind steuerfrei (§ 23 Abs. 1 Nr. 2 EStG); die Jahresfrist endet taggenau nach § 108 AO / § 188 BGB.",
+    "Staking/Lending: Zufluss als sonstige Leistung § 22 Nr. 3, Freigrenze 256 €.",
+    "Krypto-zu-Krypto-Tausch = Veräußerung des abgegebenen Coins zum EUR-Marktwert; die Tauschgebühr wird als Anschaffungsnebenkosten des erhaltenen Coins aktiviert.",
+    "Endkontrolle durch Steuerberater — dies ist keine Steuerberatung.",
+    "§ 23-Verlustvortrag aus Vorjahren (900,00 €): 900,00 € wurden mit den steuerpflichtigen § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG), 0,00 € bleiben vortragsfähig."
+  ],
+  "elster_mapping": [
+    {
+      "anlage": "Hauptvordruck",
+      "zeile": "—",
+      "bezeichnung": "Steuerjahr",
+      "wert": "2024",
+      "quelle": "steuerjahr",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Hauptvordruck",
+      "zeile": "Z. 8",
+      "bezeichnung": "Name",
+      "wert": "Beispiel Muster",
+      "quelle": "steuerpflichtiger.name",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage N",
+      "zeile": "Z. 6",
+      "bezeichnung": "Bruttoarbeitslohn (lt. Lohnsteuerbescheinigung Nr. 3)",
+      "wert": "78500.00",
+      "quelle": "anlage_n.bruttoarbeitslohn",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage N",
+      "zeile": "Z. 7",
+      "bezeichnung": "Einbehaltene Lohnsteuer",
+      "wert": "18420.00",
+      "quelle": "anlage_n.lohnsteuer",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage N",
+      "zeile": "Z. 8",
+      "bezeichnung": "Solidaritätszuschlag",
+      "wert": "0.00",
+      "quelle": "anlage_n.soli",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage N",
+      "zeile": "Z. 9",
+      "bezeichnung": "Einbehaltene Kirchensteuer",
+      "wert": "1658.00",
+      "quelle": "anlage_n.kirchensteuer",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage N",
+      "zeile": "Z. 31 ff.",
+      "bezeichnung": "Werbungskosten (Summe)",
+      "wert": "2300.00",
+      "quelle": "anlage_n.werbungskosten",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 7",
+      "bezeichnung": "Kapitalerträge (ohne Steuerabzug bzw. lt. Steuerbescheinigung)",
+      "wert": "850.00",
+      "quelle": "anlage_kap.kapitalertraege",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 16/17",
+      "bezeichnung": "Sparer-Pauschbetrag (Antrag)",
+      "wert": "1000",
+      "quelle": "steuerlib.sparer_pauschbetrag",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 37",
+      "bezeichnung": "Anrechenbare Kapitalertragsteuer",
+      "wert": "212.50",
+      "quelle": "anlage_kap.anrechenbare_kest",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 38",
+      "bezeichnung": "Einbehaltener Solidaritätszuschlag (Kapitalerträge)",
+      "wert": "11.68",
+      "quelle": "anlage_kap.einbehaltener_soli",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage SO",
+      "zeile": "Z. 41–47",
+      "bezeichnung": "Private Veräußerungsgeschäfte § 23 — Gewinn/Verlust",
+      "wert": "1482.00",
+      "quelle": "krypto-quellen (aggregiert)",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage SO",
+      "zeile": "Z. 41–47",
+      "bezeichnung": "davon steuerpflichtig (Freigrenze einmalig geprüft)",
+      "wert": "1482.00",
+      "quelle": "krypto-quellen (aggregiert)",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage SO",
+      "zeile": "Z. 54–59",
+      "bezeichnung": "Festgestellter Verlustvortrag § 23 aus Vorjahren (Antrag auf Verrechnung)",
+      "wert": "900.00",
+      "quelle": "anlage_so.verlustvortrag_23_vorjahr",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage SO",
+      "zeile": "Z. 54–59",
+      "bezeichnung": "davon mit § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG)",
+      "wert": "900.00",
+      "quelle": "anlage_so.verlustvortrag_23_vorjahr",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage SO",
+      "zeile": "Z. 54–59",
+      "bezeichnung": "verbleibender Verlustvortrag § 23 aus Vorjahren (Feststellung fortschreiben)",
+      "wert": "0.00",
+      "quelle": "anlage_so.verlustvortrag_23_vorjahr",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage SO",
+      "zeile": "Z. 10–13",
+      "bezeichnung": "Leistungen § 22 Nr. 3 (Staking/Lending u. a., Freigrenze 256 € auf die Gesamtsumme)",
+      "wert": "700.00",
+      "quelle": "krypto-quellen + anlage_so.sonstige_einkuenfte",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage Vorsorgeaufwand",
+      "zeile": "—",
+      "bezeichnung": "Rentenversicherung",
+      "wert": "7300.00",
+      "quelle": "vorsorge.rentenversicherung",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage Vorsorgeaufwand",
+      "zeile": "—",
+      "bezeichnung": "Krankenversicherung",
+      "wert": "3200.00",
+      "quelle": "vorsorge.krankenversicherung",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage Vorsorgeaufwand",
+      "zeile": "—",
+      "bezeichnung": "Pflegeversicherung",
+      "wert": "550.00",
+      "quelle": "vorsorge.pflegeversicherung",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage Vorsorgeaufwand",
+      "zeile": "—",
+      "bezeichnung": "Arbeitslosenversicherung",
+      "wert": "1030.00",
+      "quelle": "vorsorge.arbeitslosenversicherung",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage Sonderausgaben",
+      "zeile": "Z. 5–12",
+      "bezeichnung": "Spenden",
+      "wert": "240.00",
+      "quelle": "sonderausgaben.spenden",
+      "art": "eintragen"
+    }
+  ]
+}

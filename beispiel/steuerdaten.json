@@ -1,0 +1,40 @@
+{
+  "steuerjahr": 2024,
+  "zusammenveranlagung": false,
+  "steuerpflichtiger": {
+    "name": "Beispiel Muster",
+    "verheiratet": false,
+    "kirchensteuersatz": "0.09",
+    "steuer_id": ""
+  },
+  "anlage_n": {
+    "bruttoarbeitslohn": "78500",
+    "lohnsteuer": "18420",
+    "soli": "0",
+    "kirchensteuer": "1658",
+    "werbungskosten": {
+      "arbeitsmittel": "320",
+      "fahrtkosten": "1380",
+      "fortbildung": "0",
+      "homeoffice": "600"
+    }
+  },
+  "anlage_kap": {
+    "kapitalertraege": "850",
+    "anrechenbare_kest": "212.50",
+    "einbehaltener_soli": "11.68"
+  },
+  "anlage_so": {
+    "sonstige_einkuenfte": "0",
+    "verlustvortrag_23_vorjahr": "900"
+  },
+  "vorsorge": {
+    "rentenversicherung": "7300",
+    "krankenversicherung": "3200",
+    "pflegeversicherung": "550",
+    "arbeitslosenversicherung": "1030"
+  },
+  "sonderausgaben": { "spenden": "240" },
+  "kinder": [],
+  "krypto_transaktionen": []
+}

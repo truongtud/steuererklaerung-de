@@ -1,0 +1,8 @@
+[
+  {"timestamp": "2022-05-10", "type": "buy",  "asset": "BTC", "amount": "0.5",  "eur_value": "14000", "fee_eur": "20"},
+  {"timestamp": "2023-11-20", "type": "buy",  "asset": "BTC", "amount": "0.25", "eur_value": "8500",  "fee_eur": "10"},
+  {"timestamp": "2024-03-15", "type": "sell", "asset": "BTC", "amount": "0.4",  "eur_value": "22000", "fee_eur": "25"},
+  {"timestamp": "2024-01-10", "type": "buy",  "asset": "ETH", "amount": "2",    "eur_value": "4400",  "fee_eur": "8"},
+  {"timestamp": "2024-08-01", "type": "sell", "asset": "ETH", "amount": "1.5",  "eur_value": "4800",  "fee_eur": "12"},
+  {"timestamp": "2024-06-30", "type": "reward", "asset": "SOL", "amount": "5", "eur_value": "700", "fee_eur": "0", "reward_kind": "staking"}
+]

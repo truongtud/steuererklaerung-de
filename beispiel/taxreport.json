@@ -1,0 +1,545 @@
+{
+  "meta": {
+    "steuerjahr": 2024,
+    "erstellt": "2026-08-30T20:25:11.177435+00:00",
+    "waehrung": "EUR",
+    "veranlagung": "Einzelveranlagung",
+    "steuerpflichtiger": {
+      "name": "Beispiel Muster",
+      "verheiratet": false,
+      "kirchensteuersatz": "0.09",
+      "steuer_id": ""
+    },
+    "krypto_quellen": [
+      {
+        "quelle": "krypto_fifo.py — FIFO-Neuberechnung aus der Transaktionshistorie",
+        "datei": "krypto_fifo (FIFO-Engine)",
+        "steuerjahr": 2024,
+        "freigrenze_angewendet": true,
+        "netto_23_eur": "1482.00"
+      }
+    ],
+    "kap_quellen": [
+      {
+        "quelle": "steuerdaten.json (anlage_kap)",
+        "datei": null,
+        "profil": null,
+        "steuerjahr": 2024,
+        "art": "handeingabe"
+      }
+    ]
+  },
+  "anlagen": {
+    "N": {
+      "bruttoarbeitslohn": "78500.00",
+      "werbungskosten_geltend": "2300.00",
+      "werbungskosten_angesetzt": "2300.00",
+      "arbeitnehmer_pauschbetrag": "1230",
+      "einkuenfte": "76200.00",
+      "lohnsteuer": "18420.00",
+      "soli_einbehalten": "0.00",
+      "kirchensteuer_einbehalten": "1658.00"
+    },
+    "KAP": {
+      "kapitalertraege": "850.00",
+      "gewinn_aktien": "0.00",
+      "gewinn_termingeschaefte": "0.00",
+      "verlust_aktien": "0.00",
+      "verlust_termingeschaefte": "0.00",
+      "verluste_ohne_aktien": "0.00",
+      "verluste_ausfall": "0.00",
+      "verlust_aktien_verrechnet": "0.00",
+      "verlust_aktien_ueberhang_hinzugerechnet": "0.00",
+      "kapitalertraege_nach_aktien_hinzurechnung": "850.00",
+      "verlust_termingeschaefte_verrechnet": "0.00",
+      "verluste_ohne_aktien_verrechnet": "0.00",
+      "verluste_ausfall_verrechnet": "0.00",
+      "netto_kapitalertraege": "850.00",
+      "sparer_pauschbetrag": "1000",
+      "nach_pauschbetrag_vor_verlustvortrag": "0.00",
+      "nach_pauschbetrag_und_verlustvortrag": "0.00",
+      "nach_pauschbetrag": "0.00",
+      "bemessungsgrundlage_abgeltungsteuer": "0.00",
+      "abgeltungsteuer": "0.00",
+      "abgeltungsteuer_soli": "0.00",
+      "abgeltungsteuer_kirchensteuer": "0.00",
+      "anrechenbare_kest": "212.50",
+      "einbehaltener_soli": "11.68",
+      "einbehaltene_kirchensteuer": "0.00",
+      "auslaendische_quellensteuer": "0.00",
+      "fiktive_quellensteuer": "0.00",
+      "anrechenbare_quellensteuer_gesamt": "0.00",
+      "quellen": [
+        {
+          "quelle": "steuerdaten.json (anlage_kap)",
+          "datei": null,
+          "profil": null,
+          "steuerjahr": 2024,
+          "art": "handeingabe",
+          "kennzahlen": {
+            "kapitalertraege": "850.00",
+            "gewinn_aktien": "0.00",
+            "gewinn_termingeschaefte": "0.00",
+            "verlust_aktien": "0.00",
+            "verlust_termingeschaefte": "0.00",
+            "verluste_ohne_aktien": "0.00",
+            "verluste_ausfall": "0.00",
+            "anrechenbare_kest": "212.50",
+            "einbehaltener_soli": "11.68",
+            "einbehaltene_kirchensteuer": "0.00",
+            "auslaendische_quellensteuer": "0.00",
+            "fiktive_quellensteuer": "0.00"
+          },
+          "kap_zeilen": {}
+        }
+      ],
+      "aus_dateien": {
+        "kapitalertraege": "0.00",
+        "gewinn_aktien": "0.00",
+        "gewinn_termingeschaefte": "0.00",
+        "verlust_aktien": "0.00",
+        "verlust_termingeschaefte": "0.00",
+        "verluste_ohne_aktien": "0.00",
+        "verluste_ausfall": "0.00",
+        "anrechenbare_kest": "0.00",
+        "einbehaltener_soli": "0.00",
+        "einbehaltene_kirchensteuer": "0.00",
+        "auslaendische_quellensteuer": "0.00",
+        "fiktive_quellensteuer": "0.00"
+      },
+      "aus_handeingabe": {
+        "kapitalertraege": "850.00",
+        "gewinn_aktien": "0.00",
+        "gewinn_termingeschaefte": "0.00",
+        "verlust_aktien": "0.00",
+        "verlust_termingeschaefte": "0.00",
+        "verluste_ohne_aktien": "0.00",
+        "verluste_ausfall": "0.00",
+        "anrechenbare_kest": "212.50",
+        "einbehaltener_soli": "11.68",
+        "einbehaltene_kirchensteuer": "0.00",
+        "auslaendische_quellensteuer": "0.00",
+        "fiktive_quellensteuer": "0.00"
+      },
+      "kap_zeilen": [],
+      "verlustvortrag_aktien_vorjahr": "0.00",
+      "verlustvortrag_aktien_verbraucht": "0.00",
+      "verlustvortrag_aktien_rest": "0.00",
+      "verlustvortrag_allgemein_vorjahr": "0.00",
+      "verlustvortrag_termingeschaefte_vorjahr": "0.00",
+      "verlustvortrag_allgemein_vorjahr_gesamt": "0.00",
+      "verlustvortrag_allgemein_verbraucht": "0.00",
+      "verlustvortrag_allgemein_rest": "0.00",
+      "bemessung_vor_verlustvortrag": "0.00",
+      "verlustvortraege": {
+        "aktien": "0.00",
+        "termingeschaefte": "0.00",
+        "allgemein": "0.00",
+        "allgemein_davon_laufendes_jahr": "0.00",
+        "allgemein_davon_rest_vorjahre": "0.00"
+      }
+    },
+    "SO": {
+      "krypto_23_steuerpflichtig": "582.00",
+      "krypto_23_vor_verlustvortrag": "1482.00",
+      "verlustvortrag_23_vorjahr": "900.00",
+      "verlustvortrag_23_verbraucht": "900.00",
+      "verlustvortrag_23_rest": "0.00",
+      "verlustvortrag_23_neu_gesamt": "0.00",
+      "krypto_23_verlustvortrag": "0.00",
+      "krypto_22_3_staking": "700.00",
+      "sonstige_einkuenfte": "0.00",
+      "leistungen_22_3_gesamt": "700.00",
+      "leistungen_22_3_steuerpflichtig": "700.00",
+      "einkuenfte_gesamt": "1282.00"
+    },
+    "V": {
+      "einkuenfte": "0.00"
+    },
+    "S": {
+      "gewinn": "0.00"
+    },
+    "G": {
+      "gewinn": "0.00"
+    },
+    "Vorsorgeaufwand": {
+      "summe": "12080.00",
+      "positionen": {
+        "rentenversicherung": "7300",
+        "krankenversicherung": "3200",
+        "pflegeversicherung": "550",
+        "arbeitslosenversicherung": "1030"
+      }
+    },
+    "Sonderausgaben": {
+      "summe_geltend": "240.00",
+      "summe_angesetzt": "240.00",
+      "pauschbetrag": "36",
+      "positionen": {
+        "spenden": "240"
+      }
+    },
+    "AussergewoehnlicheBelastungen": {
+      "anzusetzen": "0.00"
+    },
+    "Kind": []
+  },
+  "krypto_detail": {
+    "quellen": [
+      {
+        "quelle": "krypto_fifo.py — FIFO-Neuberechnung aus der Transaktionshistorie",
+        "datei": "krypto_fifo (FIFO-Engine)",
+        "steuerjahr": 2024,
+        "freigrenze_angewendet": true,
+        "netto_23_eur": "1482.00"
+      }
+    ],
+    "steuerjahr": 2024,
+    "paragraph_23": {
+      "freigrenze_eur": "1000",
+      "freigrenze_angewendet": true,
+      "freigrenze_ueberschritten": true,
+      "anzahl_veraeusserungen": 2,
+      "summe_steuerpflichtige_gewinne_eur": "1482.00",
+      "summe_verluste_eur": "0.00",
+      "gewinn_eur": "1482.00",
+      "verlust_eur": "0.00",
+      "netto_ergebnis_eur": "1482.00",
+      "summe_steuerfrei_gt_1_jahr_eur": "10759.00",
+      "steuerpflichtiger_betrag_eur": "1482.00",
+      "verlustvortrag_eur": "0.00",
+      "disposals": [
+        {
+          "asset": "BTC",
+          "disposal_date": "2024-03-15",
+          "acquisition_date": "2022-05-10",
+          "amount": "0.4",
+          "proceeds_eur": "22000.00",
+          "cost_basis_eur": "11216.00",
+          "fee_eur": "25.00",
+          "gain_eur": "10759.00",
+          "held_days": 675,
+          "holding_period_met": true,
+          "taxable": false,
+          "steuerjahr": 2024,
+          "im_steuerjahr": true,
+          "note": "Verkauf/Ausgabe",
+          "nullwert_ungeklaert": false
+        },
+        {
+          "asset": "ETH",
+          "disposal_date": "2024-08-01",
+          "acquisition_date": "2024-01-10",
+          "amount": "1.5",
+          "proceeds_eur": "4800.00",
+          "cost_basis_eur": "3306.00",
+          "fee_eur": "12.00",
+          "gain_eur": "1482.00",
+          "held_days": 204,
+          "holding_period_met": false,
+          "taxable": true,
+          "steuerjahr": 2024,
+          "im_steuerjahr": true,
+          "note": "Verkauf/Ausgabe",
+          "nullwert_ungeklaert": false
+        }
+      ]
+    },
+    "steuerfrei_langfristig_eur": "10759.00",
+    "elster_extra": [],
+    "warnungen": [],
+    "hinweise": [
+      "Alle Kennzahlen betreffen ausschließlich das Steuerjahr; die Vorjahres-Historie geht nur in das FIFO ein (siehe alle_veraeusserungen).",
+      "Freigrenze (kein Freibetrag): bei Überschreiten ist der GESAMTE § 23-Gewinn steuerpflichtig.",
+      "Coins > 1 Jahr gehalten sind steuerfrei (§ 23 Abs. 1 Nr. 2 EStG); die Jahresfrist endet taggenau nach § 108 AO / § 188 BGB.",
+      "Staking/Lending: Zufluss als sonstige Leistung § 22 Nr. 3, Freigrenze 256 €.",
+      "Krypto-zu-Krypto-Tausch = Veräußerung des abgegebenen Coins zum EUR-Marktwert; die Tauschgebühr wird als Anschaffungsnebenkosten des erhaltenen Coins aktiviert.",
+      "Endkontrolle durch Steuerberater — dies ist keine Steuerberatung."
+    ],
+    "koinly_extra": null,
+    "paragraph_22_nr3": {
+      "freigrenze_eur": "256",
+      "freigrenze_angewendet": true,
+      "summe_eur": "700.00",
+      "summe_zufluesse_eur": "700.00",
+      "davon_krypto_eur": "700.00",
+      "davon_sonstige_leistungen_eur": "0.00",
+      "steuerpflichtig_eur": "700.00",
+      "ertraege": [
+        {
+          "asset": "SOL",
+          "date": "2024-06-30",
+          "amount": "5",
+          "eur_value": "700.00",
+          "kind": "staking",
+          "steuerjahr": 2024,
+          "im_steuerjahr": true
+        }
+      ]
+    },
+    "paragraph_22_nr_3": {
+      "freigrenze_eur": "256",
+      "freigrenze_angewendet": true,
+      "summe_eur": "700.00",
+      "summe_zufluesse_eur": "700.00",
+      "davon_krypto_eur": "700.00",
+      "davon_sonstige_leistungen_eur": "0.00",
+      "steuerpflichtig_eur": "700.00",
+      "ertraege": [
+        {
+          "asset": "SOL",
+          "date": "2024-06-30",
+          "amount": "5",
+          "eur_value": "700.00",
+          "kind": "staking",
+          "steuerjahr": 2024,
+          "im_steuerjahr": true
+        }
+      ]
+    }
+  },
+  "berechnung": {
+    "summe_der_einkuenfte": "77482.00",
+    "einkuenfte_n": "76200.00",
+    "einkuenfte_so": "1282.00",
+    "abzug_vorsorge": "12080.00",
+    "abzug_sonderausgaben": "240.00",
+    "abzug_agb": "0.00",
+    "zu_versteuerndes_einkommen": "65162.00",
+    "tarif": "Grundtarif",
+    "einkommensteuer_schaetzung": "16736.00",
+    "soli_schaetzung": "0.00",
+    "kirchensteuer_schaetzung": "1506.24",
+    "abgeltungsteuer_kap": "0.00",
+    "abgeltungsteuer_kap_soli": "0.00",
+    "abgeltungsteuer_kap_kirchensteuer": "0.00",
+    "steuer_gesamt_est": "16736.00",
+    "steuer_gesamt_soli": "0.00",
+    "steuer_gesamt_kirchensteuer": "1506.24",
+    "kirchensteuersatz": "0.09",
+    "tarif_jahr_hinterlegt": true
+  },
+  "ergebnis": {
+    "steuer_festsetzung_gesamt": "18242.24",
+    "davon_einkommensteuer": "16736.00",
+    "davon_solidaritaetszuschlag": "0.00",
+    "davon_kirchensteuer": "1506.24",
+    "anrechenbare_betraege": {
+      "lohnsteuer": "18420.00",
+      "solidaritaetszuschlag_einbehalten": "11.68",
+      "kirchensteuer_einbehalten": "1658.00",
+      "anrechenbare_kapitalertragsteuer": "212.50",
+      "soli_auf_kapitalertraege_einbehalten": "11.68",
+      "kirchensteuer_auf_kapitalertraege_einbehalten": "0.00",
+      "auslaendische_quellensteuer_nach_32d_abs5": "0.00",
+      "davon_fiktive_quellensteuer": "0.00",
+      "summe": "20302.18"
+    },
+    "saldo": "-2059.94",
+    "art": "Erstattung",
+    "betrag_absolut": "2059.94",
+    "hinweis": "SCHÄTZUNG — keine verbindliche Steuerfestsetzung. Vorauszahlungen, Günstigerprüfung, Progressionsvorbehalt und Kinderfreibeträge sind nicht berücksichtigt."
+  },
+  "elster_mapping": [
+    {
+      "anlage": "Hauptvordruck",
+      "zeile": "—",
+      "bezeichnung": "Steuerjahr",
+      "wert": "2024",
+      "quelle": "steuerjahr",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Hauptvordruck",
+      "zeile": "Z. 8",
+      "bezeichnung": "Name",
+      "wert": "Beispiel Muster",
+      "quelle": "steuerpflichtiger.name",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage N",
+      "zeile": "Z. 6",
+      "bezeichnung": "Bruttoarbeitslohn (lt. Lohnsteuerbescheinigung Nr. 3)",
+      "wert": "78500.00",
+      "quelle": "anlage_n.bruttoarbeitslohn",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage N",
+      "zeile": "Z. 7",
+      "bezeichnung": "Einbehaltene Lohnsteuer",
+      "wert": "18420.00",
+      "quelle": "anlage_n.lohnsteuer",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage N",
+      "zeile": "Z. 8",
+      "bezeichnung": "Solidaritätszuschlag",
+      "wert": "0.00",
+      "quelle": "anlage_n.soli",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage N",
+      "zeile": "Z. 9",
+      "bezeichnung": "Einbehaltene Kirchensteuer",
+      "wert": "1658.00",
+      "quelle": "anlage_n.kirchensteuer",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage N",
+      "zeile": "Z. 31 ff.",
+      "bezeichnung": "Werbungskosten (Summe)",
+      "wert": "2300.00",
+      "quelle": "anlage_n.werbungskosten",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 7",
+      "bezeichnung": "Kapitalerträge (ohne Steuerabzug bzw. lt. Steuerbescheinigung)",
+      "wert": "850.00",
+      "quelle": "anlage_kap.kapitalertraege",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 16/17",
+      "bezeichnung": "Sparer-Pauschbetrag (Antrag)",
+      "wert": "1000",
+      "quelle": "steuerlib.sparer_pauschbetrag",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 37",
+      "bezeichnung": "Anrechenbare Kapitalertragsteuer",
+      "wert": "212.50",
+      "quelle": "anlage_kap.anrechenbare_kest",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage KAP",
+      "zeile": "Z. 38",
+      "bezeichnung": "Einbehaltener Solidaritätszuschlag (Kapitalerträge)",
+      "wert": "11.68",
+      "quelle": "anlage_kap.einbehaltener_soli",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage SO",
+      "zeile": "Z. 41–47",
+      "bezeichnung": "Private Veräußerungsgeschäfte § 23 — Gewinn/Verlust",
+      "wert": "1482.00",
+      "quelle": "krypto-quellen (aggregiert)",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage SO",
+      "zeile": "Z. 41–47",
+      "bezeichnung": "davon steuerpflichtig (Freigrenze einmalig geprüft)",
+      "wert": "1482.00",
+      "quelle": "krypto-quellen (aggregiert)",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage SO",
+      "zeile": "Z. 54–59",
+      "bezeichnung": "Festgestellter Verlustvortrag § 23 aus Vorjahren (Antrag auf Verrechnung)",
+      "wert": "900.00",
+      "quelle": "anlage_so.verlustvortrag_23_vorjahr",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage SO",
+      "zeile": "Z. 54–59",
+      "bezeichnung": "davon mit § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG)",
+      "wert": "900.00",
+      "quelle": "anlage_so.verlustvortrag_23_vorjahr",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage SO",
+      "zeile": "Z. 54–59",
+      "bezeichnung": "verbleibender Verlustvortrag § 23 aus Vorjahren (Feststellung fortschreiben)",
+      "wert": "0.00",
+      "quelle": "anlage_so.verlustvortrag_23_vorjahr",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage SO",
+      "zeile": "Z. 10–13",
+      "bezeichnung": "Leistungen § 22 Nr. 3 (Staking/Lending u. a., Freigrenze 256 € auf die Gesamtsumme)",
+      "wert": "700.00",
+      "quelle": "krypto-quellen + anlage_so.sonstige_einkuenfte",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage Vorsorgeaufwand",
+      "zeile": "—",
+      "bezeichnung": "Rentenversicherung",
+      "wert": "7300.00",
+      "quelle": "vorsorge.rentenversicherung",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage Vorsorgeaufwand",
+      "zeile": "—",
+      "bezeichnung": "Krankenversicherung",
+      "wert": "3200.00",
+      "quelle": "vorsorge.krankenversicherung",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage Vorsorgeaufwand",
+      "zeile": "—",
+      "bezeichnung": "Pflegeversicherung",
+      "wert": "550.00",
+      "quelle": "vorsorge.pflegeversicherung",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage Vorsorgeaufwand",
+      "zeile": "—",
+      "bezeichnung": "Arbeitslosenversicherung",
+      "wert": "1030.00",
+      "quelle": "vorsorge.arbeitslosenversicherung",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage Sonderausgaben",
+      "zeile": "Z. 5–12",
+      "bezeichnung": "Spenden",
+      "wert": "240.00",
+      "quelle": "sonderausgaben.spenden",
+      "art": "eintragen"
+    }
+  ],
+  "eingabepruefung": {
+    "unbekannte_felder": []
+  },
+  "hinweise": [
+    "Zeilennummern sind Orientierung — ELSTER ändert die Layouts jährlich. Jede Zeile vor dem Absenden im Formular gegenprüfen.",
+    "§ 20 Abs. 6 Sätze 5 und 6 EStG (eigener Verrechnungskreis und 20.000-€-Deckel für Termingeschäfte) wurden durch das Jahressteuergesetz 2024 aufgehoben — anwendbar in allen offenen Fällen. Verluste aus Termingeschäften sind daher mit sämtlichen Kapitalerträgen verrechenbar; beschränkt bleibt nur der Aktien-Verlusttopf (§ 20 Abs. 6 Satz 4 EStG).",
+    "Alle Kennzahlen betreffen ausschließlich das Steuerjahr; die Vorjahres-Historie geht nur in das FIFO ein (siehe alle_veraeusserungen).",
+    "Freigrenze (kein Freibetrag): bei Überschreiten ist der GESAMTE § 23-Gewinn steuerpflichtig.",
+    "Coins > 1 Jahr gehalten sind steuerfrei (§ 23 Abs. 1 Nr. 2 EStG); die Jahresfrist endet taggenau nach § 108 AO / § 188 BGB.",
+    "Staking/Lending: Zufluss als sonstige Leistung § 22 Nr. 3, Freigrenze 256 €.",
+    "Krypto-zu-Krypto-Tausch = Veräußerung des abgegebenen Coins zum EUR-Marktwert; die Tauschgebühr wird als Anschaffungsnebenkosten des erhaltenen Coins aktiviert.",
+    "Endkontrolle durch Steuerberater — dies ist keine Steuerberatung.",
+    "§ 23-Verlustvortrag aus Vorjahren (900,00 €): 900,00 € wurden mit den steuerpflichtigen § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG), 0,00 € bleiben vortragsfähig."
+  ],
+  "protokoll": [],
+  "warnungen": [],
+  "disclaimer": [
+    "Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung.",
+    "Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Günstigerprüfung, kein Progressionsvorbehalt, keine Kinderfreibeträge im Tarif, keine Vorauszahlungen).",
+    "GRÖSSTE VEREINFACHUNG: Vorsorgeaufwendungen werden hier in voller Höhe abgezogen — die Höchstbetragsberechnung nach § 10 Abs. 3 und 4 EStG (Deckelung der Altersvorsorgeaufwendungen, eigener Höchstbetrag für Kranken-/Pflege- und übrige sonstige Vorsorgeaufwendungen, Kürzung um den Arbeitgeberanteil) ist NICHT umgesetzt. Tatsächlich abziehbar ist regelmäßig deutlich weniger; das zu versteuernde Einkommen ist damit hier zu niedrig und die ausgewiesene Steuer ZU NIEDRIG (bzw. eine Erstattung zu hoch). Bei nennenswerten Vorsorgeaufwendungen ist die Abweichung die mit Abstand größte Fehlerquelle dieser Schätzung.",
+    "Zeilennummern sind Orientierung — ELSTER ändert die Layouts jährlich. Jede Zeile vor dem Absenden im Formular gegenprüfen.",
+    "Krypto-Endkontrolle durch Steuerberater und Abgleich mit der ELSTER-Berechnung vor Einreichung.",
+    "§ 23-Verlustvortrag aus Vorjahren: 900,00 € von 900,00 € wurden mit den § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG). Der verbrauchte Betrag muss in Anlage SO beantragt werden und steht künftig nicht mehr zur Verfügung."
+  ]
+}
