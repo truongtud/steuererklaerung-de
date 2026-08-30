@@ -1,7 +1,8 @@
 {
   "name": "steuer-de",
   "owner": {
-    "name": "Tien Truong Nguyen"
+    "name": "Tien Truong Nguyen",
+    "url": "https://github.com/truongtud"
   },
   "metadata": {
     "description": "Werkzeuge für die deutsche Einkommensteuererklärung: TaxReport über alle Anlagen, Krypto nach FIFO/§ 23 EStG, ELSTER-Feld-Mapping.",

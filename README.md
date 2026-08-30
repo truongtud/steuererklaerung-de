@@ -6,7 +6,7 @@ Ein Claude-Plugin für die **deutsche Einkommensteuererklärung**.
 > Name lässt später Platz für weitere Steuer-Plugins daneben. Zum Hinzufügen zählt der
 > Repository-Name, zum Installieren der Plugin-Name; beide Kommandos stehen unten.
 
-[![tests](https://github.com/DEIN-GITHUB-USER/steuererklaerung-de/actions/workflows/tests.yml/badge.svg)](https://github.com/DEIN-GITHUB-USER/steuererklaerung-de/actions/workflows/tests.yml)
+[![tests](https://github.com/truongtud/steuererklaerung-de/actions/workflows/tests.yml/badge.svg)](https://github.com/truongtud/steuererklaerung-de/actions/workflows/tests.yml)
 
 ## Worum es geht
 
@@ -215,7 +215,7 @@ Netz. Ohne `docling` braucht das Plugin überhaupt keine Netzverbindung.
 ## Installation
 
 ```
-/plugin marketplace add DEIN-GITHUB-USER/steuererklaerung-de
+/plugin marketplace add truongtud/steuererklaerung-de
 /plugin install steuer-de@steuer-de
 ```
 
