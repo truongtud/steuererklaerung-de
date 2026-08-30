@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.DS_Store
+*.egg-info/
+.venv/
+out/
+arbeit/
+# Nie versehentlich echte Steuerdaten committen:
+steuerdaten.json
+transactions.json
+taxreport.json
+*.krypto_result.json
+*.transactions.json
+*.extracted.json
+*.tables.csv
+*.pdf
+!plugins/**/references/**/*.pdf

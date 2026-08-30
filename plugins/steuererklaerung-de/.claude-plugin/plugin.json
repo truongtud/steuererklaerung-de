@@ -1,0 +1,19 @@
+{
+  "name": "steuererklaerung-de",
+  "displayName": "Steuererklärung Deutschland",
+  "description": "Deutsche Einkommensteuererklärung: TaxReport über alle Anlagen, Krypto-FIFO nach § 23 EStG mit taggenauer Haltefrist, Broker-PDF-Import (Koinly, eToro), Export als HTML, PDF und ELSTER-Feld-Mapping. Orientierung, keine Steuerberatung.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Tien Truong Nguyen"
+  },
+  "license": "MIT",
+  "keywords": [
+    "steuererklaerung",
+    "einkommensteuer",
+    "elster",
+    "krypto",
+    "fifo",
+    "deutschland",
+    "german-tax"
+  ]
+}

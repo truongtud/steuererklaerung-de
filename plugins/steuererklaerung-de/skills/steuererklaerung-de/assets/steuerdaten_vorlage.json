@@ -1,0 +1,50 @@
+{
+  "steuerjahr": 2025,
+  "zusammenveranlagung": false,
+  "steuerpflichtiger": {
+    "name": "",
+    "verheiratet": false,
+    "kirchensteuersatz": "0.09",
+    "steuer_id": ""
+  },
+  "anlage_n": {
+    "bruttoarbeitslohn": "0",
+    "lohnsteuer": "0",
+    "soli": "0",
+    "kirchensteuer": "0",
+    "werbungskosten": {
+      "arbeitsmittel": "0",
+      "fahrtkosten": "0",
+      "fortbildung": "0",
+      "homeoffice": "0"
+    }
+  },
+  "anlage_kap": {
+    "kapitalertraege": "0",
+    "gewinn_aktien": "0",
+    "verlust_aktien": "0",
+    "verlust_termingeschaefte": "0",
+    "verlustvortrag_aktien_vorjahr": "0",
+    "anrechenbare_kest": "0",
+    "auslaendische_quellensteuer": "0"
+  },
+  "anlage_so": {
+    "sonstige_einkuenfte": "0",
+    "verlustvortrag_23_vorjahr": "0"
+  },
+  "anlage_v": { "einkuenfte": "0" },
+  "anlage_s": { "gewinn": "0" },
+  "anlage_g": { "gewinn": "0" },
+  "vorsorge": {
+    "rentenversicherung": "0",
+    "krankenversicherung": "0",
+    "pflegeversicherung": "0",
+    "arbeitslosenversicherung": "0"
+  },
+  "sonderausgaben": {
+    "spenden": "0"
+  },
+  "aussergewoehnliche_belastungen": { "anzusetzen": "0" },
+  "kinder": [],
+  "krypto_transaktionen": []
+}
