@@ -61,6 +61,18 @@ je Report — § 23, § 22 Nr. 3 und § 20 Abs. 6 gelten personenbezogen über a
 
 ## So benutzt du es
 
+Vier Slash-Befehle stehen nach der Installation bereit:
+
+| Befehl | Wofür |
+|---|---|
+| `/steuererklaerung [jahr]` | der ganze Durchlauf bis zur ELSTER-CSV |
+| `/krypto-check [frage]` | eine einzelne Frage zu Haltefrist, Freigrenze, Tausch, Staking |
+| `/broker-profil [id]` | einen neuen Broker anbinden |
+| `/steuer-pruefen [datei]` | einen fertigen TaxReport gegenprüfen |
+
+Bei Namenskollision greift die lange Form (`/steuererklaerung-de:steuererklaerung`). Die
+Befehle löst nur der Nutzer aus, nicht Claude.
+
 Die Skripte rufst du nicht selbst auf — das macht Claude. Du hängst deine Reports an und
 sagst, was du brauchst:
 

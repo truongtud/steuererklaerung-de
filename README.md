@@ -92,6 +92,23 @@ Dateien an und sagst, was du willst. Voraussetzung ist nur, dass die Code-Ausfü
 aktiviert ist; das Plugin arbeitet dann in Claudes Arbeitsumgebung und gibt die fertigen
 Dateien zurück (bzw. legt sie in einen verbundenen Ordner, wenn du einen freigegeben hast).
 
+### Slash-Befehle
+
+Vier Befehle stehen nach der Installation im `/`-Menü. Sie sind der direkte Weg, wenn du
+weißt, was du willst — sonst reicht es, dein Anliegen normal zu beschreiben, dann meldet
+sich das Skill von selbst.
+
+| Befehl | Wofür |
+|---|---|
+| `/steuererklaerung [jahr]` | der ganze Durchlauf: Reports einlesen, fehlende Angaben erfragen, rechnen, HTML + PDF + ELSTER-CSV |
+| `/krypto-check [frage]` | eine einzelne Frage — Haltefrist, Freigrenze, Tausch, Staking — ohne kompletten Report |
+| `/broker-profil [id]` | einen neuen Broker anbinden: Entwurf aus einem echten Report, TODOs auflösen, Fixture anlegen |
+| `/steuer-pruefen [datei]` | einen fertigen TaxReport gegenprüfen, bevor die Zahlen nach ELSTER wandern |
+
+Falls ein Name schon belegt ist, funktioniert immer die lange Form, etwa
+`/steuererklaerung-de:steuererklaerung`. Die Befehle starten nur, wenn **du** sie aufrufst
+— Claude löst sie nicht von sich aus aus.
+
 **Ein Steuerjahr durchrechnen**
 
 > 📎 *koinly-2024.pdf, etoro-taxreport-2024.pdf*

@@ -33,6 +33,13 @@ scripts/profiles/*.json   ── ein Broker = eine Profildatei
 Wer einen Wert ändert, ändert ihn dort (und in `references/steuerwerte.md`). Grundregel des
 Codes: **bei unlesbarer Eingabe wird abgebrochen, nie still 0 angenommen.**
 
+## Slash-Befehle
+
+Als Plugin bringt dieses Skill vier vom Nutzer aufrufbare Einstiege mit, die alle hierher
+zurückführen: `/steuererklaerung` (ganzer Durchlauf), `/krypto-check` (Einzelfrage ohne
+Report), `/broker-profil` (neuen Broker anbinden), `/steuer-pruefen` (fertigen Report
+gegenprüfen). Wird einer davon aufgerufen, gilt zusätzlich dessen eigene Schrittfolge.
+
 ## Was rein geht, was raus kommt
 
 | Eingabe | Weg |
