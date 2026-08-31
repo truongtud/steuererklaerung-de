@@ -5,7 +5,7 @@ Diese Datei ist die menschenlesbare Fassung davon und dient der Prüfung — wer
 ändert, ändert ihn in `steuerlib.py` und hier, sonst nirgends. In den übrigen Skripten
 stehen bewusst keine Steuerkonstanten mehr.
 
-Zuletzt gegen öffentliche Quellen geprüft: **30.08.2026** (2022–2026).
+Zuletzt gegen öffentliche Quellen geprüft: **31.08.2026** (2022–2026).
 Vor jeder Einreichung erneut verifizieren — Werte ändern sich jährlich, teils rückwirkend.
 
 ## Freibeträge / Freigrenzen / Pauschalen
@@ -18,7 +18,7 @@ Vor jeder Einreichung erneut verifizieren — Werte ändern sich jährlich, teil
 | **Freigrenze § 23 EStG** | 600 € | 600 € | **1.000 €** | 1.000 € | 1.000 € |
 | **Freigrenze § 22 Nr. 3 EStG** | 256 € | 256 € | 256 € | 256 € | 256 € |
 | Sonderausgaben-Pauschbetrag (ledig) | 36 € | 36 € | 36 € | 36 € | 36 € |
-| **Soli-Freigrenze** (tarifl. ESt, ledig) | 16.956 € | 17.543 € | 18.130 € | 19.450 € | 20.350 € |
+| **Soli-Freigrenze** (tarifl. ESt, ledig) | 16.956 € | 17.543 € | 18.130 € | 19.950 € | 20.350 € |
 | Kirchensteuersatz | 8 % (BW/BY), sonst 9 % | dito | dito | dito | dito |
 | Abgeltungsteuer | 25 % (+ Soli + KiSt) | dito | dito | dito | dito |
 

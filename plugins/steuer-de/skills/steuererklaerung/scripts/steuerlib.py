@@ -271,7 +271,7 @@ TARIF = {
 # Freigrenze tarifliche ESt für den Solidaritätszuschlag (Einzelveranlagung;
 # bei Zusammenveranlagung verdoppelt). § 3 Abs. 3 SolZG.
 SOLI_FREIGRENZE = {2022: D("16956"), 2023: D("17543"), 2024: D("18130"),
-                   2025: D("19450"), 2026: D("20350")}
+                   2025: D("19950"), 2026: D("20350")}
 SOLI_SATZ = D("0.055")
 SOLI_MILDERUNG = D("0.119")  # § 4 Satz 2 SolZG
 

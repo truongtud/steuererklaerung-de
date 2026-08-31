@@ -163,9 +163,9 @@ def test_soli_milderungszone():
 @case
 def test_soli_splitting_und_jahre():
     eq(sl.soli(D("30000"), 2024, True), D("0.00"), "Freigrenze verdoppelt sich")
-    eq(sl.soli(D("19450"), 2025), D("0.00"), "Freigrenze 2025")
+    eq(sl.soli(D("19950"), 2025), D("0.00"), "Freigrenze 2025")
     eq(sl.soli(D("20350"), 2026), D("0.00"), "Freigrenze 2026")
-    assert sl.soli(D("19500"), 2025) > 0
+    assert sl.soli(D("20000"), 2025) > 0
 
 
 # ── Kirchensteuersatz ────────────────────────────────────────────────────────
