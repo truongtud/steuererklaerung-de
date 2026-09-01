@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Werkzeuge für die deutsche Einkommensteuererklärung: TaxReport über alle Anlagen, Krypto nach FIFO/§ 23 EStG, ELSTER-Feld-Mapping.",
-    "version": "2.0.0"
+    "version": "2.0.1"
   },
   "plugins": [
     {
