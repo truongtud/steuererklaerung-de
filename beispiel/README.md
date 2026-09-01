@@ -36,11 +36,18 @@ gehören zum Ergebnis dazu.
 
 ## Selbst erzeugen
 
-Vom Repository-Stamm aus (das PDF zusätzlich, wenn `fpdf2` installiert ist):
+Vom Repository-Stamm aus, in ein Arbeitsverzeichnis statt in `beispiel/` — so bleiben
+die eingecheckten Dateien als Vergleichsmaßstab unberührt (das PDF zusätzlich, wenn
+`fpdf2` installiert ist):
 
 ```bash
 S=plugins/steuer-de/skills/steuererklaerung/scripts
+mkdir -p /tmp/beispiel-lauf
 python3 $S/build_taxreport.py beispiel/steuerdaten.json \
-    --transactions beispiel/transactions.json -o beispiel/taxreport.json
-python3 $S/export_report.py beispiel/taxreport.json --outdir beispiel
+    --transactions beispiel/transactions.json -o /tmp/beispiel-lauf/taxreport.json
+python3 $S/export_report.py /tmp/beispiel-lauf/taxreport.json --outdir /tmp/beispiel-lauf
 ```
+
+Die ELSTER-Mappings (CSV/JSON) müssen byte-identisch mit den eingecheckten sein;
+`taxreport.json` und das HTML unterscheiden sich nur im eingebetteten
+Erstellungszeitpunkt.
