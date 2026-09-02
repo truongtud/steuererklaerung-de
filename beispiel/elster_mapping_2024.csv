@@ -1,7 +1,6 @@
 ﻿# ELSTER-Feld-Mapping Steuerjahr 2024 - manuelle Eingabe in Mein ELSTER
 # Hinweis: Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung.
-# Hinweis: Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Günstigerprüfung, kein Progressionsvorbehalt, keine Kinderfreibeträge im Tarif, keine Vorauszahlungen).
-"# Hinweis: GRÖSSTE VEREINFACHUNG: Vorsorgeaufwendungen werden hier in voller Höhe abgezogen — die Höchstbetragsberechnung nach § 10 Abs. 3 und 4 EStG (Deckelung der Altersvorsorgeaufwendungen, eigener Höchstbetrag für Kranken-/Pflege- und übrige sonstige Vorsorgeaufwendungen, Kürzung um den Arbeitgeberanteil) ist NICHT umgesetzt. Tatsächlich abziehbar ist regelmäßig deutlich weniger; das zu versteuernde Einkommen ist damit hier zu niedrig und die ausgewiesene Steuer ZU NIEDRIG (bzw. eine Erstattung zu hoch). Bei nennenswerten Vorsorgeaufwendungen ist die Abweichung die mit Abstand größte Fehlerquelle dieser Schätzung."
+# Hinweis: Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Kinderfreibeträge im Tarif, keine zumutbare Belastung bei außergewöhnlichen Belastungen, keine Vorauszahlungen).
 # Hinweis: Zeilennummern sind Orientierung — ELSTER ändert die Layouts jährlich. Jede Zeile vor dem Absenden im Formular gegenprüfen.
 # Hinweis: Krypto-Endkontrolle durch Steuerberater und Abgleich mit der ELSTER-Berechnung vor Einreichung.
 # Hinweis: § 23-Verlustvortrag aus Vorjahren: 900,00 € von 900,00 € wurden mit den § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG). Der verbrauchte Betrag muss in Anlage SO beantragt werden und steht künftig nicht mehr zur Verfügung.
@@ -33,8 +32,9 @@ Anlage SO;Z. 54–59;Festgestellter Verlustvortrag § 23 aus Vorjahren (Antrag a
 Anlage SO;Z. 54–59;davon mit § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG);900,00
 Anlage SO;Z. 54–59;verbleibender Verlustvortrag § 23 aus Vorjahren (Feststellung fortschreiben);0,00
 Anlage SO;Z. 10–13;Leistungen § 22 Nr. 3 (Staking/Lending u. a., Freigrenze 256 € auf die Gesamtsumme);700,00
-Anlage Vorsorgeaufwand;—;Rentenversicherung;7300,00
-Anlage Vorsorgeaufwand;—;Krankenversicherung;3200,00
-Anlage Vorsorgeaufwand;—;Pflegeversicherung;550,00
-Anlage Vorsorgeaufwand;—;Arbeitslosenversicherung;1030,00
+Anlage Vorsorgeaufwand;—;Basisversorgung: Rentenversicherung;14600,00
+Anlage Vorsorgeaufwand;—;Kranken pflege basis: Krankenversicherung;3200,00
+Anlage Vorsorgeaufwand;—;Kranken pflege basis: Pflegeversicherung;550,00
+Anlage Vorsorgeaufwand;—;Sonstige: Arbeitslosenversicherung;1030,00
+Anlage Vorsorgeaufwand;—;Arbeitgeberanteil steuerfrei;7300,00
 Anlage Sonderausgaben;Z. 5–12;Spenden;240,00

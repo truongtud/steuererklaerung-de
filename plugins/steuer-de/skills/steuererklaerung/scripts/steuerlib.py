@@ -17,7 +17,7 @@ import os
 import re
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
-from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_HALF_UP, ROUND_UP
 from typing import Iterable, Optional
 
 D = Decimal
@@ -454,6 +454,81 @@ def soli(est: Decimal, jahr: int, zusammenveranlagung: bool = False) -> Decimal:
     if est <= fg:
         return D("0")
     return q2(min(est * SOLI_SATZ, SOLI_MILDERUNG * (est - fg)))
+
+
+# § 10 Abs. 4 Sätze 1 und 2 EStG — jahresunabhängig im Gesetz.
+VORSORGE_SONSTIGE = D("2800")               # Satz 1
+VORSORGE_SONSTIGE_MIT_ZUSCHUSS = D("1900")  # Satz 2
+
+
+def vorsorge_hoechstbetrag(jahr: int, zusammenveranlagung: bool = False) -> Optional[Decimal]:
+    """§ 10 Abs. 3 Sätze 1 und 2: Höchstbeitrag zur knappschaftlichen
+    Rentenversicherung, aufgerundet auf einen vollen Euro, bei
+    Zusammenveranlagung verdoppelt.
+
+    None, wenn Beitragsbemessungsgrenze oder Beitragssatz für das Jahr fehlen —
+    dann entfällt allein die Höchstbetragsberechnung, nicht das ganze Jahr.
+    """
+    werte = _WERTE.get(jahr) or {}
+    bbg, satz = werte.get("bbg_knappschaftlich"), werte.get("beitragssatz_knappschaftlich")
+    if bbg is None or satz is None:
+        return None
+    hoechst = (bbg * satz).quantize(D("1"), rounding=ROUND_UP)
+    return hoechst * 2 if zusammenveranlagung else hoechst
+
+
+def vorsorge_anteil(jahr: int) -> Decimal:
+    """§ 10 Abs. 3 Sätze 4 und 6: 2013 sind 76 Prozent der ermittelten
+    Aufwendungen anzusetzen, je folgendem Kalenderjahr zwei Prozentpunkte mehr
+    bis 2022; ab 2023 sind es 100 Prozent."""
+    if jahr >= 2023:
+        return D("1.00")
+    if jahr < 2013:
+        raise KeyError(f"Vorsorge-Anteilssatz für {jahr} nicht geregelt (Staffel ab 2013)")
+    return (D("76") + D("2") * (jahr - 2013)) / D("100")
+
+
+def vorsorge_abziehbar(*, basis: Decimal, kranken_pflege: Decimal, sonstige: Decimal,
+                       arbeitgeberanteil: Decimal, jahr: int,
+                       zusammenveranlagung: bool = False,
+                       mit_zuschuss: bool = True) -> dict:
+    """Abziehbare Vorsorgeaufwendungen nach § 10 Abs. 3 und 4 EStG.
+
+    Zwei getrennte Töpfe:
+
+      * **Basisversorgung** (Abs. 1 Nr. 2) — auf den Höchstbeitrag gedeckelt,
+        anteilig nach der Staffel angesetzt, dann um den steuerfreien
+        Arbeitgeberanteil vermindert (Abs. 3 Sätze 1 bis 5).
+      * **Kranken-/Pflege- und sonstige Vorsorge** (Abs. 1 Nr. 3 und 3a) —
+        zusammen höchstens 2.800 €, bei Anspruch auf Zuschuss 1.900 €.
+        Übersteigen allein die Basiskranken- und Pflegebeiträge diesen Betrag,
+        sind sie in voller Höhe abziehbar und ein Abzug der sonstigen entfällt
+        (Abs. 4 Satz 4).
+
+    Nicht abgebildet: die Kürzung des Höchstbetrags für Beamte und
+    Versorgungsanwärter (Abs. 3 Satz 3). Sie verlangt den fiktiven Gesamtbeitrag
+    zur allgemeinen Rentenversicherung, den die Eingabedaten nicht hergeben; für
+    diesen Personenkreis fällt der Abzug damit zu hoch aus.
+    """
+    hoechst = vorsorge_hoechstbetrag(jahr, zusammenveranlagung)
+    if hoechst is None:
+        return {"basisversorgung": None, "sonstige": None, "sonstige_verfallen": None,
+                "hoechstbetrag_basis": None}
+
+    null = D("0")
+    angesetzt = min(max(D(basis), null), hoechst) * vorsorge_anteil(jahr)
+    basisversorgung = q2(max(angesetzt - max(D(arbeitgeberanteil), null), null))
+
+    grundbetrag = VORSORGE_SONSTIGE_MIT_ZUSCHUSS if mit_zuschuss else VORSORGE_SONSTIGE
+    deckel = grundbetrag * 2 if zusammenveranlagung else grundbetrag
+    kp, so = max(D(kranken_pflege), null), max(D(sonstige), null)
+    if kp > deckel:
+        sonstige_abziehbar, verfallen = kp, so
+    else:
+        sonstige_abziehbar = min(kp + so, deckel)
+        verfallen = max(kp + so - deckel, null)
+    return {"basisversorgung": basisversorgung, "sonstige": q2(sonstige_abziehbar),
+            "sonstige_verfallen": q2(verfallen), "hoechstbetrag_basis": hoechst}
 
 
 # § 35a EStG — Steuerermäßigung für haushaltsnahe Leistungen. Die Höchstbeträge

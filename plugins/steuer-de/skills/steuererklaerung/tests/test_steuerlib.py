@@ -241,6 +241,80 @@ def test_35a_ohne_aufwand_ist_null():
     eq(sl.steuerermaessigung_35a(D("0"), D("0"), D("0")), D("0.00"))
 
 
+# ── Vorsorgeaufwendungen ─────────────────────────────────────────────────────
+@case
+def test_vorsorge_hoechstbetrag_aus_der_bbg():
+    """§ 10 Abs. 3 Satz 1: Höchstbeitrag zur knappschaftlichen RV, aufgerundet
+    auf einen vollen Euro — Beitragsbemessungsgrenze mal Beitragssatz."""
+    eq(sl.vorsorge_hoechstbetrag(2022), D("25639"), "2022")
+    eq(sl.vorsorge_hoechstbetrag(2024), D("27566"), "2024")
+    eq(sl.vorsorge_hoechstbetrag(2025), D("29344"), "2025")
+    eq(sl.vorsorge_hoechstbetrag(2026), D("30826"), "2026")
+    eq(sl.vorsorge_hoechstbetrag(2024, True), D("55132"), "Satz 2: verdoppelt")
+    eq(sl.vorsorge_hoechstbetrag(2019), None, "ohne hinterlegte Werte kein Höchstbetrag")
+
+
+@case
+def test_vorsorge_anteil_staffel():
+    """§ 10 Abs. 3 Sätze 4 und 6: 2013 sind 76 Prozent anzusetzen, je folgendem
+    Kalenderjahr zwei Prozentpunkte mehr bis 2022; ab 2023 volle 100 Prozent."""
+    eq(sl.vorsorge_anteil(2013), D("0.76"), "Ausgangswert")
+    eq(sl.vorsorge_anteil(2022), D("0.94"), "2022 noch 94 %, nicht 100 %")
+    eq(sl.vorsorge_anteil(2023), D("1.00"), "ab 2023 voll")
+    eq(sl.vorsorge_anteil(2026), D("1.00"))
+
+
+@case
+def test_vorsorge_basis_gedeckelt_und_um_ag_anteil_gemindert():
+    """§ 10 Abs. 3 Satz 5: erst deckeln und anteilig ansetzen, dann den
+    steuerfreien Arbeitgeberanteil abziehen."""
+    r = sl.vorsorge_abziehbar(basis=D("10000"), kranken_pflege=D("0"), sonstige=D("0"),
+                              arbeitgeberanteil=D("4000"), jahr=2024,
+                              zusammenveranlagung=False, mit_zuschuss=True)
+    eq(r["basisversorgung"], D("6000.00"), "10.000 × 100 % − 4.000")
+
+    gedeckelt = sl.vorsorge_abziehbar(basis=D("99000"), kranken_pflege=D("0"),
+                                      sonstige=D("0"), arbeitgeberanteil=D("0"),
+                                      jahr=2024, zusammenveranlagung=False,
+                                      mit_zuschuss=True)
+    eq(gedeckelt["basisversorgung"], D("27566.00"), "auf den Höchstbetrag gedeckelt")
+
+    anteilig = sl.vorsorge_abziehbar(basis=D("10000"), kranken_pflege=D("0"),
+                                     sonstige=D("0"), arbeitgeberanteil=D("0"),
+                                     jahr=2022, zusammenveranlagung=False,
+                                     mit_zuschuss=True)
+    eq(anteilig["basisversorgung"], D("9400.00"), "2022: 94 % von 10.000")
+
+
+@case
+def test_vorsorge_sonstige_hoechstbetrag():
+    """§ 10 Abs. 4: insgesamt 2.800 €, aber 1.900 € bei Anspruch auf Zuschuss —
+    also bei praktisch jedem Arbeitnehmer."""
+    an = sl.vorsorge_abziehbar(basis=D("0"), kranken_pflege=D("1000"),
+                               sonstige=D("2000"), arbeitgeberanteil=D("0"),
+                               jahr=2024, zusammenveranlagung=False, mit_zuschuss=True)
+    eq(an["sonstige"], D("1900.00"), "Höchstbetrag 1.900 € greift")
+
+    selbst = sl.vorsorge_abziehbar(basis=D("0"), kranken_pflege=D("1000"),
+                                   sonstige=D("2000"), arbeitgeberanteil=D("0"),
+                                   jahr=2024, zusammenveranlagung=False,
+                                   mit_zuschuss=False)
+    eq(selbst["sonstige"], D("2800.00"), "ohne Zuschuss 2.800 €")
+
+
+@case
+def test_vorsorge_basiskranken_bleibt_ueber_dem_hoechstbetrag_abziehbar():
+    """§ 10 Abs. 4 Satz 4: übersteigen die Basiskranken- und Pflegebeiträge den
+    Höchstbetrag, sind SIE abzuziehen — der Deckel gilt dann nicht, und ein
+    Abzug der sonstigen Vorsorge entfällt. Wer diesen Satz übersieht, rechnet
+    bei fast jedem Arbeitnehmer zu wenig ab."""
+    r = sl.vorsorge_abziehbar(basis=D("0"), kranken_pflege=D("5000"),
+                              sonstige=D("800"), arbeitgeberanteil=D("0"),
+                              jahr=2024, zusammenveranlagung=False, mit_zuschuss=True)
+    eq(r["sonstige"], D("5000.00"), "die Basisbeiträge selbst, nicht der Deckel")
+    eq(r["sonstige_verfallen"], D("800.00"), "der Rest nach Nr. 3a entfällt ganz")
+
+
 # ── Kirchensteuersatz ────────────────────────────────────────────────────────
 @case
 def test_kirchensteuersatz():

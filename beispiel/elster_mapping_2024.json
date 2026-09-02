@@ -2,8 +2,7 @@
   "steuerjahr": 2024,
   "disclaimer": [
     "Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung.",
-    "Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Günstigerprüfung, kein Progressionsvorbehalt, keine Kinderfreibeträge im Tarif, keine Vorauszahlungen).",
-    "GRÖSSTE VEREINFACHUNG: Vorsorgeaufwendungen werden hier in voller Höhe abgezogen — die Höchstbetragsberechnung nach § 10 Abs. 3 und 4 EStG (Deckelung der Altersvorsorgeaufwendungen, eigener Höchstbetrag für Kranken-/Pflege- und übrige sonstige Vorsorgeaufwendungen, Kürzung um den Arbeitgeberanteil) ist NICHT umgesetzt. Tatsächlich abziehbar ist regelmäßig deutlich weniger; das zu versteuernde Einkommen ist damit hier zu niedrig und die ausgewiesene Steuer ZU NIEDRIG (bzw. eine Erstattung zu hoch). Bei nennenswerten Vorsorgeaufwendungen ist die Abweichung die mit Abstand größte Fehlerquelle dieser Schätzung.",
+    "Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Kinderfreibeträge im Tarif, keine zumutbare Belastung bei außergewöhnlichen Belastungen, keine Vorauszahlungen).",
     "Zeilennummern sind Orientierung — ELSTER ändert die Layouts jährlich. Jede Zeile vor dem Absenden im Formular gegenprüfen.",
     "Krypto-Endkontrolle durch Steuerberater und Abgleich mit der ELSTER-Berechnung vor Einreichung.",
     "§ 23-Verlustvortrag aus Vorjahren: 900,00 € von 900,00 € wurden mit den § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG). Der verbrauchte Betrag muss in Anlage SO beantragt werden und steht künftig nicht mehr zur Verfügung."
@@ -159,33 +158,41 @@
     {
       "anlage": "Anlage Vorsorgeaufwand",
       "zeile": "—",
-      "bezeichnung": "Rentenversicherung",
-      "wert": "7300.00",
-      "quelle": "vorsorge.rentenversicherung",
+      "bezeichnung": "Basisversorgung: Rentenversicherung",
+      "wert": "14600.00",
+      "quelle": "vorsorge.basisversorgung.rentenversicherung",
       "art": "eintragen"
     },
     {
       "anlage": "Anlage Vorsorgeaufwand",
       "zeile": "—",
-      "bezeichnung": "Krankenversicherung",
+      "bezeichnung": "Kranken pflege basis: Krankenversicherung",
       "wert": "3200.00",
-      "quelle": "vorsorge.krankenversicherung",
+      "quelle": "vorsorge.kranken_pflege_basis.krankenversicherung",
       "art": "eintragen"
     },
     {
       "anlage": "Anlage Vorsorgeaufwand",
       "zeile": "—",
-      "bezeichnung": "Pflegeversicherung",
+      "bezeichnung": "Kranken pflege basis: Pflegeversicherung",
       "wert": "550.00",
-      "quelle": "vorsorge.pflegeversicherung",
+      "quelle": "vorsorge.kranken_pflege_basis.pflegeversicherung",
       "art": "eintragen"
     },
     {
       "anlage": "Anlage Vorsorgeaufwand",
       "zeile": "—",
-      "bezeichnung": "Arbeitslosenversicherung",
+      "bezeichnung": "Sonstige: Arbeitslosenversicherung",
       "wert": "1030.00",
-      "quelle": "vorsorge.arbeitslosenversicherung",
+      "quelle": "vorsorge.sonstige.arbeitslosenversicherung",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage Vorsorgeaufwand",
+      "zeile": "—",
+      "bezeichnung": "Arbeitgeberanteil steuerfrei",
+      "wert": "7300.00",
+      "quelle": "vorsorge.arbeitgeberanteil_steuerfrei",
       "art": "eintragen"
     },
     {

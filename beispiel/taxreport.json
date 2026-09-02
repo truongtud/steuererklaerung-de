@@ -1,7 +1,7 @@
 {
   "meta": {
     "steuerjahr": 2024,
-    "erstellt": "2026-09-02T20:40:17.727305+00:00",
+    "erstellt": "2026-09-02T21:02:54.772027+00:00",
     "waehrung": "EUR",
     "veranlagung": "Einzelveranlagung",
     "steuerpflichtiger": {
@@ -163,12 +163,19 @@
       "gewinn": "0.00"
     },
     "Vorsorgeaufwand": {
-      "summe": "12080.00",
+      "summe": "11050.00",
       "positionen": {
-        "rentenversicherung": "7300",
-        "krankenversicherung": "3200",
-        "pflegeversicherung": "550",
-        "arbeitslosenversicherung": "1030"
+        "basisversorgung": {
+          "rentenversicherung": "14600"
+        },
+        "kranken_pflege_basis": {
+          "krankenversicherung": "3200",
+          "pflegeversicherung": "550"
+        },
+        "sonstige": {
+          "arbeitslosenversicherung": "1030"
+        },
+        "arbeitgeberanteil_steuerfrei": "7300"
       }
     },
     "Sonderausgaben": {
@@ -302,12 +309,18 @@
     "summe_der_einkuenfte": "77482.00",
     "einkuenfte_n": "76200.00",
     "einkuenfte_so": "1282.00",
-    "abzug_vorsorge": "12080.00",
+    "abzug_vorsorge": "11050.00",
+    "vorsorge_details": {
+      "hoechstbetrag_basisversorgung": "27566",
+      "basisversorgung_abziehbar": "7300.00",
+      "sonstige_abziehbar": "3750.00",
+      "sonstige_nicht_abziehbar": "1030.00"
+    },
     "abzug_sonderausgaben": "240.00",
     "abzug_agb": "0.00",
-    "zu_versteuerndes_einkommen": "65162.00",
+    "zu_versteuerndes_einkommen": "66192.00",
     "tarif": "Grundtarif",
-    "einkommensteuer_tariflich_schaetzung": "16736.00",
+    "einkommensteuer_tariflich_schaetzung": "17164.00",
     "steuerermaessigung_35a": "456.00",
     "progressionsvorbehalt": null,
     "guenstigerpruefung": {
@@ -315,35 +328,35 @@
       "vorteil": "0.00",
       "angewendet": false,
       "mit_abgeltungsteuer": {
-        "einkommensteuer": "16280.00",
+        "einkommensteuer": "16708.00",
         "soli": "0.00",
-        "kirchensteuer": "1465.20",
-        "gesamt": "17745.20"
+        "kirchensteuer": "1503.72",
+        "gesamt": "18211.72"
       },
       "mit_tarif": {
-        "einkommensteuer": "16280.00",
+        "einkommensteuer": "16708.00",
         "soli": "0.00",
-        "kirchensteuer": "1465.20",
-        "gesamt": "17745.20"
+        "kirchensteuer": "1503.72",
+        "gesamt": "18211.72"
       }
     },
-    "einkommensteuer_schaetzung": "16280.00",
+    "einkommensteuer_schaetzung": "16708.00",
     "soli_schaetzung": "0.00",
-    "kirchensteuer_schaetzung": "1465.20",
+    "kirchensteuer_schaetzung": "1503.72",
     "abgeltungsteuer_kap": "0.00",
     "abgeltungsteuer_kap_soli": "0.00",
     "abgeltungsteuer_kap_kirchensteuer": "0.00",
-    "steuer_gesamt_est": "16280.00",
+    "steuer_gesamt_est": "16708.00",
     "steuer_gesamt_soli": "0.00",
-    "steuer_gesamt_kirchensteuer": "1465.20",
+    "steuer_gesamt_kirchensteuer": "1503.72",
     "kirchensteuersatz": "0.09",
     "tarif_jahr_hinterlegt": true
   },
   "ergebnis": {
-    "steuer_festsetzung_gesamt": "17745.20",
-    "davon_einkommensteuer": "16280.00",
+    "steuer_festsetzung_gesamt": "18211.72",
+    "davon_einkommensteuer": "16708.00",
     "davon_solidaritaetszuschlag": "0.00",
-    "davon_kirchensteuer": "1465.20",
+    "davon_kirchensteuer": "1503.72",
     "anrechenbare_betraege": {
       "lohnsteuer": "18420.00",
       "solidaritaetszuschlag_einbehalten": "11.68",
@@ -355,9 +368,9 @@
       "davon_fiktive_quellensteuer": "0.00",
       "summe": "20302.18"
     },
-    "saldo": "-2556.98",
+    "saldo": "-2090.46",
     "art": "Erstattung",
-    "betrag_absolut": "2556.98",
+    "betrag_absolut": "2090.46",
     "hinweis": "SCHÄTZUNG — keine verbindliche Steuerfestsetzung. Vorauszahlungen, Günstigerprüfung, Progressionsvorbehalt und Kinderfreibeträge sind nicht berücksichtigt."
   },
   "elster_mapping": [
@@ -500,33 +513,41 @@
     {
       "anlage": "Anlage Vorsorgeaufwand",
       "zeile": "—",
-      "bezeichnung": "Rentenversicherung",
-      "wert": "7300.00",
-      "quelle": "vorsorge.rentenversicherung",
+      "bezeichnung": "Basisversorgung: Rentenversicherung",
+      "wert": "14600.00",
+      "quelle": "vorsorge.basisversorgung.rentenversicherung",
       "art": "eintragen"
     },
     {
       "anlage": "Anlage Vorsorgeaufwand",
       "zeile": "—",
-      "bezeichnung": "Krankenversicherung",
+      "bezeichnung": "Kranken pflege basis: Krankenversicherung",
       "wert": "3200.00",
-      "quelle": "vorsorge.krankenversicherung",
+      "quelle": "vorsorge.kranken_pflege_basis.krankenversicherung",
       "art": "eintragen"
     },
     {
       "anlage": "Anlage Vorsorgeaufwand",
       "zeile": "—",
-      "bezeichnung": "Pflegeversicherung",
+      "bezeichnung": "Kranken pflege basis: Pflegeversicherung",
       "wert": "550.00",
-      "quelle": "vorsorge.pflegeversicherung",
+      "quelle": "vorsorge.kranken_pflege_basis.pflegeversicherung",
       "art": "eintragen"
     },
     {
       "anlage": "Anlage Vorsorgeaufwand",
       "zeile": "—",
-      "bezeichnung": "Arbeitslosenversicherung",
+      "bezeichnung": "Sonstige: Arbeitslosenversicherung",
       "wert": "1030.00",
-      "quelle": "vorsorge.arbeitslosenversicherung",
+      "quelle": "vorsorge.sonstige.arbeitslosenversicherung",
+      "art": "eintragen"
+    },
+    {
+      "anlage": "Anlage Vorsorgeaufwand",
+      "zeile": "—",
+      "bezeichnung": "Arbeitgeberanteil steuerfrei",
+      "wert": "7300.00",
+      "quelle": "vorsorge.arbeitgeberanteil_steuerfrei",
       "art": "eintragen"
     },
     {
@@ -557,8 +578,7 @@
   "warnungen": [],
   "disclaimer": [
     "Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung.",
-    "Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Günstigerprüfung, kein Progressionsvorbehalt, keine Kinderfreibeträge im Tarif, keine Vorauszahlungen).",
-    "GRÖSSTE VEREINFACHUNG: Vorsorgeaufwendungen werden hier in voller Höhe abgezogen — die Höchstbetragsberechnung nach § 10 Abs. 3 und 4 EStG (Deckelung der Altersvorsorgeaufwendungen, eigener Höchstbetrag für Kranken-/Pflege- und übrige sonstige Vorsorgeaufwendungen, Kürzung um den Arbeitgeberanteil) ist NICHT umgesetzt. Tatsächlich abziehbar ist regelmäßig deutlich weniger; das zu versteuernde Einkommen ist damit hier zu niedrig und die ausgewiesene Steuer ZU NIEDRIG (bzw. eine Erstattung zu hoch). Bei nennenswerten Vorsorgeaufwendungen ist die Abweichung die mit Abstand größte Fehlerquelle dieser Schätzung.",
+    "Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Kinderfreibeträge im Tarif, keine zumutbare Belastung bei außergewöhnlichen Belastungen, keine Vorauszahlungen).",
     "Zeilennummern sind Orientierung — ELSTER ändert die Layouts jährlich. Jede Zeile vor dem Absenden im Formular gegenprüfen.",
     "Krypto-Endkontrolle durch Steuerberater und Abgleich mit der ELSTER-Berechnung vor Einreichung.",
     "§ 23-Verlustvortrag aus Vorjahren: 900,00 € von 900,00 € wurden mit den § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG). Der verbrauchte Betrag muss in Anlage SO beantragt werden und steht künftig nicht mehr zur Verfügung."

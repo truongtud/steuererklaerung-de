@@ -29,10 +29,17 @@
     "verlustvortrag_23_vorjahr": "900"
   },
   "vorsorge": {
-    "rentenversicherung": "7300",
-    "krankenversicherung": "3200",
-    "pflegeversicherung": "550",
-    "arbeitslosenversicherung": "1030"
+    "basisversorgung": {
+      "rentenversicherung": "14600"
+    },
+    "kranken_pflege_basis": {
+      "krankenversicherung": "3200",
+      "pflegeversicherung": "550"
+    },
+    "sonstige": {
+      "arbeitslosenversicherung": "1030"
+    },
+    "arbeitgeberanteil_steuerfrei": "7300"
   },
   "sonderausgaben": {
     "spenden": "240"

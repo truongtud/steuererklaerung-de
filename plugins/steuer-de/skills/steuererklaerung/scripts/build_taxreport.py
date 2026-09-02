@@ -58,6 +58,7 @@ from steuerlib import (  # noqa: E402
     est_tarif,
     fmt_eur,
     besonderer_steuersatz,
+    vorsorge_abziehbar,
     est_mit_progressionsvorbehalt,
     freigrenze_23,
     jahr_mit_werten,
@@ -219,7 +220,8 @@ FELDER_35A = {"minijob_haushalt", "haushaltsnahe_dienstleistungen", "handwerkerl
 # Absichtlich frei benennbare Positions-Dicts — hier ist JEDER Schlüssel gültig
 # (er wird summiert und ins ELSTER-Mapping übernommen), also wird nicht gewarnt.
 FREIFORM_BLOECKE = ("anlage_n.werbungskosten", "vorsorge", "sonderausgaben",
-                    "lohnersatzleistungen")
+                    "lohnersatzleistungen", "vorsorge.basisversorgung",
+                    "vorsorge.kranken_pflege_basis", "vorsorge.sonstige")
 
 
 def _aehnlichstes(key: str, bekannt) -> str | None:
@@ -1463,7 +1465,61 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     summe_einkuenfte = eink_n + eink_so + eink_v + eink_s + eink_g
 
     # --- Abzüge ---
-    vorsorge_summe = _summe_positionen(vorsorge, "vorsorge")
+    # Alte Dateien haben einen flachen vorsorge-Block ohne Töpfe. Sie brechen
+    # nicht, aber ohne die Zuordnung lässt sich die Höchstbetragsberechnung nach
+    # § 10 Abs. 3/4 nicht anwenden — dann wird wie bisher voll abgezogen.
+    VORSORGE_TOEPFE = ("basisversorgung", "kranken_pflege_basis", "sonstige")
+    vorsorge_gegliedert = any(k in vorsorge for k in VORSORGE_TOEPFE)
+    vorsorge_details = None
+    if vorsorge_gegliedert:
+        basis_summe = _summe_positionen(_dict_feld(vorsorge, "basisversorgung"),
+                                        "vorsorge.basisversorgung")
+        ag_anteil = _betrag(vorsorge.get("arbeitgeberanteil_steuerfrei"),
+                            "vorsorge.arbeitgeberanteil_steuerfrei")
+        # § 10 Abs. 3 rechnet mit dem GESAMTBEITRAG und zieht den steuerfreien
+        # Arbeitgeberanteil erst danach ab. Wer unter 'basisversorgung' nur
+        # seinen eigenen Anteil einträgt und den Arbeitgeberanteil zusätzlich
+        # angibt, bekommt null Abzug. Das ist die wahrscheinlichste Fehleingabe
+        # an dieser Stelle, und sie sieht im Ergebnis nicht nach einem Fehler aus.
+        # Mehr als die Hälfte des Gesamtbeitrags kann der Arbeitgeberanteil nicht
+        # sein — er trägt in der gesetzlichen Rentenversicherung genau die Hälfte.
+        # Ist er größer, steht unter 'basisversorgung' offenbar nur der eigene Anteil.
+        if ag_anteil > 0 and ag_anteil > basis_summe / 2 + D("1"):
+            warnungen.append(
+                f"Unter 'vorsorge.basisversorgung' stehen {fmt_eur(basis_summe)}, als "
+                f"steuerfreier Arbeitgeberanteil {fmt_eur(ag_anteil)}. Nach § 10 Abs. 3 "
+                f"EStG gehört dort der GESAMTBEITRAG hinein — Arbeitnehmer- UND "
+                f"Arbeitgeberanteil zusammen —, von dem der Arbeitgeberanteil dann "
+                f"abgezogen wird. Steht dort nur der eigene Anteil, fällt der Abzug zu "
+                f"niedrig oder ganz weg. Beide Beträge stehen in der "
+                f"Lohnsteuerbescheinigung (Nummern 22a und 23a).")
+        vorsorge_details = vorsorge_abziehbar(
+            basis=basis_summe,
+            kranken_pflege=_summe_positionen(_dict_feld(vorsorge, "kranken_pflege_basis"),
+                                             "vorsorge.kranken_pflege_basis"),
+            sonstige=_summe_positionen(_dict_feld(vorsorge, "sonstige"),
+                                       "vorsorge.sonstige"),
+            arbeitgeberanteil=ag_anteil,
+            jahr=werte_jahr, zusammenveranlagung=verheiratet,
+            # Wer Arbeitslohn bezieht, hat Anspruch auf den Arbeitgeberzuschuss
+            # zur Krankenversicherung — dann gilt der Höchstbetrag von 1.900 €.
+            mit_zuschuss=brutto > 0)
+        if vorsorge_details["basisversorgung"] is None:
+            vorsorge_summe = _summe_positionen(vorsorge, "vorsorge")
+            warnungen.append(
+                f"Für {werte_jahr} fehlt die Beitragsbemessungsgrenze der "
+                f"knappschaftlichen Rentenversicherung; die Höchstbetragsberechnung "
+                f"nach § 10 Abs. 3 EStG wurde übersprungen und die Vorsorgeaufwendungen "
+                f"in voller Höhe abgezogen. Die Steuerschätzung ist damit eher zu "
+                f"niedrig.")
+        else:
+            vorsorge_summe = q2(vorsorge_details["basisversorgung"]
+                                + vorsorge_details["sonstige"])
+    else:
+        # Kein eigener Eintrag in warnungen: derselbe Sachverhalt steht als
+        # Vorbehalt im Disclaimer, und Warnungen landen dort ohnehin — doppelt
+        # gesagt verliert er an Gewicht.
+        vorsorge_summe = _summe_positionen(vorsorge, "vorsorge")
     sonder_pausch = SONDERAUSGABEN_PB * 2 if verheiratet else SONDERAUSGABEN_PB
     sonder_geltend = _summe_positionen(sonder, "sonderausgaben")
     sonder_summe = max(sonder_geltend, sonder_pausch)
@@ -1565,6 +1621,31 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
             f"anteilig. Die Rechnung muss unbar bezahlt sein; eine Barzahlung erkennt "
             f"das Finanzamt selbst mit Quittung nicht an. Beides steht nicht in den "
             f"Zahlen und wurde hier nicht geprüft.")
+
+    # Der Disclaimer nennt nur, was für DIESEN Lauf zutrifft. Ein pauschaler
+    # Vorbehalt, der längst Gerechnetes weiter als Lücke führt, macht die
+    # übrigen Vorbehalte unglaubwürdig.
+    disclaimer = [
+        "Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung.",
+        "Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine "
+        "Kinderfreibeträge im Tarif, keine zumutbare Belastung bei außergewöhnlichen "
+        "Belastungen, keine Vorauszahlungen).",
+    ]
+    if not vorsorge_gegliedert and vorsorge_summe > 0:
+        disclaimer.append(
+            "GRÖSSTE VEREINFACHUNG IN DIESEM LAUF: Vorsorgeaufwendungen wurden in "
+            "voller Höhe abgezogen, weil der Block 'vorsorge' nicht in "
+            "'basisversorgung', 'kranken_pflege_basis' und 'sonstige' gegliedert ist. "
+            "Die Höchstbetragsberechnung nach § 10 Abs. 3 und 4 EStG konnte deshalb "
+            "nicht greifen. Tatsächlich abziehbar ist regelmäßig deutlich weniger; das "
+            "zu versteuernde Einkommen ist damit zu niedrig und die ausgewiesene Steuer "
+            "ZU NIEDRIG (bzw. eine Erstattung zu hoch). Mit der Gliederung rechnet der "
+            "Report den Höchstbetrag aus.")
+    disclaimer += [
+        ELSTER_CAVEAT,
+        "Krypto-Endkontrolle durch Steuerberater und Abgleich mit der "
+        "ELSTER-Berechnung vor Einreichung.",
+    ]
 
     # --- Nachzahlung / Erstattung ---
     # Die von den Depots einbehaltenen Beträge (KESt, Soli, KiSt) sind Vorauszahlungen
@@ -1845,6 +1926,19 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
             "einkuenfte_n": str(q2(eink_n)),
             "einkuenfte_so": str(q2(eink_so)),
             "abzug_vorsorge": str(q2(vorsorge_summe)),
+            "vorsorge_details": (None if vorsorge_details is None else {
+                "hoechstbetrag_basisversorgung": (
+                    None if vorsorge_details["hoechstbetrag_basis"] is None
+                    else str(vorsorge_details["hoechstbetrag_basis"])),
+                "basisversorgung_abziehbar": (
+                    None if vorsorge_details["basisversorgung"] is None
+                    else str(vorsorge_details["basisversorgung"])),
+                "sonstige_abziehbar": (None if vorsorge_details["sonstige"] is None
+                                       else str(vorsorge_details["sonstige"])),
+                "sonstige_nicht_abziehbar": (
+                    None if vorsorge_details["sonstige_verfallen"] is None
+                    else str(vorsorge_details["sonstige_verfallen"])),
+            }),
             "abzug_sonderausgaben": str(q2(sonder_summe)),
             "abzug_agb": str(q2(agb_summe)),
             "zu_versteuerndes_einkommen": str(q2(zve)),
@@ -1876,24 +1970,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
         "hinweise": hinweise,
         "protokoll": protokoll,
         "warnungen": warnungen,
-        "disclaimer": [
-            "Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung.",
-            "Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen "
-            "(keine Günstigerprüfung, kein Progressionsvorbehalt, keine Kinderfreibeträge "
-            "im Tarif, keine Vorauszahlungen).",
-            "GRÖSSTE VEREINFACHUNG: Vorsorgeaufwendungen werden hier in voller Höhe "
-            "abgezogen — die Höchstbetragsberechnung nach § 10 Abs. 3 und 4 EStG "
-            "(Deckelung der Altersvorsorgeaufwendungen, eigener Höchstbetrag für "
-            "Kranken-/Pflege- und übrige sonstige Vorsorgeaufwendungen, Kürzung um den "
-            "Arbeitgeberanteil) ist NICHT umgesetzt. Tatsächlich abziehbar ist "
-            "regelmäßig deutlich weniger; das zu versteuernde Einkommen ist damit hier "
-            "zu niedrig und die ausgewiesene Steuer ZU NIEDRIG (bzw. eine Erstattung zu "
-            "hoch). Bei nennenswerten Vorsorgeaufwendungen ist die Abweichung die mit "
-            "Abstand größte Fehlerquelle dieser Schätzung.",
-            ELSTER_CAVEAT,
-            "Krypto-Endkontrolle durch Steuerberater und Abgleich mit der "
-            "ELSTER-Berechnung vor Einreichung.",
-        ],
+        "disclaimer": disclaimer,
     }
 
     # Die davon-Zeilen-Auslegung ist die folgenreichste Annahme der KAP-Rechnung —
@@ -2327,9 +2404,18 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
     def _label(key: str) -> str:
         return key.replace("_", " ").strip().capitalize() or key
 
+    # Der Block ist entweder flach (alte Dateien) oder in Töpfe gegliedert. Beide
+    # Formen landen als Einzelpositionen im Mapping, damit die CSV ohne Rückgriff
+    # auf die Eingabedatei taugt; der Topf wird dem Namen vorangestellt.
     for key, val in (vorsorge or {}).items():
-        add("Anlage Vorsorgeaufwand", "—", _label(key),
-            q2(_betrag(val, f"vorsorge.{key}")), f"vorsorge.{key}")
+        if isinstance(val, dict):
+            for unterkey, unterwert in val.items():
+                pfad = f"vorsorge.{key}.{unterkey}"
+                add("Anlage Vorsorgeaufwand", "—", f"{_label(key)}: {_label(unterkey)}",
+                    q2(_betrag(unterwert, pfad)), pfad)
+        else:
+            add("Anlage Vorsorgeaufwand", "—", _label(key),
+                q2(_betrag(val, f"vorsorge.{key}")), f"vorsorge.{key}")
     for key, val in (sonder or {}).items():
         betrag = q2(_betrag(val, f"sonderausgaben.{key}"))
         zeile = "Z. 5–12" if key.lower().startswith("spende") else "—"

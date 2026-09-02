@@ -50,10 +50,19 @@
     "gewinn": "0"
   },
   "vorsorge": {
-    "rentenversicherung": "0",
-    "krankenversicherung": "0",
-    "pflegeversicherung": "0",
-    "arbeitslosenversicherung": "0"
+    "basisversorgung": {
+      "rentenversicherung": "0.00",
+      "ruerup": "0.00"
+    },
+    "kranken_pflege_basis": {
+      "krankenversicherung": "0.00",
+      "pflegeversicherung": "0.00"
+    },
+    "sonstige": {
+      "arbeitslosenversicherung": "0.00",
+      "haftpflicht": "0.00"
+    },
+    "arbeitgeberanteil_steuerfrei": "0.00"
   },
   "sonderausgaben": {
     "spenden": "0"

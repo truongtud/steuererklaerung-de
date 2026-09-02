@@ -168,9 +168,13 @@ Schätzung mit Vorjahreswerten ist Orientierung, keine Zahl für eine Erklärung
 
 ## Vereinfachungen der ESt-Schätzung (bewusst)
 
-- **Vorsorgeaufwendungen werden in voller Höhe abgezogen** — die Höchstbetragsberechnung
-  nach § 10 Abs. 3/4 EStG fehlt. Das ist die größte Fehlerquelle: tatsächlich ist weniger
-  abziehbar, das zvE hier also zu niedrig und die geschätzte Steuer **zu niedrig**.
+- **Die Höchstbetragsberechnung der Vorsorgeaufwendungen (§ 10 Abs. 3/4) wird gerechnet**,
+  sobald der Block `vorsorge` in `basisversorgung`, `kranken_pflege_basis` und `sonstige`
+  gegliedert ist. Ohne Gliederung wird wie früher voll abgezogen — dann sagt der
+  Disclaimer, dass die Schätzung zu niedrig ist. **Nicht** umgesetzt ist die Kürzung des
+  Höchstbetrags für Beamte und Versorgungsanwärter (§ 10 Abs. 3 Satz 3): sie verlangt
+  den fiktiven Gesamtbeitrag zur allgemeinen Rentenversicherung, den die Eingabedaten
+  nicht hergeben. Für diesen Personenkreis fällt der Abzug zu hoch aus.
 - **Die Günstigerprüfung nach § 32d Abs. 6 wird gerechnet und ausgewiesen, aber nicht
   angewandt** — sie wirkt nur auf Antrag, und das ELSTER-Mapping enthält keine
   Antragszeile. Ist der Tarif günstiger, nennt der Report den Betrag und den Antrag.
