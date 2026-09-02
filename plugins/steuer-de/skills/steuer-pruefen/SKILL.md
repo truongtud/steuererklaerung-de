@@ -40,7 +40,15 @@ Durchgehen und **jeden Punkt beantworten**, auch die unauffälligen:
    zvE gegen die Abzüge, Nachzahlung/Erstattung gegen Festsetzung minus einbehaltene
    Steuern. Nicht die Rechnung des Skripts nacherzählen, sondern selbst nachrechnen.
 
+10. **Unsicherheitsbilanz** (`unsicherheit`): jeden Posten mit Richtung und
+    Größenordnung vorlesen und die Gesamtrichtung nennen. Sie sagt, ob die Schätzung
+    eher zu hoch oder zu niedrig liegt — ohne sie kann der Nutzer die Zahl nicht
+    einordnen.
+
 Am Ende eine klare Aussage: was ist belastbar, was muss der Nutzer noch klären, und was
-gehört vor der Einreichung zum Steuerberater. Die größte bekannte Vereinfachung ist die
-fehlende Höchstbetragsberechnung Vorsorgeaufwand — sie macht die Schätzung **zu niedrig**
-und gehört in jede solche Zusammenfassung.
+gehört vor der Einreichung zum Steuerberater. Ist der Block `vorsorge` nicht in
+`basisversorgung`, `kranken_pflege_basis` und `sonstige` gegliedert, konnte die
+Höchstbetragsberechnung nach § 10 Abs. 3/4 nicht greifen — dann ist die Schätzung **zu
+niedrig**, und das gehört in die Zusammenfassung.
+
+Kommt später der Bescheid, führt `/bescheid-pruefen` diesen Report gegen ihn.

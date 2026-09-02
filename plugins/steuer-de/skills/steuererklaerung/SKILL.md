@@ -42,10 +42,11 @@ unlesbarer Eingabe wird abgebrochen, nie still 0 angenommen.**
 
 ## Slash-Befehle
 
-Als Plugin bringt dieser Skill vier vom Nutzer aufrufbare Einstiege mit, die alle hierher
+Als Plugin bringt dieser Skill fünf vom Nutzer aufrufbare Einstiege mit, die alle hierher
 zurückführen: `/steuererklaerung` (ganzer Durchlauf), `/krypto-check` (Einzelfrage ohne
 Report), `/broker-profil` (neuen Broker anbinden), `/steuer-pruefen` (fertigen Report
-gegenprüfen). Wird einer davon aufgerufen, gilt zusätzlich dessen eigene Schrittfolge.
+gegenprüfen) und `/bescheid-pruefen` (den Steuerbescheid gegen den Report halten, mit
+Einspruchsfrist). Wird einer davon aufgerufen, gilt zusätzlich dessen eigene Schrittfolge.
 
 ## Was reingeht, was rauskommt
 

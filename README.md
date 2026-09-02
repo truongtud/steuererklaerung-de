@@ -112,6 +112,7 @@ sich der Skill von selbst.
 | `/krypto-check [frage]` | eine einzelne Frage — Haltefrist, Freigrenze, Tausch, Staking — ohne kompletten Report |
 | `/broker-profil [id]` | einen neuen Broker anbinden: Entwurf aus einem echten Report, TODOs auflösen, Fixture anlegen |
 | `/steuer-pruefen [datei]` | einen fertigen TaxReport gegenprüfen, bevor die Zahlen nach ELSTER wandern |
+| `/bescheid-pruefen [datei]` | den Steuerbescheid gegen den eigenen Report halten, Einspruchsfrist rechnen, Einspruch entwerfen |
 
 Falls ein Name schon belegt ist, funktioniert immer die lange Form, etwa
 `/steuer-de:steuererklaerung`. Die Befehle starten nur, wenn **du** sie aufrufst
@@ -270,12 +271,13 @@ steuererklaerung-de/                        das Repository (= der Marketplace)
     ├── .claude-plugin/plugin.json          Name, Version, Autor, Lizenz
     └── skills/
         ├── steuererklaerung/               ← der Hauptskill, alles Weitere unten
+        ├── bescheid-pruefen/               Bescheid gegen den Report, Einspruchsfrist
         ├── krypto-check/                   Einzelfrage ohne kompletten Report
         ├── broker-profil/                  neuen Broker anbinden
         └── steuer-pruefen/                 fertigen Report gegenprüfen
 ```
 
-Die vier Einstiege sind bewusst dünn: sie laden den Hauptskill und ergänzen nur ihre eigene
+Die fünf Einstiege sind bewusst dünn: sie laden den Hauptskill und ergänzen nur ihre eigene
 Schrittfolge. Zwei Beschreibungen desselben Ablaufs würden auseinanderlaufen.
 
 Der Hauptskill:
