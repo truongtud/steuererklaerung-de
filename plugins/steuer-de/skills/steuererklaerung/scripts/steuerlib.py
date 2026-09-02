@@ -280,6 +280,12 @@ def _lade_steuerwerte(pfad: str = STEUERWERTE_JSON) -> dict:
                 **{k: (None if e[k] is None else D(e[k]))
                    for k in ("soli_freigrenze", "freigrenze_23",
                              "sparer_pb", "an_pauschbetrag")},
+                # Nur für den Vorsorge-Höchstbetrag (§ 10 Abs. 3 Satz 1). Fehlen
+                # sie, entfällt allein die Höchstbetragsberechnung — deshalb
+                # stehen sie NICHT in JAHRESWERTE und lösen keinen Ersatzwert
+                # für das ganze Jahr aus.
+                **{k: (None if e.get(k) is None else D(e[k]))
+                   for k in ("bbg_knappschaftlich", "beitragssatz_knappschaftlich")},
             }
             for jahr, e in daten["jahre"].items()
         }

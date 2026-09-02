@@ -59,6 +59,7 @@ import steuerlib as sl  # noqa: E402
 BMF_START = "https://www.bmf-steuerrechner.de/"
 ESTG_XML = "https://www.gesetze-im-internet.de/estg/xml.zip"
 SOLZG_XML = "https://www.gesetze-im-internet.de/solzg_1995/xml.zip"
+SGB6_XML = "https://www.gesetze-im-internet.de/sgb_6/xml.zip"
 
 UA = "steuer-de-marketplace/steuerwerte-pflege"
 
@@ -80,12 +81,11 @@ def text_aus_markup(h: str) -> str:
     return re.sub(r"\s+", " ", html_mod.unescape(re.sub(r"<[^>]+>", " ", h))).strip()
 
 
-def norm_aus_xml(xml: str, enbez: str) -> str:
-    """Den Text *einer* Norm aus der amtlichen XML-Fassung eines Gesetzes.
+def _norm_block(xml: str, enbez: str) -> str:
+    """Das rohe `<norm>`-Element einer Vorschrift aus der amtlichen XML.
 
-    Die XML enthält das ganze Gesetz; jede Vorschrift steckt in einem `<norm>`
-    mit ihrer Bezeichnung in `<enbez>`. Ohne diesen Schnitt träfe ein Suchmuster
-    irgendwann auf einen ganz anderen Paragraphen.
+    Getrennt von norm_aus_xml, weil manche Auswertungen das Markup brauchen —
+    eine Tabelle verliert beim Plätten ihre Spalten.
     """
     i = xml.find(f"<enbez>{enbez}</enbez>")
     if i < 0:
@@ -94,7 +94,17 @@ def norm_aus_xml(xml: str, enbez: str) -> str:
     ende = xml.find("</norm>", i)
     if anfang < 0 or ende < 0:
         raise FetchError(f"{enbez}: XML-Aufbau unerwartet")
-    return text_aus_markup(xml[anfang:ende])
+    return xml[anfang:ende]
+
+
+def norm_aus_xml(xml: str, enbez: str) -> str:
+    """Den Text *einer* Norm aus der amtlichen XML-Fassung eines Gesetzes.
+
+    Die XML enthält das ganze Gesetz; jede Vorschrift steckt in einem `<norm>`
+    mit ihrer Bezeichnung in `<enbez>`. Ohne diesen Schnitt träfe ein Suchmuster
+    irgendwann auf einen ganz anderen Paragraphen.
+    """
+    return text_aus_markup(_norm_block(xml, enbez))
 
 
 def tarifhistorie_link(startseite: str) -> str:
@@ -260,6 +270,40 @@ def soli_freigrenze_aus_text(text: str) -> D:
     return _zahl(m.group(1))
 
 
+def bbg_knappschaftlich_aus_xml(xml: str) -> dict:
+    """Anlage 2 SGB VI → Jahr → knappschaftliche Beitragsbemessungsgrenze.
+
+    Für § 10 Abs. 3 Satz 1 EStG ist der Höchstbeitrag zur **knappschaftlichen**
+    Rentenversicherung maßgeblich. Die Tabelle führt je Zeitraum zuerst die
+    allgemeine, dann die knappschaftliche Grenze; genommen wird die letzte Zahl
+    der Zeile. Die allgemeine ist rund ein Fünftel kleiner — eine Verwechslung
+    fiele in der fertigen Steuerzahl nicht mehr auf.
+    """
+    # Nur Anlage 2. Anlage 2a führt dieselben Zeiträume für das Beitrittsgebiet;
+    # über die ganze XML gesucht überschriebe sie die West-Werte, und für 2022
+    # stünde dann 100.200 statt 103.800 in der Steuerberechnung.
+    grenzen = {}
+    for zeile in re.findall(r"<row>.*?</row>", _norm_block(xml, "Anlage 2"), re.S):
+        # Zellenweise lesen: über die ganze Zeile gesucht verschmölzen Datum und
+        # Beträge zu einer einzigen Zahl, weil hier Leerzeichen die Tausender
+        # trennen ("103 800") und Punkte im Datum stehen.
+        zellen = [text_aus_markup(z) for z in re.findall(r"<entry[^>]*>.*?</entry>",
+                                                         zeile, re.S)]
+        if not zellen:
+            continue
+        jahr = re.match(r"\s*1\.\s?1\.(\d{4})", zellen[0])
+        if not jahr:
+            continue
+        betraege = [_zahl(z) for z in zellen[1:]
+                    if re.fullmatch(rf"\s*{_ZAHL}\s*", z) and _zahl(z) > 1000]
+        if betraege:
+            grenzen[int(jahr.group(1))] = betraege[-1]
+    if not grenzen:
+        raise FetchError("Anlage 2 SGB VI: keine Beitragsbemessungsgrenze gelesen — "
+                         "hat sich der Aufbau der Tabelle geändert?")
+    return grenzen
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Selbstkontrolle
 # ─────────────────────────────────────────────────────────────────────────────
@@ -339,6 +383,21 @@ def tarife_holen(jahre: set[int], laut: bool = True) -> dict[int, tuple[dict, st
     return gefunden
 
 
+def bbg_holen(jahre: set, laut: bool = True) -> dict:
+    """Knappschaftliche Beitragsbemessungsgrenze je Jahr, aus Anlage 2 SGB VI.
+
+    Daraus ergibt sich mit dem Beitragssatz der Höchstbetrag für
+    Altersvorsorgeaufwendungen nach § 10 Abs. 3 Satz 1 EStG. Anders als beim
+    Tarif führt die Anlage die Werte für alle Jahre, auch zurückliegende.
+    """
+    alle = bbg_knappschaftlich_aus_xml(gesetz_xml(SGB6_XML))
+    gefunden = {j: alle[j] for j in sorted(jahre & set(alle))}
+    if laut:
+        for jahr, wert in gefunden.items():
+            print(f"  BBG knappschaftlich {jahr}: {wert} €")
+    return gefunden
+
+
 def geltendes_jahr_pruefen(tarife: dict[int, tuple[dict, str]],
                            laut: bool = True) -> tuple[int, D]:
     """Den Tarif des geltenden Jahres gegen das EStG halten und die
@@ -376,7 +435,8 @@ def _s(d: D) -> str:
 
 
 def zusammenfuehren(alt: dict, tarife: dict[int, tuple[dict, str]],
-                    soli: dict[int, D]) -> tuple[dict, list[str]]:
+                    soli: dict[int, D], bbg: Optional[dict] = None
+                    ) -> tuple[dict, list[str]]:
     """Geholte Werte in die vorhandene JSON einarbeiten. Gibt die neue Fassung
     und die Liste der Änderungen zurück; von Hand gepflegte Werte bleiben."""
     neu = json.loads(json.dumps(alt))
@@ -384,7 +444,8 @@ def zusammenfuehren(alt: dict, tarife: dict[int, tuple[dict, str]],
     heute = date.today().isoformat()
     aenderungen: list[str] = []
 
-    for jahr in sorted(set(tarife) | set(soli)):
+    bbg = bbg or {}
+    for jahr in sorted(set(tarife) | set(soli) | set(bbg)):
         k = str(jahr)
         eintrag = jahre.get(k)
         if eintrag is None and jahr not in tarife:
@@ -423,6 +484,12 @@ def zusammenfuehren(alt: dict, tarife: dict[int, tuple[dict, str]],
             if eintrag.get("beleg") != quelle:
                 aenderungen.append(f"{k}: beleg → {quelle}")
             eintrag["beleg"] = quelle
+        if jahr in bbg:
+            wert = _s(bbg[jahr])
+            if eintrag.get("bbg_knappschaftlich") != wert:
+                aenderungen.append(
+                    f"{k}: bbg_knappschaftlich {eintrag.get('bbg_knappschaftlich')} → {wert}")
+            eintrag["bbg_knappschaftlich"] = wert
         if jahr in soli:
             wert = _s(soli[jahr])
             if eintrag.get("soli_freigrenze") != wert:
@@ -471,6 +538,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     try:
         tarife = tarife_holen(jahre)
         soli_jahr, freigrenze = geltendes_jahr_pruefen(tarife)
+        bbg = bbg_holen(jahre)
     except FetchError as e:
         print(f"\nFEHLER: {e}\nEs wurde nichts geschrieben.", file=sys.stderr)
         return 1
@@ -489,7 +557,7 @@ def main(argv: Optional[list[str]] = None) -> int:
               f"{', '.join(str(j) for j in fehlend)} — das Gesetz führt diese "
               f"Veranlagungszeiträume (noch) nicht.")
 
-    neu, aenderungen = zusammenfuehren(alt, tarife, soli)
+    neu, aenderungen = zusammenfuehren(alt, tarife, soli, bbg)
     if not aenderungen:
         print("\nAlle geholten Werte stimmen mit der JSON überein.")
     else:

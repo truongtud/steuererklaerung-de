@@ -22,6 +22,9 @@ Vor jeder Einreichung erneut verifizieren — Werte ändern sich jährlich, teil
 | **Freigrenze § 22 Nr. 3 EStG** | 256 € | 256 € | 256 € | 256 € | 256 € |
 | Sonderausgaben-Pauschbetrag (ledig) | 36 € | 36 € | 36 € | 36 € | 36 € |
 | **Soli-Freigrenze** (tarifl. ESt, ledig) | 16.956 € | 17.543 € | 18.130 € | 19.950 € | 20.350 € |
+| Beitragsbemessungsgrenze knappschaftl. RV | 103.800 € | 107.400 € | 111.600 € | 118.800 € | 124.800 € |
+| Beitragssatz knappschaftl. RV | 24,7 % | 24,7 % | 24,7 % | 24,7 % | 24,7 % |
+| **Höchstbetrag Altersvorsorge** (§ 10 Abs. 3) | 25.639 € | 26.528 € | 27.566 € | 29.344 € | 30.826 € |
 | Kirchensteuersatz | 8 % (BW/BY), sonst 9 % | dito | dito | dito | dito |
 | Abgeltungsteuer | 25 % (+ Soli + KiSt) | dito | dito | dito | dito |
 
@@ -91,6 +94,11 @@ python3 $S/fetch_steuerwerte.py --jahre 2022-2027 --schreiben  # übernehmen
 - **Amtliche XML-Fassung von EStG und SolZG** (gesetze-im-internet.de) — daraus die
   Freigrenze des § 3 Abs. 3 SolZG; der Tarif des geltenden Jahres wird damit gegen die
   BMF-Historie gehalten.
+- **Anlage 2 SGB VI** (gesetze-im-internet.de) — die knappschaftliche
+  Beitragsbemessungsgrenze je Jahr. Aus ihr mal dem Beitragssatz ergibt sich der
+  Höchstbetrag für Altersvorsorgeaufwendungen (§ 10 Abs. 3 Satz 1 EStG). Achtung:
+  **Anlage 2a** führt dieselben Zeiträume für das Beitrittsgebiet — wer sie mitliest,
+  bekommt die Ost-Grenze und damit einen zu niedrigen Höchstbetrag.
 
 Vor dem Schreiben prüft das Skript jeden Tarif auf Stetigkeit an den Zonengrenzen und die
 beiden Quellen gegeneinander — stimmt etwas nicht, wird nichts geschrieben. Ohne

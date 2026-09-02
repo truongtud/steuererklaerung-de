@@ -156,6 +156,29 @@ def test_soli_freigrenze_nimmt_die_einzelveranlagung():
     eq(fs.soli_freigrenze_aus_text(text), D("20350"), "Soli-Freigrenze")
 
 
+@case
+def test_beitragsbemessungsgrenzen_je_jahr():
+    """Anlage 2 SGB VI führt die Grenzen je Zeitraum. Die knappschaftliche steht
+    in der letzten Spalte — die allgemeine daneben ist rund ein Fünftel kleiner,
+    und eine Verwechslung fiele in der fertigen Steuerzahl nicht mehr auf."""
+    bbg = fs.bbg_knappschaftlich_aus_xml(fixture("gii_sgb6_anlage2.xml"))
+    eq(bbg[2022], D("103800"), "BBG knappschaftlich 2022")
+    eq(bbg[2024], D("111600"), "BBG knappschaftlich 2024")
+    eq(bbg[2026], D("124800"), "BBG knappschaftlich 2026")
+    assert 2017 not in bbg, "die Fixture reicht nur bis 2018 zurück"
+
+
+@case
+def test_beitrittsgebiet_wird_nicht_mitgelesen():
+    """Anlage 2a führt dieselben Zeiträume für das Beitrittsgebiet. Wer über die
+    ganze XML sucht statt über Anlage 2, bekommt für 2022 die Ost-Grenze
+    (100.200 statt 103.800) — und damit einen um rund 900 € zu niedrigen
+    Vorsorge-Höchstbetrag, der in der fertigen Steuerzahl nicht mehr auffällt."""
+    bbg = fs.bbg_knappschaftlich_aus_xml(fixture("gii_sgb6_anlage2.xml"))
+    eq(bbg[2022], D("103800"), "West-Grenze, nicht die des Beitrittsgebiets")
+    eq(bbg[2023], D("107400"), "2023")
+
+
 # ── Selbstkontrolle vor dem Schreiben ────────────────────────────────────────
 @case
 def test_unstetiger_tarif_faellt_auf():
