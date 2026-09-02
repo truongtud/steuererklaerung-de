@@ -29,6 +29,7 @@ JSON/manuell ─────────────────────┘ 
 scripts/steuerlib.py      ── ein Zahlenparser, eine Fristenlogik, alle Steuerwerte
 scripts/fetch_steuerwerte.py ─ holt § 32a EStG / § 3 SolZG (Pflege, nicht Pipeline)
 scripts/pruefe_bescheid.py  ── Steuerbescheid gegen den Report halten, Fristen
+scripts/neue_steuerdaten.py ── Startdatei und Unterlagen-Checkliste (/einstieg)
 scripts/brokerprofile.py  ── Profil-Engine: Erkennung, Anwendung, Summenabgleich
 scripts/profiles/*.json   ── ein Broker = eine Profildatei
 ```
@@ -42,11 +43,12 @@ unlesbarer Eingabe wird abgebrochen, nie still 0 angenommen.**
 
 ## Slash-Befehle
 
-Als Plugin bringt dieser Skill fünf vom Nutzer aufrufbare Einstiege mit, die alle hierher
-zurückführen: `/steuererklaerung` (ganzer Durchlauf), `/krypto-check` (Einzelfrage ohne
-Report), `/broker-profil` (neuen Broker anbinden), `/steuer-pruefen` (fertigen Report
-gegenprüfen) und `/bescheid-pruefen` (den Steuerbescheid gegen den Report halten, mit
-Einspruchsfrist). Wird einer davon aufgerufen, gilt zusätzlich dessen eigene Schrittfolge.
+Als Plugin bringt dieser Skill sechs vom Nutzer aufrufbare Einstiege mit, die alle hierher
+zurückführen: `/einstieg` (Vorbereitung: welche Anlagen, welche Unterlagen, Startdatei),
+`/steuererklaerung` (ganzer Durchlauf), `/krypto-check` (Einzelfrage ohne Report),
+`/broker-profil` (neuen Broker anbinden), `/steuer-pruefen` (fertigen Report gegenprüfen)
+und `/bescheid-pruefen` (den Steuerbescheid gegen den Report halten, mit Einspruchsfrist).
+Wird einer davon aufgerufen, gilt zusätzlich dessen eigene Schrittfolge.
 
 ## Was reingeht, was rauskommt
 

@@ -108,6 +108,7 @@ sich der Skill von selbst.
 
 | Befehl | Wofür |
 |---|---|
+| `/einstieg [jahr]` | Vorbereitung: welche Anlagen betreffen mich, welche Unterlagen brauche ich, Startdatei anlegen |
 | `/steuererklaerung [jahr]` | der ganze Durchlauf: Reports einlesen, fehlende Angaben erfragen, rechnen, HTML + PDF + ELSTER-CSV |
 | `/krypto-check [frage]` | eine einzelne Frage — Haltefrist, Freigrenze, Tausch, Staking — ohne kompletten Report |
 | `/broker-profil [id]` | einen neuen Broker anbinden: Entwurf aus einem echten Report, TODOs auflösen, Fixture anlegen |
@@ -271,13 +272,14 @@ steuererklaerung-de/                        das Repository (= der Marketplace)
     ├── .claude-plugin/plugin.json          Name, Version, Autor, Lizenz
     └── skills/
         ├── steuererklaerung/               ← der Hauptskill, alles Weitere unten
+        ├── einstieg/                       Vorbereitung, Unterlagen, Startdatei
         ├── bescheid-pruefen/               Bescheid gegen den Report, Einspruchsfrist
         ├── krypto-check/                   Einzelfrage ohne kompletten Report
         ├── broker-profil/                  neuen Broker anbinden
         └── steuer-pruefen/                 fertigen Report gegenprüfen
 ```
 
-Die fünf Einstiege sind bewusst dünn: sie laden den Hauptskill und ergänzen nur ihre eigene
+Die sechs Einstiege sind bewusst dünn: sie laden den Hauptskill und ergänzen nur ihre eigene
 Schrittfolge. Zwei Beschreibungen desselben Ablaufs würden auseinanderlaufen.
 
 Der Hauptskill:
@@ -292,6 +294,7 @@ skills/steuererklaerung/
 │   ├── steuerlib.py            Zahlenlogik; liest die Steuerwerte aus der JSON
 │   ├── fetch_steuerwerte.py    holt § 32a EStG / § 3 SolZG (Pflege, nicht Pipeline)
 │   ├── pruefe_bescheid.py      Steuerbescheid gegen den Report, Einspruchsfrist
+│   ├── neue_steuerdaten.py     Startdatei + Unterlagen-Checkliste (/einstieg)
 │   ├── brokerprofile.py        Profil-Engine: Erkennung, Anwendung, Summenabgleich
 │   ├── profiles/*.json         ein Broker = eine Profildatei
 │   ├── parse_broker.py         ein Einstiegspunkt für alle Broker
