@@ -1,7 +1,7 @@
 {
   "meta": {
     "steuerjahr": 2024,
-    "erstellt": "2026-09-02T20:39:19.435768+00:00",
+    "erstellt": "2026-09-02T20:40:17.727305+00:00",
     "waehrung": "EUR",
     "veranlagung": "Einzelveranlagung",
     "steuerpflichtiger": {
@@ -308,42 +308,42 @@
     "zu_versteuerndes_einkommen": "65162.00",
     "tarif": "Grundtarif",
     "einkommensteuer_tariflich_schaetzung": "16736.00",
-    "steuerermaessigung_35a": "0.00",
+    "steuerermaessigung_35a": "456.00",
     "progressionsvorbehalt": null,
     "guenstigerpruefung": {
       "tarif_guenstiger": false,
       "vorteil": "0.00",
       "angewendet": false,
       "mit_abgeltungsteuer": {
-        "einkommensteuer": "16736.00",
+        "einkommensteuer": "16280.00",
         "soli": "0.00",
-        "kirchensteuer": "1506.24",
-        "gesamt": "18242.24"
+        "kirchensteuer": "1465.20",
+        "gesamt": "17745.20"
       },
       "mit_tarif": {
-        "einkommensteuer": "16736.00",
+        "einkommensteuer": "16280.00",
         "soli": "0.00",
-        "kirchensteuer": "1506.24",
-        "gesamt": "18242.24"
+        "kirchensteuer": "1465.20",
+        "gesamt": "17745.20"
       }
     },
-    "einkommensteuer_schaetzung": "16736.00",
+    "einkommensteuer_schaetzung": "16280.00",
     "soli_schaetzung": "0.00",
-    "kirchensteuer_schaetzung": "1506.24",
+    "kirchensteuer_schaetzung": "1465.20",
     "abgeltungsteuer_kap": "0.00",
     "abgeltungsteuer_kap_soli": "0.00",
     "abgeltungsteuer_kap_kirchensteuer": "0.00",
-    "steuer_gesamt_est": "16736.00",
+    "steuer_gesamt_est": "16280.00",
     "steuer_gesamt_soli": "0.00",
-    "steuer_gesamt_kirchensteuer": "1506.24",
+    "steuer_gesamt_kirchensteuer": "1465.20",
     "kirchensteuersatz": "0.09",
     "tarif_jahr_hinterlegt": true
   },
   "ergebnis": {
-    "steuer_festsetzung_gesamt": "18242.24",
-    "davon_einkommensteuer": "16736.00",
+    "steuer_festsetzung_gesamt": "17745.20",
+    "davon_einkommensteuer": "16280.00",
     "davon_solidaritaetszuschlag": "0.00",
-    "davon_kirchensteuer": "1506.24",
+    "davon_kirchensteuer": "1465.20",
     "anrechenbare_betraege": {
       "lohnsteuer": "18420.00",
       "solidaritaetszuschlag_einbehalten": "11.68",
@@ -355,9 +355,9 @@
       "davon_fiktive_quellensteuer": "0.00",
       "summe": "20302.18"
     },
-    "saldo": "-2059.94",
+    "saldo": "-2556.98",
     "art": "Erstattung",
-    "betrag_absolut": "2059.94",
+    "betrag_absolut": "2556.98",
     "hinweis": "SCHÄTZUNG — keine verbindliche Steuerfestsetzung. Vorauszahlungen, Günstigerprüfung, Progressionsvorbehalt und Kinderfreibeträge sind nicht berücksichtigt."
   },
   "elster_mapping": [
@@ -550,7 +550,8 @@
     "Staking/Lending: Zufluss als sonstige Leistung § 22 Nr. 3, Freigrenze 256 €.",
     "Krypto-zu-Krypto-Tausch = Veräußerung des abgegebenen Coins zum EUR-Marktwert; die Tauschgebühr wird als Anschaffungsnebenkosten des erhaltenen Coins aktiviert.",
     "Endkontrolle durch Steuerberater — dies ist keine Steuerberatung.",
-    "§ 23-Verlustvortrag aus Vorjahren (900,00 €): 900,00 € wurden mit den steuerpflichtigen § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG), 0,00 € bleiben vortragsfähig."
+    "§ 23-Verlustvortrag aus Vorjahren (900,00 €): 900,00 € wurden mit den steuerpflichtigen § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG), 0,00 € bleiben vortragsfähig.",
+    "§ 35a EStG: 456,00 € Steuerermäßigung angesetzt (20 % der Aufwendungen, je Topf gedeckelt). Begünstigt sind nur Arbeits-, Maschinen- und Fahrtkosten — Material zählt nicht, auch nicht anteilig. Die Rechnung muss unbar bezahlt sein; eine Barzahlung erkennt das Finanzamt selbst mit Quittung nicht an. Beides steht nicht in den Zahlen und wurde hier nicht geprüft."
   ],
   "protokoll": [],
   "warnungen": [],

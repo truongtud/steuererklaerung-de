@@ -224,7 +224,38 @@ Belastung (die der Report nicht rechnet — hier den bereits gekürzten Betrag e
 Je Kind Name, Geburtsdatum, Kindergeld. Die Günstigerprüfung Kinderfreibetrag vs.
 Kindergeld macht ELSTER automatisch.
 
+### Steuerermäßigungen — § 35a (Hauptvordruck)
+Block `steuerermaessigungen.paragraph_35a` mit drei festen Töpfen, je 20 % der
+Aufwendungen mit eigenem Höchstbetrag:
+
+| Feld | § 35a | Höchstbetrag der Ermäßigung |
+|---|---|---|
+| `minijob_haushalt` | Abs. 1 | 510 € |
+| `haushaltsnahe_dienstleistungen` | Abs. 2 | 4.000 € |
+| `handwerkerleistungen` | Abs. 3 | 1.200 € |
+
+Einzutragen ist der **begünstigte Rechnungsbetrag**, nicht die Ermäßigung: nur
+Arbeits-, Maschinen- und Fahrtkosten, **kein Material**. Viele Rechnungen weisen den
+Lohnanteil getrennt aus — genau dieser Betrag gehört hierher. Die Rechnung muss unbar
+bezahlt sein; eine Barzahlung erkennt das Finanzamt selbst mit Quittung nicht an.
+Häufig übersehen: Schornsteinfeger, Treppenhausreinigung und Hausmeister stehen in der
+Nebenkostenabrechnung und zählen zu Abs. 2 bzw. Abs. 3.
+
+Die Töpfe füllen einander nicht auf, und die Ermäßigung kann die Steuer nicht unter
+null drücken — ein Überhang verfällt.
+
+### Lohnersatzleistungen — Progressionsvorbehalt (Hauptvordruck)
+Block `lohnersatzleistungen`, frei benennbare Positionen (`elterngeld`,
+`arbeitslosengeld`, `krankengeld`, `kurzarbeitergeld`, `mutterschaftsgeld` …).
+Einzutragen sind die **Bruttobeträge laut Leistungsbescheinigung**. Die Leistungen
+bleiben steuerfrei, erhöhen aber nach § 32b EStG den Steuersatz auf das übrige
+Einkommen.
+
 ## Was der Report NICHT automatisch rechnet
 Höchstbetragsberechnung Vorsorgeaufwand, zumutbare Belastung bei agB, Günstigerprüfung
-(KAP/Kind), Progressionsvorbehalt, Gewerbesteueranrechnung, Vorauszahlungen. Diese
-überlässt der Report bewusst ELSTER bzw. dem Steuerberater.
+Kinderfreibetrag/Kindergeld, Gewerbesteueranrechnung, Vorauszahlungen. Diese überlässt
+der Report bewusst ELSTER bzw. dem Steuerberater.
+
+Die **Günstigerprüfung nach § 32d Abs. 6** (Kapitalerträge zum Tarif) rechnet der
+Report und weist beide Varianten aus — angewandt wird sie nicht, denn sie wirkt nur
+auf Antrag in der Anlage KAP.

@@ -247,6 +247,9 @@ Tesseract mit deutschem Sprachpaket — die SKILL.md nennt die genauen Kommandos
 | **Krypto § 22 Nr. 3** | Staking und Lending zum Zuflusswert, 256-€-Freigrenze auf die Gesamtsumme |
 | **Kapitalerträge** | Abgeltungsteuer inkl. Soli und Kirchensteuer (`(e−4q)/(4+k)`), Aktien-Verlusttopf, Termingeschäfte nach dem JStG 2024, Verlustvorträge, ausländische und fiktive Quellensteuer |
 | **Tarif** | § 32a für 2022–2026, Soli mit Milderungszone, Grund- und Splittingtarif, Nachzahlung/Erstattung |
+| **Steuerermäßigung § 35a** | Minijob, haushaltsnahe Dienstleistungen und Handwerker — 20 % je Topf mit eigenem Höchstbetrag, gedeckelt auf die Steuer |
+| **Progressionsvorbehalt § 32b** | Eltern-, Arbeitslosen-, Kranken- und Kurzarbeitergeld heben den Satz, ohne selbst besteuert zu werden |
+| **Günstigerprüfung § 32d Abs. 6** | beide Varianten gerechnet und ausgewiesen; angewandt wird sie nicht, denn sie wirkt nur auf Antrag |
 
 ## Wie es aufgebaut ist
 

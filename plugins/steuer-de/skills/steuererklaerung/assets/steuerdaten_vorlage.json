@@ -40,9 +40,15 @@
     "sonstige_einkuenfte": "0",
     "verlustvortrag_23_vorjahr": "0"
   },
-  "anlage_v": { "einkuenfte": "0" },
-  "anlage_s": { "gewinn": "0" },
-  "anlage_g": { "gewinn": "0" },
+  "anlage_v": {
+    "einkuenfte": "0"
+  },
+  "anlage_s": {
+    "gewinn": "0"
+  },
+  "anlage_g": {
+    "gewinn": "0"
+  },
   "vorsorge": {
     "rentenversicherung": "0",
     "krankenversicherung": "0",
@@ -52,7 +58,21 @@
   "sonderausgaben": {
     "spenden": "0"
   },
-  "aussergewoehnliche_belastungen": { "anzusetzen": "0" },
+  "aussergewoehnliche_belastungen": {
+    "anzusetzen": "0"
+  },
   "kinder": [],
+  "lohnersatzleistungen": {
+    "elterngeld": "0.00",
+    "arbeitslosengeld": "0.00",
+    "krankengeld": "0.00"
+  },
+  "steuerermaessigungen": {
+    "paragraph_35a": {
+      "minijob_haushalt": "0.00",
+      "haushaltsnahe_dienstleistungen": "0.00",
+      "handwerkerleistungen": "0.00"
+    }
+  },
   "krypto_transaktionen": []
 }

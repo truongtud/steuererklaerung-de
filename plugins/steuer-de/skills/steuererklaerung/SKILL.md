@@ -8,8 +8,10 @@ license: MIT — NUR Orientierung, KEINE Steuerberatung.
 
 Erstellt aus Einkommens- und Krypto-Daten einen strukturierten **TaxReport** über alle
 Anlagen, rechnet Krypto nach FIFO/§ 23 EStG, schätzt Einkommensteuer (§ 32a),
-Solidaritätszuschlag, Kirchensteuer und Abgeltungsteuer, rechnet einbehaltene Steuern an
-und exportiert **HTML**, **PDF** und ein **ELSTER-Feld-Mapping**.
+Solidaritätszuschlag, Kirchensteuer und Abgeltungsteuer, berücksichtigt die
+Steuerermäßigung nach § 35a und den Progressionsvorbehalt nach § 32b, prüft die
+Günstigerprüfung nach § 32d Abs. 6, rechnet einbehaltene Steuern an und exportiert
+**HTML**, **PDF** und ein **ELSTER-Feld-Mapping**.
 
 > **Keine Steuerberatung.** Der Skill erzeugt eine Arbeitsgrundlage. Die verbindliche
 > Berechnung liefert ELSTER, die Endkontrolle gehört in die Hände des Steuerberaters.

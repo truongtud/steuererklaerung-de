@@ -163,8 +163,10 @@ Schätzung mit Vorjahreswerten ist Orientierung, keine Zahl für eine Erklärung
 - **Vorsorgeaufwendungen werden in voller Höhe abgezogen** — die Höchstbetragsberechnung
   nach § 10 Abs. 3/4 EStG fehlt. Das ist die größte Fehlerquelle: tatsächlich ist weniger
   abziehbar, das zvE hier also zu niedrig und die geschätzte Steuer **zu niedrig**.
-- Kapitalerträge bleiben in der Abgeltungsteuer, keine Günstigerprüfung (§ 32d Abs. 6).
-- Keine Kinderfreibeträge im Tarif, kein Progressionsvorbehalt, keine zumutbare Belastung
-  bei außergewöhnlichen Belastungen, keine Gewerbesteueranrechnung, keine Vorauszahlungen.
+- **Die Günstigerprüfung nach § 32d Abs. 6 wird gerechnet und ausgewiesen, aber nicht
+  angewandt** — sie wirkt nur auf Antrag, und das ELSTER-Mapping enthält keine
+  Antragszeile. Ist der Tarif günstiger, nennt der Report den Betrag und den Antrag.
+- Keine Kinderfreibeträge im Tarif, keine zumutbare Belastung bei außergewöhnlichen
+  Belastungen, keine Gewerbesteueranrechnung, keine Vorauszahlungen.
 
 → Die Schätzung dient der Orientierung. Die verbindliche Zahl liefert ELSTER.

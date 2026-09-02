@@ -34,7 +34,15 @@
     "pflegeversicherung": "550",
     "arbeitslosenversicherung": "1030"
   },
-  "sonderausgaben": { "spenden": "240" },
+  "sonderausgaben": {
+    "spenden": "240"
+  },
   "kinder": [],
+  "steuerermaessigungen": {
+    "paragraph_35a": {
+      "haushaltsnahe_dienstleistungen": "480.00",
+      "handwerkerleistungen": "1800.00"
+    }
+  },
   "krypto_transaktionen": []
 }

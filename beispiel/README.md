@@ -9,7 +9,7 @@ Haupt-READMEs: ledig, 9 % Kirchensteuer, 78.500 € Bruttoarbeitslohn, 900 €
 
 | Datei | Inhalt |
 |---|---|
-| [`steuerdaten.json`](steuerdaten.json) | Lohn, Werbungskosten, Vorsorge, Kapitalerträge, Verlustvortrag |
+| [`steuerdaten.json`](steuerdaten.json) | Lohn, Werbungskosten, Vorsorge, Kapitalerträge, Verlustvortrag, § 35a |
 | [`transactions.json`](transactions.json) | sechs Krypto-Transaktionen — je ein Lehrbuchfall |
 
 Die Transaktionen decken die drei wichtigsten § 23-/§ 22-Fälle ab:
@@ -30,7 +30,9 @@ Die Transaktionen decken die drei wichtigsten § 23-/§ 22-Fälle ab:
 
 Kernzahlen: § 23-Gewinn 1.482 € (der BTC-Langfristgewinn bleibt steuerfrei), nach
 Verlustvortrag 582 € steuerpflichtig; 700 € Staking nach § 22 Nr. 3; zvE 65.162 €,
-ESt-Schätzung 16.736 €, geschätzte Erstattung 2.059,94 €. Die Hinweise am Anfang der
+tarifliche ESt 16.736 €, abzüglich 456 € Steuerermäßigung nach § 35a (20 % von 480 €
+haushaltsnahen Dienstleistungen und 1.800 € Handwerkerleistungen) 16.280 €,
+geschätzte Erstattung 2.556,98 €. Die Hinweise am Anfang der
 CSV — insbesondere zur fehlenden Höchstbetragsberechnung der Vorsorgeaufwendungen —
 gehören zum Ergebnis dazu.
 
