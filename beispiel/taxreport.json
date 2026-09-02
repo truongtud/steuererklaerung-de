@@ -1,7 +1,7 @@
 {
   "meta": {
     "steuerjahr": 2024,
-    "erstellt": "2026-09-02T21:02:54.772027+00:00",
+    "erstellt": "2026-09-02T21:05:58.010762+00:00",
     "waehrung": "EUR",
     "veranlagung": "Einzelveranlagung",
     "steuerpflichtiger": {
@@ -318,6 +318,7 @@
     },
     "abzug_sonderausgaben": "240.00",
     "abzug_agb": "0.00",
+    "agb_details": null,
     "zu_versteuerndes_einkommen": "66192.00",
     "tarif": "Grundtarif",
     "einkommensteuer_tariflich_schaetzung": "17164.00",

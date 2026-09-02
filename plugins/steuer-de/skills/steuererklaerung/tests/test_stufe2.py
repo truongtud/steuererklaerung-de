@@ -108,6 +108,35 @@ def test_arbeitgeberanteil_groesser_als_beitrag_faellt_auf():
     eq(ok["berechnung"]["vorsorge_details"]["basisversorgung_abziehbar"], "7300.00")
 
 
+# ── zumutbare Belastung ──────────────────────────────────────────────────────
+@case
+def test_agb_aufwendungen_werden_um_die_zumutbare_belastung_gekuerzt():
+    """Neu: 'aufwendungen' ist der Bruttobetrag, den der Report selbst kürzt —
+    bisher musste der Nutzer die Kürzung selbst rechnen."""
+    r = bau(steuerdaten(aussergewoehnliche_belastungen={"aufwendungen": "5000"}))
+    d = r["berechnung"]["agb_details"]
+    eq(d["aufwendungen"], "5000.00")
+    # GdE 48.770 (50.000 − 1.230 AN-Pauschbetrag): 5 % von 15.340 + 6 % vom Rest
+    eq(d["zumutbare_belastung"], "2772.80", "§ 33 Abs. 3, stufenweise")
+    eq(r["berechnung"]["abzug_agb"], "2227.20", "5.000 − 2.772,80")
+
+
+@case
+def test_agb_unter_der_zumutbaren_belastung_wirkt_gar_nicht():
+    r = bau(steuerdaten(aussergewoehnliche_belastungen={"aufwendungen": "500"}))
+    eq(r["berechnung"]["abzug_agb"], "0.00", "nichts übersteigt die zumutbare Belastung")
+    text = " ".join(r["hinweise"])
+    assert "zumutbare Belastung" in text, f"das muss erklärt werden: {text!r}"
+
+
+@case
+def test_altes_feld_anzusetzen_wird_unveraendert_uebernommen():
+    """Rückwärtskompatibilität: wer weiterhin den selbst gekürzten Betrag
+    einträgt, bekommt ihn unverändert — sonst würde doppelt gekürzt."""
+    r = bau(steuerdaten(aussergewoehnliche_belastungen={"anzusetzen": "1500"}))
+    eq(r["berechnung"]["abzug_agb"], "1500.00", "keine zweite Kürzung")
+
+
 if __name__ == "__main__":
     fails = []
     for fn in CASES:

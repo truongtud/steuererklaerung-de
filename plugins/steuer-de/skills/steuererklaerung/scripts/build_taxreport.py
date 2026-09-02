@@ -59,6 +59,7 @@ from steuerlib import (  # noqa: E402
     fmt_eur,
     besonderer_steuersatz,
     vorsorge_abziehbar,
+    zumutbare_belastung,
     est_mit_progressionsvorbehalt,
     freigrenze_23,
     jahr_mit_werten,
@@ -209,7 +210,7 @@ FELDER_JE_BLOCK = {
     "anlage_v": {"einkuenfte"},
     "anlage_s": {"gewinn"},
     "anlage_g": {"gewinn"},
-    "aussergewoehnliche_belastungen": {"anzusetzen"},
+    "aussergewoehnliche_belastungen": {"anzusetzen", "aufwendungen"},
     "steuerermaessigungen": {"paragraph_35a"},
 }
 
@@ -1523,7 +1524,25 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     sonder_pausch = SONDERAUSGABEN_PB * 2 if verheiratet else SONDERAUSGABEN_PB
     sonder_geltend = _summe_positionen(sonder, "sonderausgaben")
     sonder_summe = max(sonder_geltend, sonder_pausch)
-    agb_summe = _betrag(agb.get("anzusetzen"), "aussergewoehnliche_belastungen.anzusetzen")
+    # 'aufwendungen' ist der Bruttobetrag, den der Report selbst um die zumutbare
+    # Belastung kürzt. 'anzusetzen' bleibt für alte Dateien: dort steht der
+    # bereits gekürzte Betrag, der unverändert übernommen wird — sonst würde
+    # zweimal gekürzt.
+    agb_roh = _betrag(agb.get("aufwendungen"), "aussergewoehnliche_belastungen.aufwendungen")
+    agb_vorgekuerzt = _betrag(agb.get("anzusetzen"),
+                              "aussergewoehnliche_belastungen.anzusetzen")
+    zumutbar = zumutbare_belastung(summe_einkuenfte, verheiratet, len(kinder))
+    agb_nach_kuerzung = q2(max(agb_roh - zumutbar, NULL))
+    agb_summe = q2(agb_nach_kuerzung + agb_vorgekuerzt)
+    agb_details = ({"aufwendungen": str(q2(agb_roh)),
+                    "zumutbare_belastung": str(zumutbar),
+                    "abziehbar": str(agb_nach_kuerzung)} if agb_roh > 0 else None)
+    if agb_roh > 0 and agb_nach_kuerzung == 0:
+        hinweise.append(
+            f"Außergewöhnliche Belastungen: {fmt_eur(agb_roh)} liegen unter der "
+            f"zumutbaren Belastung von {fmt_eur(zumutbar)} (§ 33 Abs. 3 EStG) und wirken "
+            f"sich deshalb steuerlich nicht aus. Die zumutbare Belastung hängt vom "
+            f"Gesamtbetrag der Einkünfte, vom Familienstand und von der Kinderzahl ab.")
 
     # Clamp bleibt hier: ein negatives zvE gibt es nicht (Verlustabzug § 10d gesondert).
     zve = max(summe_einkuenfte - vorsorge_summe - sonder_summe - agb_summe, NULL)
@@ -1941,6 +1960,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
             }),
             "abzug_sonderausgaben": str(q2(sonder_summe)),
             "abzug_agb": str(q2(agb_summe)),
+            "agb_details": agb_details,
             "zu_versteuerndes_einkommen": str(q2(zve)),
             "tarif": "Splitting" if verheiratet else "Grundtarif",
             "einkommensteuer_tariflich_schaetzung": (

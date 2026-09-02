@@ -178,7 +178,7 @@ Schätzung mit Vorjahreswerten ist Orientierung, keine Zahl für eine Erklärung
 - **Die Günstigerprüfung nach § 32d Abs. 6 wird gerechnet und ausgewiesen, aber nicht
   angewandt** — sie wirkt nur auf Antrag, und das ELSTER-Mapping enthält keine
   Antragszeile. Ist der Tarif günstiger, nennt der Report den Betrag und den Antrag.
-- Keine Kinderfreibeträge im Tarif, keine zumutbare Belastung bei außergewöhnlichen
-  Belastungen, keine Gewerbesteueranrechnung, keine Vorauszahlungen.
+- Keine Kinderfreibeträge im Tarif, keine Gewerbesteueranrechnung, keine
+  Vorauszahlungen.
 
 → Die Schätzung dient der Orientierung. Die verbindliche Zahl liefert ELSTER.

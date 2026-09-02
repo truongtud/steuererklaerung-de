@@ -315,6 +315,41 @@ def test_vorsorge_basiskranken_bleibt_ueber_dem_hoechstbetrag_abziehbar():
     eq(r["sonstige_verfallen"], D("800.00"), "der Rest nach Nr. 3a entfällt ganz")
 
 
+# ── zumutbare Belastung ──────────────────────────────────────────────────────
+@case
+def test_zumutbare_belastung_stufen():
+    """§ 33 Abs. 3: Stufen bis 15.340 / bis 51.130 / darüber; ohne Kinder im
+    Grundtarif 5, 6, 7 Prozent."""
+    eq(sl.zumutbare_belastung(D("10000")), D("500.00"), "5 % innerhalb der ersten Stufe")
+    eq(sl.zumutbare_belastung(D("15340")), D("767.00"), "erste Stufe voll")
+    # 5 % von 15.340 + 6 % von 35.790
+    eq(sl.zumutbare_belastung(D("51130")), D("2914.40"), "zweite Stufe voll")
+
+
+@case
+def test_zumutbare_belastung_wird_stufenweise_gerechnet():
+    """Seit BFH vom 19.01.2017, VI R 75/14, gilt der höhere Satz nur für den
+    ÜBERSTEIGENDEN Teil. Die frühere Lesart wandte einen Satz auf den ganzen
+    Betrag an und erzeugte an den Grenzen Sprünge von mehreren hundert Euro."""
+    for grenze in (D("15340"), D("51130")):
+        davor = sl.zumutbare_belastung(grenze)
+        danach = sl.zumutbare_belastung(grenze + 1)
+        assert danach - davor < D("1"), f"Sprung an der Stufengrenze {grenze}: {davor} → {danach}"
+
+
+@case
+def test_zumutbare_belastung_nach_familienstand_und_kindern():
+    gde = D("40000")
+    ledig = sl.zumutbare_belastung(gde)
+    zusammen = sl.zumutbare_belastung(gde, zusammenveranlagung=True)
+    ein_kind = sl.zumutbare_belastung(gde, kinder=1)
+    drei = sl.zumutbare_belastung(gde, kinder=3)
+    assert zusammen < ledig, "Splitting: eine Stufe niedriger"
+    assert ein_kind < zusammen and drei < ein_kind, "mehr Kinder, weniger zumutbar"
+    eq(drei, D("400.00"), "1 % über beide Stufen")
+    eq(sl.zumutbare_belastung(gde, kinder=2), ein_kind, "ein oder zwei Kinder: gleicher Satz")
+
+
 # ── Kirchensteuersatz ────────────────────────────────────────────────────────
 @case
 def test_kirchensteuersatz():

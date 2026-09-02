@@ -217,8 +217,12 @@ zieht sie in voller Höhe ab und schätzt die Steuer dadurch **zu niedrig** — 
 größte Vereinfachung und steht so auch im Disclaimer.
 
 ### Anlage Sonderausgaben / Außergewöhnliche Belastungen
-Spenden, Kirchensteuer, Ausbildungskosten; Krankheitskosten u. a. nach zumutbarer
-Belastung (die der Report nicht rechnet — hier den bereits gekürzten Betrag eintragen).
+Spenden, Kirchensteuer, Ausbildungskosten. Bei den außergewöhnlichen Belastungen gehört
+der **Bruttobetrag** in `aussergewoehnliche_belastungen.aufwendungen` — der Report kürzt
+ihn selbst um die zumutbare Belastung nach § 33 Abs. 3 EStG (stufenweise, nach
+Gesamtbetrag der Einkünfte, Familienstand und Kinderzahl). Das ältere Feld `anzusetzen`
+gilt weiter für bereits selbst gekürzte Beträge und wird unverändert übernommen; beide
+zusammen einzutragen kürzt doppelt.
 
 ### Anlage Kind
 Je Kind Name, Geburtsdatum, Kindergeld. Die Günstigerprüfung Kinderfreibetrag vs.
@@ -252,8 +256,7 @@ bleiben steuerfrei, erhöhen aber nach § 32b EStG den Steuersatz auf das übrig
 Einkommen.
 
 ## Was der Report NICHT automatisch rechnet
-Höchstbetragsberechnung Vorsorgeaufwand, zumutbare Belastung bei agB, Günstigerprüfung
-Kinderfreibetrag/Kindergeld, Gewerbesteueranrechnung, Vorauszahlungen. Diese überlässt
+Günstigerprüfung Kinderfreibetrag/Kindergeld, Gewerbesteueranrechnung, Vorauszahlungen. Diese überlässt
 der Report bewusst ELSTER bzw. dem Steuerberater.
 
 Die **Günstigerprüfung nach § 32d Abs. 6** (Kapitalerträge zum Tarif) rechnet der

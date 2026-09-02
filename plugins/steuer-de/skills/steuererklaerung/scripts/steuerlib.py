@@ -456,6 +456,48 @@ def soli(est: Decimal, jahr: int, zusammenveranlagung: bool = False) -> Decimal:
     return q2(min(est * SOLI_SATZ, SOLI_MILDERUNG * (est - fg)))
 
 
+# § 33 Abs. 3 EStG — Stufengrenzen und Prozentsätze. Jahresunabhängig im Gesetz.
+ZUMUTBAR_STUFEN = (D("15340"), D("51130"))
+ZUMUTBAR_SAETZE = {
+    "grund": (D("5"), D("6"), D("7")),      # Nr. 1 a: ohne Kinder, Grundtarif
+    "splitting": (D("4"), D("5"), D("6")),  # Nr. 1 b: ohne Kinder, Splitting
+    "kind_1_2": (D("2"), D("3"), D("4")),   # Nr. 2 a: ein oder zwei Kinder
+    "kind_3": (D("1"), D("1"), D("2")),     # Nr. 2 b: drei oder mehr Kinder
+}
+
+
+def zumutbare_belastung(gesamtbetrag: Decimal, zusammenveranlagung: bool = False,
+                        kinder: int = 0) -> Decimal:
+    """§ 33 Abs. 3 EStG — der Teil der außergewöhnlichen Belastungen, den man
+    selbst zu tragen hat.
+
+    **Stufenweise** gerechnet: der höhere Satz gilt nur für den Teil des
+    Gesamtbetrags der Einkünfte, der die jeweilige Grenze übersteigt (BFH vom
+    19.01.2017, VI R 75/14). Die frühere Lesart wandte einen Satz auf den ganzen
+    Betrag an; an den Stufengrenzen sprang die zumutbare Belastung dadurch um
+    mehrere hundert Euro.
+    """
+    if kinder >= 3:
+        saetze = ZUMUTBAR_SAETZE["kind_3"]
+    elif kinder >= 1:
+        saetze = ZUMUTBAR_SAETZE["kind_1_2"]
+    else:
+        saetze = ZUMUTBAR_SAETZE["splitting" if zusammenveranlagung else "grund"]
+
+    rest = max(D(gesamtbetrag), D("0"))
+    vorige_grenze = D("0")
+    summe = D("0")
+    for grenze, satz in zip(ZUMUTBAR_STUFEN + (None,), saetze):
+        teil = rest if grenze is None else min(rest, grenze - vorige_grenze)
+        if teil <= 0:
+            break
+        summe += teil * satz / D("100")
+        rest -= teil
+        if grenze is not None:
+            vorige_grenze = grenze
+    return q2(summe)
+
+
 # § 10 Abs. 4 Sätze 1 und 2 EStG — jahresunabhängig im Gesetz.
 VORSORGE_SONSTIGE = D("2800")               # Satz 1
 VORSORGE_SONSTIGE_MIT_ZUSCHUSS = D("1900")  # Satz 2
