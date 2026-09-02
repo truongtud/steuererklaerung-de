@@ -179,6 +179,23 @@ def test_beitrittsgebiet_wird_nicht_mitgelesen():
     eq(bbg[2023], D("107400"), "2023")
 
 
+@case
+def test_kinderwerte_aus_der_amtlichen_xml():
+    """§ 32 Abs. 6 Satz 1 nennt die HALBEN Beträge — je Elternteil; bei
+    Zusammenveranlagung verdoppeln sie sich (Satz 2). Wer den Satz-1-Betrag für
+    den vollen Freibetrag hält, halbiert ihn."""
+    w = fs.kinderwerte_aus_xml(fixture("gii_estg_32.xml") + fixture("gii_estg_66.xml"))
+    eq(w["kinderfreibetrag"], D("3414"), "Kinderfreibetrag je Elternteil")
+    eq(w["bea_freibetrag"], D("1464"), "BEA-Freibetrag je Elternteil")
+    eq(w["kindergeld_monat"], D("259"), "§ 66 Abs. 1, monatlich")
+
+
+@case
+def test_kinderwerte_ohne_die_normen_wirft():
+    wirft(fs.FetchError, lambda: fs.kinderwerte_aus_xml("<norm><enbez>§ 1</enbez></norm>"),
+          "§ 32 fehlt")
+
+
 # ── Selbstkontrolle vor dem Schreiben ────────────────────────────────────────
 @case
 def test_unstetiger_tarif_faellt_auf():

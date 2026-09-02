@@ -1,7 +1,7 @@
 {
   "meta": {
     "steuerjahr": 2024,
-    "erstellt": "2026-09-02T21:24:41.576753+00:00",
+    "erstellt": "2026-09-02T21:35:38.094375+00:00",
     "waehrung": "EUR",
     "veranlagung": "Einzelveranlagung",
     "steuerpflichtiger": {
@@ -341,6 +341,7 @@
         "gesamt": "18211.72"
       }
     },
+    "kinder": null,
     "einkommensteuer_schaetzung": "16708.00",
     "soli_schaetzung": "0.00",
     "kirchensteuer_schaetzung": "1503.72",

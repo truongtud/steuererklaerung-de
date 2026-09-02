@@ -250,6 +250,7 @@ Tesseract mit deutschem Sprachpaket — die SKILL.md nennt die genauen Kommandos
 | **Steuerermäßigung § 35a** | Minijob, haushaltsnahe Dienstleistungen und Handwerker — 20 % je Topf mit eigenem Höchstbetrag, gedeckelt auf die Steuer |
 | **Progressionsvorbehalt § 32b** | Eltern-, Arbeitslosen-, Kranken- und Kurzarbeitergeld heben den Satz, ohne selbst besteuert zu werden |
 | **Günstigerprüfung § 32d Abs. 6** | beide Varianten gerechnet und ausgewiesen; angewandt wird sie nicht, denn sie wirkt nur auf Antrag |
+| **Kinder § 31** | Günstigerprüfung Kinderfreibetrag gegen Kindergeld; Soli und Kirchensteuer bemessen sich **immer** mit Freibetrag, auch wenn das Kindergeld gewinnt |
 | **Bescheidprüfung** | Bescheid gegen den eigenen Report, Position für Position; Einspruchsfrist nach § 122 Abs. 2, § 355 Abs. 1 und § 108 Abs. 3 AO; Einspruchsentwurf |
 | **Offene Jahre** | welche Veranlagungszeiträume noch abgegeben werden können (§ 169 Abs. 2 Nr. 2 AO) |
 | **Unsicherheitsbilanz** | jeder Report sagt, welche Lücken bleiben, in welche Richtung sie wirken und wie groß sie sind |

@@ -70,7 +70,12 @@
   "aussergewoehnliche_belastungen": {
     "anzusetzen": "0"
   },
-  "kinder": [],
+  "kinder": [
+    {
+      "name": "",
+      "geburtsdatum": "JJJJ-MM-TT"
+    }
+  ],
   "lohnersatzleistungen": {
     "elterngeld": "0.00",
     "arbeitslosengeld": "0.00",

@@ -25,6 +25,9 @@ Vor jeder Einreichung erneut verifizieren — Werte ändern sich jährlich, teil
 | Beitragsbemessungsgrenze knappschaftl. RV | 103.800 € | 107.400 € | 111.600 € | 118.800 € | 124.800 € |
 | Beitragssatz knappschaftl. RV | 24,7 % | 24,7 % | 24,7 % | 24,7 % | 24,7 % |
 | **Höchstbetrag Altersvorsorge** (§ 10 Abs. 3) | 25.639 € | 26.528 € | 27.566 € | 29.344 € | 30.826 € |
+| Kinderfreibetrag je Elternteil (§ 32 Abs. 6) | — | — | — | — | 3.414 € |
+| BEA-Freibetrag je Elternteil (§ 32 Abs. 6) | — | — | — | — | 1.464 € |
+| Kindergeld je Kind und Monat (§ 66) | — | — | — | — | 259 € |
 | Kirchensteuersatz | 8 % (BW/BY), sonst 9 % | dito | dito | dito | dito |
 | Abgeltungsteuer | 25 % (+ Soli + KiSt) | dito | dito | dito | dito |
 
@@ -118,6 +121,15 @@ Danach von Hand:
    Finanzamt zitiert. Was das Skript zuletzt geprüft hat, steht daneben in `beleg`.
 3. Die Tabellen oben nachziehen; `tests/test_steuerwerte_json.py` prüft sie gegen die JSON.
 4. `python3 tests/run_tests.py` — der Stetigkeitstest läuft über alle Jahre.
+
+**Kinderwerte früherer Jahre** holt das Skript ebenfalls nicht: § 32 Abs. 6 und § 66
+EStG nennen keinen Veranlagungszeitraum und liegen nur in der geltenden Fassung vor.
+Geholt wird deshalb nur das laufende Kalenderjahr. Für frühere Jahre bleiben die Werte
+`null`, und der Report rechnet die Günstigerprüfung dort **gar nicht**, statt mit dem
+Wert eines Nachbarjahres — ein falscher Kinderfreibetrag verschöbe das Ergebnis um
+mehrere hundert Euro je Kind. Wer die Werte hat, trägt `kinderfreibetrag`,
+`bea_freibetrag` (beide **je Elternteil**, wie im Gesetz) und `kindergeld_monat` von
+Hand nach. **Vorsicht bei 2024:** der Kinderfreibetrag wurde nachträglich geändert.
 
 Die **Soli-Freigrenzen früherer Jahre** prüft das Skript nicht nach: amtlich
 veröffentlicht ist nur die geltende Fassung des § 3 SolZG, eine maschinenlesbare

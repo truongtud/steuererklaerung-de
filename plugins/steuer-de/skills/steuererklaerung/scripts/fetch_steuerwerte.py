@@ -13,11 +13,12 @@ Zwei amtliche Quellen, beide vom Bund, unabhängig voneinander:
     (bmf-steuerrechner.de) — je Seite ein Tarifzeitraum mit der „Formel nach
     § 32a EStG“, zurück bis 1958. Daher kommen die Tarife aller Jahre; das Jahr
     steht in der Seitenüberschrift, die Zuordnung ist also keine Annahme.
-  * **Amtliche XML-Fassung von EStG und SolZG** (gesetze-im-internet.de,
-    herausgegeben vom Bundesministerium der Justiz) — führt immer nur die
-    *geltende* Fassung. Daraus kommt die Freigrenze des § 3 Abs. 3 SolZG, und
-    der Tarif des geltenden Jahres wird damit gegen die BMF-Historie gehalten.
-    Widersprechen sich die beiden, wird nichts geschrieben.
+  * **Amtliche XML-Fassung von EStG, SolZG und SGB VI** (gesetze-im-internet.de,
+    herausgegeben vom Bundesministerium der Justiz). Daraus kommen die Freigrenze
+    des § 3 Abs. 3 SolZG, die Kinderwerte aus § 32 Abs. 6 und § 66 EStG sowie —
+    als einzige echte Jahresreihe — die Beitragsbemessungsgrenzen aus Anlage 2
+    SGB VI. Der Tarif des geltenden Jahres wird gegen die BMF-Historie gehalten;
+    widersprechen sich die beiden, wird nichts geschrieben.
 
 Nicht geholt werden:
 
@@ -28,6 +29,10 @@ Nicht geholt werden:
   * **Sparer-Pauschbetrag, Arbeitnehmer-Pauschbetrag, Freigrenze § 23.** Sie
     stehen an anderer Stelle im Gesetz und werden von Hand gepflegt. Für ein
     neues Jahr legt das Skript sie als `null` an — nie als 0.
+  * **Kinderwerte früherer Jahre.** § 32 Abs. 6 und § 66 EStG nennen keinen
+    Veranlagungszeitraum und liegen nur in der geltenden Fassung vor. Geholt wird
+    deshalb nur das laufende Kalenderjahr; für frühere Jahre bleibt der Wert
+    `null`, und der Report rechnet die Günstigerprüfung dort gar nicht.
 
     python3 scripts/fetch_steuerwerte.py                 # nur anzeigen
     python3 scripts/fetch_steuerwerte.py --jahre 2022-2027
@@ -270,6 +275,28 @@ def soli_freigrenze_aus_text(text: str) -> D:
     return _zahl(m.group(1))
 
 
+def kinderwerte_aus_xml(xml: str) -> dict:
+    """§ 32 Abs. 6 Satz 1 und § 66 Abs. 1 EStG → Kinderfreibetrag, BEA-Freibetrag,
+    Kindergeld je Monat.
+
+    Die beiden Freibeträge stehen als **halbe** Beträge im Gesetz — je Elternteil;
+    bei Zusammenveranlagung verdoppeln sie sich nach Satz 2. Sie werden hier so
+    übernommen, wie sie im Gesetz stehen; das Verdoppeln macht steuerlib.
+
+    Beide Normen nennen keinen Veranlagungszeitraum, es gibt sie nur in der
+    geltenden Fassung — eine Jahresreihe liefert die amtliche XML nicht.
+    """
+    t32 = norm_aus_xml(xml, "§ 32")
+    m = _such(rf"Freibetrag von ({_ZAHL})\s*Euro f(?:ü|ue)r das s(?:ä|ae)chliche "
+              rf"Existenzminimum des Kindes \(Kinderfreibetrag\) sowie ein Freibetrag "
+              rf"von ({_ZAHL})\s*Euro", t32, "Kinderfreibetrag und BEA-Freibetrag")
+    kindergeld = _such(rf"Das Kindergeld betr(?:ä|ae)gt monatlich f(?:ü|ue)r jedes Kind "
+                       rf"({_ZAHL})\s*Euro", norm_aus_xml(xml, "§ 66"),
+                       "Kindergeld nach § 66 Abs. 1")
+    return {"kinderfreibetrag": _zahl(m.group(1)), "bea_freibetrag": _zahl(m.group(2)),
+            "kindergeld_monat": _zahl(kindergeld.group(1))}
+
+
 def bbg_knappschaftlich_aus_xml(xml: str) -> dict:
     """Anlage 2 SGB VI → Jahr → knappschaftliche Beitragsbemessungsgrenze.
 
@@ -398,6 +425,28 @@ def bbg_holen(jahre: set, laut: bool = True) -> dict:
     return gefunden
 
 
+def kinderwerte_holen(jahre: set, laut: bool = True) -> dict:
+    """Kinderfreibetrag, BEA-Freibetrag und Kindergeld — nur für das laufende
+    Kalenderjahr.
+
+    § 32 Abs. 6 und § 66 EStG nennen keinen Veranlagungszeitraum und liegen nur
+    in der geltenden Fassung vor; eine amtliche Jahresreihe gibt es nicht. Für
+    frühere Jahre wird deshalb **nichts** geschrieben — dort bleibt der Wert
+    `null`, und der Report rechnet die Günstigerprüfung für dieses Jahr gar
+    nicht, statt mit einem Nachbarwert zu rechnen. Ein falscher Kinderfreibetrag
+    verschiebt das Ergebnis um mehrere hundert Euro je Kind.
+    """
+    jahr = date.today().year
+    if jahr not in jahre:
+        return {}
+    werte = kinderwerte_aus_xml(gesetz_xml(ESTG_XML))
+    if laut:
+        print(f"  Kinderwerte {jahr}: Freibetrag {werte['kinderfreibetrag']} + "
+              f"{werte['bea_freibetrag']} € je Elternteil, Kindergeld "
+              f"{werte['kindergeld_monat']} €/Monat")
+    return {jahr: werte}
+
+
 def geltendes_jahr_pruefen(tarife: dict[int, tuple[dict, str]],
                            laut: bool = True) -> tuple[int, D]:
     """Den Tarif des geltenden Jahres gegen das EStG halten und die
@@ -435,8 +484,8 @@ def _s(d: D) -> str:
 
 
 def zusammenfuehren(alt: dict, tarife: dict[int, tuple[dict, str]],
-                    soli: dict[int, D], bbg: Optional[dict] = None
-                    ) -> tuple[dict, list[str]]:
+                    soli: dict[int, D], bbg: Optional[dict] = None,
+                    kinder: Optional[dict] = None) -> tuple[dict, list[str]]:
     """Geholte Werte in die vorhandene JSON einarbeiten. Gibt die neue Fassung
     und die Liste der Änderungen zurück; von Hand gepflegte Werte bleiben."""
     neu = json.loads(json.dumps(alt))
@@ -444,8 +493,8 @@ def zusammenfuehren(alt: dict, tarife: dict[int, tuple[dict, str]],
     heute = date.today().isoformat()
     aenderungen: list[str] = []
 
-    bbg = bbg or {}
-    for jahr in sorted(set(tarife) | set(soli) | set(bbg)):
+    bbg, kinder = bbg or {}, kinder or {}
+    for jahr in sorted(set(tarife) | set(soli) | set(bbg) | set(kinder)):
         k = str(jahr)
         eintrag = jahre.get(k)
         if eintrag is None and jahr not in tarife:
@@ -490,6 +539,12 @@ def zusammenfuehren(alt: dict, tarife: dict[int, tuple[dict, str]],
                 aenderungen.append(
                     f"{k}: bbg_knappschaftlich {eintrag.get('bbg_knappschaftlich')} → {wert}")
             eintrag["bbg_knappschaftlich"] = wert
+        for schluessel, wert in (kinder.get(jahr) or {}).items():
+            neu_wert = _s(wert)
+            if eintrag.get(schluessel) != neu_wert:
+                aenderungen.append(
+                    f"{k}: {schluessel} {eintrag.get(schluessel)} → {neu_wert}")
+            eintrag[schluessel] = neu_wert
         if jahr in soli:
             wert = _s(soli[jahr])
             if eintrag.get("soli_freigrenze") != wert:
@@ -539,6 +594,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         tarife = tarife_holen(jahre)
         soli_jahr, freigrenze = geltendes_jahr_pruefen(tarife)
         bbg = bbg_holen(jahre)
+        kinder = kinderwerte_holen(jahre)
     except FetchError as e:
         print(f"\nFEHLER: {e}\nEs wurde nichts geschrieben.", file=sys.stderr)
         return 1
@@ -557,7 +613,7 @@ def main(argv: Optional[list[str]] = None) -> int:
               f"{', '.join(str(j) for j in fehlend)} — das Gesetz führt diese "
               f"Veranlagungszeiträume (noch) nicht.")
 
-    neu, aenderungen = zusammenfuehren(alt, tarife, soli, bbg)
+    neu, aenderungen = zusammenfuehren(alt, tarife, soli, bbg, kinder)
     if not aenderungen:
         print("\nAlle geholten Werte stimmen mit der JSON überein.")
     else:

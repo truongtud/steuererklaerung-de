@@ -63,6 +63,8 @@ from steuerlib import (  # noqa: E402
     est_mit_progressionsvorbehalt,
     freigrenze_23,
     jahr_mit_werten,
+    kinderfreibetraege,
+    kindergeld_jahr,
     offene_veranlagungszeitraeume,
     steuerermaessigung_35a,
     normiere_kirchensteuersatz,
@@ -1564,6 +1566,15 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     an_pb_rest = max(an_pb - brutto, NULL) if lohnersatz_roh > 0 else NULL
     lohnersatz = max(lohnersatz_roh - an_pb_rest, NULL)
 
+    # --- Kinder: Günstigerprüfung § 31, und die Bemessung der Zuschlagsteuern ---
+    # § 3 Abs. 2 SolZG und § 51a Abs. 2 Satz 1 EStG verlangen beide eine
+    # Einkommensteuer, die "unter Berücksichtigung von Freibeträgen nach § 32
+    # Absatz 6 in allen Fällen" festzusetzen wäre. Es gibt deshalb ZWEI Beträge:
+    # den festgesetzten — bei dem das Kindergeld gewonnen haben kann — und einen
+    # fiktiven, stets mit Freibetrag, allein für Soli und Kirchensteuer.
+    kfb_summe = kinderfreibetraege(werte_jahr, len(kinder), verheiratet) if kinder else None
+    kindergeld = (kindergeld_jahr(werte_jahr, len(kinder), verheiratet)
+                  if kinder else None)
     gemeinsam = dict(jahr=jahr, werte_jahr=werte_jahr, verheiratet=verheiratet,
                      kist_satz=kist_satz, lohnersatz=lohnersatz,
                      ermaessigung=ermaessigung_35a)
@@ -1573,6 +1584,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     variante_b = _festsetzung(zve + bemessung_kap, **gemeinsam)
 
     guenstigerpruefung = None
+    kinder_details = {"gerechnet": False, "anzahl": len(kinder)} if kinder else None
     if variante_a is None:
         est = est_tariflich = None
         tarif_soli = tarif_kist = None
@@ -1610,6 +1622,35 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
         est = variante_a["est"]
         tarif_soli = variante_a["soli"]
         tarif_kist = variante_a["kist"] if kist_satz is not None else None
+        # Kinder: zwei Rechnungen, eine Entscheidung und eine getrennte
+        # Bemessungsgrundlage für die Zuschlagsteuern.
+        if kfb_summe is not None and kindergeld is not None:
+            mit_freibetrag = _festsetzung(max(zve - kfb_summe, NULL), **gemeinsam)
+            # § 31 Satz 4: die Freibeträge greifen, wenn ihre Entlastung das
+            # Kindergeld übersteigt.
+            entlastung = q2(variante_a["est"] - mit_freibetrag["est"])
+            freibetrag_guenstiger = entlastung > kindergeld
+            if freibetrag_guenstiger:
+                # § 31 Satz 5: Freibeträge abziehen, Kindergeldanspruch hinzurechnen.
+                est_tariflich = mit_freibetrag["est_tariflich"]
+                est = q2(mit_freibetrag["est"] + kindergeld)
+            # Soli und Kirchensteuer IMMER aus der Fassung mit Freibetrag.
+            tarif_soli = mit_freibetrag["soli"]
+            tarif_kist = mit_freibetrag["kist"] if kist_satz is not None else None
+            kinder_details = {
+                "gerechnet": True,
+                "anzahl": len(kinder),
+                "freibetraege": str(q2(kfb_summe)),
+                "kindergeld_anspruch": str(q2(kindergeld)),
+                "entlastung_durch_freibetrag": str(entlastung),
+                "freibetrag_guenstiger": freibetrag_guenstiger,
+                "est_fuer_zuschlagsteuern": str(mit_freibetrag["est"]),
+            }
+        elif kinder:
+            kinder_details = {"gerechnet": False, "anzahl": len(kinder)}
+        else:
+            kinder_details = None
+
         est_gesamt = q2(est + kap_est)
         soli_gesamt = q2(tarif_soli + kap_soli)
         kist_gesamt = (q2((tarif_kist or NULL) + (kap_kist or NULL))
@@ -1680,10 +1721,12 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
                "Versorgungsanwärter nicht gerechnet", "offen",
                "§ 10 Abs. 3 Satz 3 EStG",
                "nur bei diesem Personenkreis; sonst ohne Wirkung")
-    if kinder:
-        _offen("Kinderfreibetrag und Günstigerprüfung gegen das Kindergeld nicht "
-               "gerechnet", "zu hoch", "§ 31, § 32 Abs. 6 EStG",
-               "bis zu mehreren hundert Euro je Kind")
+    if kinder and not (kinder_details or {}).get("gerechnet"):
+        _offen(f"Kinderfreibetrag und Günstigerprüfung für {werte_jahr} nicht "
+               f"gerechnet — die Werte sind nicht hinterlegt", "zu hoch",
+               "§ 31, § 32 Abs. 6 EStG",
+               "bis zu mehreren hundert Euro je Kind; nachtragbar in "
+               "references/steuerwerte.json")
     if guenstigerpruefung and guenstigerpruefung["tarif_guenstiger"]:
         _offen("Günstigerprüfung ausgewiesen, aber nicht angewandt", "zu hoch",
                "§ 32d Abs. 6 EStG", fmt_eur(guenstigerpruefung["vorteil"]))
@@ -2032,6 +2075,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
                     besonderer_steuersatz(zve, lohnersatz, jahr, verheiratet) or NULL),
             } if lohnersatz > 0 else None),
             "guenstigerpruefung": guenstigerpruefung,
+            "kinder": kinder_details,
             "einkommensteuer_schaetzung": (None if est is None else str(est)),
             "soli_schaetzung": (None if tarif_soli is None else str(tarif_soli)),
             "kirchensteuer_schaetzung": (None if tarif_kist is None else str(tarif_kist)),

@@ -110,7 +110,10 @@
       "geprueft": "2026-09-02",
       "beleg": "Tarifhistorie des Bundesministeriums der Finanzen, 2025_10_14_Tarifhistorie_Steuerrechner.pdf",
       "bbg_knappschaftlich": "124800",
-      "beitragssatz_knappschaftlich": "0.247"
+      "beitragssatz_knappschaftlich": "0.247",
+      "kinderfreibetrag": "3414",
+      "bea_freibetrag": "1464",
+      "kindergeld_monat": "259"
     }
   }
 }

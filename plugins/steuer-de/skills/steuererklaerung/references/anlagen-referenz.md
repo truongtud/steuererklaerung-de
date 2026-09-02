@@ -225,8 +225,25 @@ gilt weiter für bereits selbst gekürzte Beträge und wird unverändert überno
 zusammen einzutragen kürzt doppelt.
 
 ### Anlage Kind
-Je Kind Name, Geburtsdatum, Kindergeld. Die Günstigerprüfung Kinderfreibetrag vs.
-Kindergeld macht ELSTER automatisch.
+Je Kind `name` und `geburtsdatum` im Block `kinder`. Der Report rechnet die
+**Günstigerprüfung nach § 31 EStG** selbst: Kinderfreibetrag und BEA-Freibetrag
+(§ 32 Abs. 6) gegen den Kindergeldanspruch (§ 66). Ist der Freibetrag günstiger, wird er
+abgezogen und der Kindergeld*anspruch* hinzugerechnet — der Anspruch, nicht die
+Auszahlung.
+
+Der Vergleich ist symmetrisch: bei Einzelveranlagung steht dem **halben** Freibetrag
+auch nur das **halbe** Kindergeld gegenüber. Der Umschlag liegt beim Grenzsteuersatz, ab
+dem die Entlastung das Kindergeld übersteigt — 2026 bei rund 31,9 %.
+
+> **Der Fallstrick daneben:** Solidaritätszuschlag (§ 3 Abs. 2 SolZG) und Kirchensteuer
+> (§ 51a Abs. 2 Satz 1 EStG) bemessen sich nach einer Einkommensteuer, die „unter
+> Berücksichtigung von Freibeträgen nach § 32 Absatz 6 **in allen Fällen**“ festzusetzen
+> wäre — auch dann, wenn das Kindergeld gewonnen hat. Der Report weist diese zweite,
+> fiktive Steuer als `est_fuer_zuschlagsteuern` aus.
+
+Nicht gerechnet: Kinderbetreuungskosten (§ 10 Abs. 1 Nr. 5), Entlastungsbetrag für
+Alleinerziehende (§ 24b), Ausbildungsfreibetrag (§ 33a Abs. 2), Übertragung des vollen
+Freibetrags auf einen Elternteil (§ 32 Abs. 6 Sätze 6 ff.).
 
 ### Steuerermäßigungen — § 35a (Hauptvordruck)
 Block `steuerermaessigungen.paragraph_35a` mit drei festen Töpfen, je 20 % der

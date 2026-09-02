@@ -374,6 +374,41 @@ def test_vorsorge_basiskranken_bleibt_ueber_dem_hoechstbetrag_abziehbar():
     eq(r["sonstige_verfallen"], D("800.00"), "der Rest nach Nr. 3a entfällt ganz")
 
 
+# ── Kinder ───────────────────────────────────────────────────────────────────
+@case
+def test_kinderfreibetraege_summe():
+    """§ 32 Abs. 6 Sätze 1 und 2: je Elternteil 3.414 € Kinderfreibetrag und
+    1.464 € BEA; bei Zusammenveranlagung verdoppelt."""
+    eq(sl.kinderfreibetraege(2026, 1, False), D("4878"), "ein Kind, einzeln")
+    eq(sl.kinderfreibetraege(2026, 1, True), D("9756"), "ein Kind, zusammen")
+    eq(sl.kinderfreibetraege(2026, 2, True), D("19512"), "zwei Kinder, zusammen")
+    eq(sl.kinderfreibetraege(2026, 0, True), D("0"), "ohne Kind kein Freibetrag")
+
+
+@case
+def test_kinderwerte_ohne_hinterlegung_sind_none():
+    """Für Jahre ohne hinterlegte Werte wird NICHT auf ein Nachbarjahr
+    ausgewichen: ein falscher Kinderfreibetrag verschiebt das Ergebnis um
+    mehrere hundert Euro je Kind."""
+    eq(sl.kinderfreibetraege(2024, 1, True), None)
+    eq(sl.kindergeld_jahr(2024, 1), None)
+
+
+@case
+def test_kindergeld_jahr():
+    eq(sl.kindergeld_jahr(2026, 2, True), D("6216"), "2 Kinder × 259 € × 12 Monate")
+    eq(sl.kindergeld_jahr(2026, 0, True), D("0"))
+
+
+@case
+def test_kindergeld_halbiert_sich_bei_einzelveranlagung():
+    """Der Vergleich muss symmetrisch sein: dem halben Kinderfreibetrag steht
+    auch nur das halbe Kindergeld gegenüber. Ohne die Halbierung gewönne bei
+    Einzelveranlagung rechnerisch immer das Kindergeld."""
+    eq(sl.kindergeld_jahr(2026, 1, False), D("1554"), "halber Anspruch")
+    eq(sl.kindergeld_jahr(2026, 1, True), D("3108"), "voller Anspruch")
+
+
 # ── zumutbare Belastung ──────────────────────────────────────────────────────
 @case
 def test_zumutbare_belastung_stufen():

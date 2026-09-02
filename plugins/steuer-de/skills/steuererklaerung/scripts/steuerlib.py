@@ -386,7 +386,8 @@ def _lade_steuerwerte(pfad: str = STEUERWERTE_JSON) -> dict:
                 # stehen sie NICHT in JAHRESWERTE und lösen keinen Ersatzwert
                 # für das ganze Jahr aus.
                 **{k: (None if e.get(k) is None else D(e[k]))
-                   for k in ("bbg_knappschaftlich", "beitragssatz_knappschaftlich")},
+                   for k in ("bbg_knappschaftlich", "beitragssatz_knappschaftlich",
+                             "kinderfreibetrag", "bea_freibetrag", "kindergeld_monat")},
             }
             for jahr, e in daten["jahre"].items()
         }
@@ -555,6 +556,47 @@ def soli(est: Decimal, jahr: int, zusammenveranlagung: bool = False) -> Decimal:
     if est <= fg:
         return D("0")
     return q2(min(est * SOLI_SATZ, SOLI_MILDERUNG * (est - fg)))
+
+
+def kinderfreibetraege(jahr: int, anzahl: int,
+                       zusammenveranlagung: bool = False) -> Optional[Decimal]:
+    """§ 32 Abs. 6 EStG: Kinderfreibetrag und BEA-Freibetrag für alle Kinder.
+
+    Satz 1 nennt die Beträge **je Elternteil**; nach Satz 2 verdoppeln sie sich
+    bei zusammenveranlagten Ehegatten. None, wenn die Werte für das Jahr fehlen —
+    dann wird die Günstigerprüfung nicht gerechnet, statt mit dem Wert eines
+    Nachbarjahres. Ein falscher Kinderfreibetrag verschiebt das Ergebnis um
+    mehrere hundert Euro je Kind.
+    """
+    werte = _WERTE.get(jahr) or {}
+    kfb, bea = werte.get("kinderfreibetrag"), werte.get("bea_freibetrag")
+    if kfb is None or bea is None:
+        return None
+    je_kind = (kfb + bea) * (2 if zusammenveranlagung else 1)
+    return je_kind * max(int(anzahl), 0)
+
+
+def kindergeld_jahr(jahr: int, anzahl: int,
+                    zusammenveranlagung: bool = False) -> Optional[Decimal]:
+    """§ 66 Abs. 1 EStG: Kindergeldanspruch für ein volles Jahr.
+
+    Maßgeblich ist der **Anspruch**, nicht die Auszahlung (§ 31 Satz 5). Wer das
+    Kindergeld nicht beantragt hat, muss es sich trotzdem anrechnen lassen.
+
+    Der Vergleich in der Günstigerprüfung muss symmetrisch sein: bei
+    Einzelveranlagung steht dem **halben** Kinderfreibetrag (§ 32 Abs. 6 Satz 1)
+    auch nur der **halbe** Kindergeldanspruch gegenüber. Ohne diese Halbierung
+    gewönne bei Einzelveranlagung rechnerisch immer das Kindergeld — auch dort,
+    wo der Freibetrag günstiger ist.
+
+    Nicht abgebildet: die Übertragung des vollen Freibetrags auf einen Elternteil
+    (§ 32 Abs. 6 Sätze 6 ff.).
+    """
+    monat = (_WERTE.get(jahr) or {}).get("kindergeld_monat")
+    if monat is None:
+        return None
+    voll = monat * D("12") * max(int(anzahl), 0)
+    return voll if zusammenveranlagung else voll / D("2")
 
 
 # § 33 Abs. 3 EStG — Stufengrenzen und Prozentsätze. Jahresunabhängig im Gesetz.
