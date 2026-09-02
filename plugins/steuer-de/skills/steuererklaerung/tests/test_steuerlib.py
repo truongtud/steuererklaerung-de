@@ -161,6 +161,44 @@ def test_unbekanntes_jahr():
     eq(sl.est_grundtarif(D("50000"), 2019), None, "kein Tarif → None statt Fantasiewert")
 
 
+# ── Progressionsvorbehalt ────────────────────────────────────────────────────
+@case
+def test_progressionsvorbehalt_hebt_den_satz():
+    """§ 32b: der Satz bemisst sich nach zvE + Lohnersatz, angewandt wird er auf
+    das zvE. Die Leistung selbst bleibt steuerfrei."""
+    ohne = sl.est_grundtarif(D("30000"), 2024)
+    mit = sl.est_mit_progressionsvorbehalt(D("30000"), D("12000"), 2024)
+    assert mit > ohne, f"Elterngeld muss den Satz heben: {mit} vs. {ohne}"
+    assert mit < sl.est_grundtarif(D("42000"), 2024), \
+        "die Leistung darf nicht wie Einkommen besteuert werden"
+
+
+@case
+def test_progressionsvorbehalt_ohne_leistung_aendert_nichts():
+    eq(sl.est_mit_progressionsvorbehalt(D("30000"), D("0"), 2024),
+       sl.est_grundtarif(D("30000"), 2024), "ohne Lohnersatz identisch")
+
+
+@case
+def test_besonderer_steuersatz_vier_nachkommastellen():
+    satz = sl.besonderer_steuersatz(D("30000"), D("12000"), 2024)
+    eq(satz, satz.quantize(D("0.0001")), "auf vier Nachkommastellen festgelegt")
+    assert D("0") < satz < D("0.45"), f"unplausibler Satz: {satz}"
+
+
+@case
+def test_progressionsvorbehalt_ohne_tarif_ist_none():
+    eq(sl.est_mit_progressionsvorbehalt(D("30000"), D("12000"), 2019), None)
+    eq(sl.besonderer_steuersatz(D("30000"), D("12000"), 2019), None)
+
+
+@case
+def test_progressionsvorbehalt_splitting():
+    einzel = sl.est_mit_progressionsvorbehalt(D("30000"), D("12000"), 2024)
+    zusammen = sl.est_mit_progressionsvorbehalt(D("60000"), D("24000"), 2024, True)
+    eq(zusammen, einzel * 2, "Splitting: doppeltes zvE und doppelte Leistung")
+
+
 # ── Soli ─────────────────────────────────────────────────────────────────────
 @case
 def test_soli_milderungszone():

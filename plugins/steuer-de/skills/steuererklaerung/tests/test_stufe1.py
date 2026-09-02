@@ -91,6 +91,48 @@ def test_35a_tippfehler_im_topf_faellt_auf():
     eq(r["berechnung"]["steuerermaessigung_35a"], "0.00", "der Wert darf nicht wirken")
 
 
+# ── Progressionsvorbehalt ────────────────────────────────────────────────────
+@case
+def test_lohnersatz_hebt_die_steuer_und_wird_nicht_besteuert():
+    ohne = bau(steuerdaten())
+    mit = bau(steuerdaten(lohnersatzleistungen={"elterngeld": "12000"}))
+    eq(mit["berechnung"]["zu_versteuerndes_einkommen"],
+       ohne["berechnung"]["zu_versteuerndes_einkommen"],
+       "die Leistung erhöht das zu versteuernde Einkommen nicht")
+    assert (D(mit["berechnung"]["einkommensteuer_schaetzung"])
+            > D(ohne["berechnung"]["einkommensteuer_schaetzung"])), "der Satz muss steigen"
+    pv = mit["berechnung"]["progressionsvorbehalt"]
+    eq(pv["lohnersatzleistungen"], "12000.00")
+    assert D(pv["besonderer_steuersatz"]) > 0
+
+
+@case
+def test_lohnersatz_zieht_den_an_pauschbetrag_nicht_doppelt_ab():
+    """§ 32b Abs. 2 Nr. 1: der Arbeitnehmer-Pauschbetrag mindert die Leistungen
+    nur, soweit er nicht schon bei den Einkünften abgezogen wurde. Bei
+    vorhandenem Arbeitslohn ist er dort verbraucht."""
+    mit_lohn = bau(steuerdaten(lohnersatzleistungen={"elterngeld": "12000"}))
+    eq(mit_lohn["berechnung"]["progressionsvorbehalt"]["lohnersatzleistungen"], "12000.00",
+       "kein zweiter Abzug bei vorhandenem Arbeitslohn")
+
+    ohne_lohn = bau(steuerdaten(anlage_n={"bruttoarbeitslohn": "0", "lohnsteuer": "0"},
+                                lohnersatzleistungen={"elterngeld": "12000"}))
+    eq(ohne_lohn["berechnung"]["progressionsvorbehalt"]["lohnersatzleistungen"], "10770.00",
+       "ohne Arbeitslohn mindert der Pauschbetrag von 1.230 € die Leistungen")
+
+
+@case
+def test_ohne_lohnersatz_kein_abschnitt():
+    eq(bau(steuerdaten())["berechnung"]["progressionsvorbehalt"], None)
+
+
+@case
+def test_lohnersatz_hinweis():
+    r = bau(steuerdaten(lohnersatzleistungen={"elterngeld": "12000"}))
+    text = " ".join(r["hinweise"])
+    assert "§ 32b" in text and "steuerfrei" in text, f"Hinweis fehlt: {text!r}"
+
+
 if __name__ == "__main__":
     fails = []
     for fn in CASES:

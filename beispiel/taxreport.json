@@ -1,7 +1,7 @@
 {
   "meta": {
     "steuerjahr": 2024,
-    "erstellt": "2026-09-02T20:33:49.981259+00:00",
+    "erstellt": "2026-09-02T20:35:42.079934+00:00",
     "waehrung": "EUR",
     "veranlagung": "Einzelveranlagung",
     "steuerpflichtiger": {
@@ -309,6 +309,7 @@
     "tarif": "Grundtarif",
     "einkommensteuer_tariflich_schaetzung": "16736.00",
     "steuerermaessigung_35a": "0.00",
+    "progressionsvorbehalt": null,
     "einkommensteuer_schaetzung": "16736.00",
     "soli_schaetzung": "0.00",
     "kirchensteuer_schaetzung": "1506.24",

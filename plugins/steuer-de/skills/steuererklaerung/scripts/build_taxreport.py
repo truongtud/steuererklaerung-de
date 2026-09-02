@@ -57,6 +57,8 @@ from steuerlib import (  # noqa: E402
     an_pauschbetrag,
     est_tarif,
     fmt_eur,
+    besonderer_steuersatz,
+    est_mit_progressionsvorbehalt,
     freigrenze_23,
     jahr_mit_werten,
     steuerermaessigung_35a,
@@ -184,7 +186,7 @@ FELDER_OBERSTE_EBENE = {
     "steuerjahr", "tax_year", "zusammenveranlagung", "steuerpflichtiger",
     "anlage_n", "anlage_kap", "anlage_so", "anlage_v", "anlage_s", "anlage_g",
     "vorsorge", "sonderausgaben", "aussergewoehnliche_belastungen", "kinder",
-    "krypto_transaktionen", "steuerermaessigungen",
+    "krypto_transaktionen", "steuerermaessigungen", "lohnersatzleistungen",
 }
 
 FELDER_JE_BLOCK = {
@@ -216,7 +218,8 @@ FELDER_35A = {"minijob_haushalt", "haushaltsnahe_dienstleistungen", "handwerkerl
 
 # Absichtlich frei benennbare Positions-Dicts — hier ist JEDER Schlüssel gültig
 # (er wird summiert und ins ELSTER-Mapping übernommen), also wird nicht gewarnt.
-FREIFORM_BLOECKE = ("anlage_n.werbungskosten", "vorsorge", "sonderausgaben")
+FREIFORM_BLOECKE = ("anlage_n.werbungskosten", "vorsorge", "sonderausgaben",
+                    "lohnersatzleistungen")
 
 
 def _aehnlichstes(key: str, bekannt) -> str | None:
@@ -1456,7 +1459,15 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
         _betrag(p35a.get("handwerkerleistungen"),
                 "steuerermaessigungen.paragraph_35a.handwerkerleistungen"))
 
-    est_tariflich = est_tarif(zve, jahr, verheiratet)
+    lohnersatz_roh = _summe_positionen(
+        _dict_feld(steuerdaten, "lohnersatzleistungen"), "lohnersatzleistungen")
+    # § 32b Abs. 2 Nr. 1: die Leistungen werden um den Arbeitnehmer-Pauschbetrag
+    # gemindert, SOWEIT er nicht schon bei den Einkünften aus nichtselbständiger
+    # Arbeit abgezogen wurde. Bei vorhandenem Arbeitslohn ist er dort verbraucht.
+    an_pb_rest = max(an_pb - brutto, NULL) if lohnersatz_roh > 0 else NULL
+    lohnersatz = max(lohnersatz_roh - an_pb_rest, NULL)
+
+    est_tariflich = est_mit_progressionsvorbehalt(zve, lohnersatz, jahr, verheiratet)
     if est_tariflich is None:
         est = None
         tarif_soli = None
@@ -1475,6 +1486,13 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
         kist_gesamt = None
         if kist_satz is not None:
             kist_gesamt = q2((tarif_kist or NULL) + (kap_kist or NULL))
+
+    if lohnersatz > 0:
+        hinweise.append(
+            f"Progressionsvorbehalt (§ 32b EStG): {fmt_eur(lohnersatz)} steuerfreie "
+            f"Lohnersatzleistungen wurden angesetzt. Sie bleiben steuerfrei, erhöhen "
+            f"aber den Steuersatz auf das übrige Einkommen. Die Bruttobeträge stehen "
+            f"in der Leistungsbescheinigung und gehören in den Hauptvordruck.")
 
     if ermaessigung_35a > 0:
         hinweise.append(
@@ -1771,6 +1789,11 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
             "einkommensteuer_tariflich_schaetzung": (
                 None if est_tariflich is None else str(est_tariflich)),
             "steuerermaessigung_35a": str(ermaessigung_35a),
+            "progressionsvorbehalt": ({
+                "lohnersatzleistungen": str(q2(lohnersatz)),
+                "besonderer_steuersatz": str(
+                    besonderer_steuersatz(zve, lohnersatz, jahr, verheiratet) or NULL),
+            } if lohnersatz > 0 else None),
             "einkommensteuer_schaetzung": (None if est is None else str(est)),
             "soli_schaetzung": (None if tarif_soli is None else str(tarif_soli)),
             "kirchensteuer_schaetzung": (None if tarif_kist is None else str(tarif_kist)),

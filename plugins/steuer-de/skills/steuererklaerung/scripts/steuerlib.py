@@ -400,6 +400,42 @@ def est_tarif(zve: Decimal, jahr: int, zusammenveranlagung: bool = False) -> Opt
     return est_grundtarif(D(zve), jahr)
 
 
+def besonderer_steuersatz(zve: Decimal, lohnersatz: Decimal, jahr: int,
+                          zusammenveranlagung: bool = False) -> Optional[Decimal]:
+    """§ 32b Abs. 2: Steuersatz, der sich auf zvE **zuzüglich** der
+    Lohnersatzleistungen ergibt.
+
+    Zur Rundung: § 32b schreibt selbst keine vor. Die üblichen vier
+    Nachkommastellen stammen aus der Verwaltungspraxis; hier wird abgerundet,
+    also zugunsten des Steuerpflichtigen. None, wenn für das Jahr kein Tarif
+    hinterlegt ist.
+    """
+    erhoeht = D(zve) + max(D(lohnersatz), D("0"))
+    if erhoeht <= 0:
+        return D("0.0000")
+    est = est_tarif(erhoeht, jahr, zusammenveranlagung)
+    if est is None:
+        return None
+    return (est / erhoeht).quantize(D("0.0001"), rounding=ROUND_DOWN)
+
+
+def est_mit_progressionsvorbehalt(zve: Decimal, lohnersatz: Decimal, jahr: int,
+                                  zusammenveranlagung: bool = False) -> Optional[Decimal]:
+    """Tarifliche ESt unter Progressionsvorbehalt (§ 32b EStG).
+
+    Steuerfreie Lohnersatzleistungen — Eltern-, Arbeitslosen-, Kranken-,
+    Kurzarbeiter-, Mutterschaftsgeld — werden nicht besteuert, heben aber den
+    Satz auf das übrige Einkommen. Ohne Leistung ist das Ergebnis identisch mit
+    est_tarif.
+    """
+    if max(D(lohnersatz), D("0")) == 0:
+        return est_tarif(zve, jahr, zusammenveranlagung)
+    satz = besonderer_steuersatz(zve, lohnersatz, jahr, zusammenveranlagung)
+    if satz is None:
+        return None
+    return euro_abrunden(D(zve) * satz)
+
+
 def soli(est: Decimal, jahr: int, zusammenveranlagung: bool = False) -> Decimal:
     """Solidaritätszuschlag inkl. Milderungszone (§ 4 SolZG).
 
