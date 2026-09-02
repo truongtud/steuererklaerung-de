@@ -1014,6 +1014,27 @@ def _als_quellenliste(krypto) -> list:
     return quellen
 
 
+def _festsetzung(zve, *, jahr, werte_jahr, verheiratet, kist_satz, lohnersatz,
+                 ermaessigung):
+    """Die Kette Tarif → § 35a → Zuschlagsteuern für ein gegebenes zvE.
+
+    Als eigene Funktion, weil die Günstigerprüfung nach § 32d Abs. 6 sie zweimal
+    braucht: einmal ohne und einmal mit den Kapitaleinkünften im zvE. Die
+    Ermäßigung nach § 35a wird in **beiden** Varianten angewandt — sonst kippte
+    der Vergleich falsch, wenn sie in der einen Variante nicht voll aufgezehrt
+    werden kann. None, wenn für das Jahr kein Tarif hinterlegt ist.
+    """
+    est_tariflich = est_mit_progressionsvorbehalt(zve, lohnersatz, jahr, verheiratet)
+    if est_tariflich is None:
+        return None
+    est_tariflich = q2(est_tariflich)
+    est = q2(max(est_tariflich - ermaessigung, NULL))
+    soli_betrag = q2(soli(est, werte_jahr, verheiratet))
+    kist = q2(est * kist_satz) if kist_satz is not None else NULL
+    return {"est_tariflich": est_tariflich, "est": est, "soli": soli_betrag,
+            "kist": kist, "gesamt": q2(est + soli_betrag + kist)}
+
+
 def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     jahr = lies_steuerjahr(steuerdaten)
     tarif_hinterlegt = jahr in TARIF
@@ -1467,25 +1488,67 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     an_pb_rest = max(an_pb - brutto, NULL) if lohnersatz_roh > 0 else NULL
     lohnersatz = max(lohnersatz_roh - an_pb_rest, NULL)
 
-    est_tariflich = est_mit_progressionsvorbehalt(zve, lohnersatz, jahr, verheiratet)
-    if est_tariflich is None:
-        est = None
-        tarif_soli = None
-        tarif_kist = None
+    gemeinsam = dict(jahr=jahr, werte_jahr=werte_jahr, verheiratet=verheiratet,
+                     kist_satz=kist_satz, lohnersatz=lohnersatz,
+                     ermaessigung=ermaessigung_35a)
+    # Variante A: Kapitalerträge gesondert mit 25 % (§ 32d Abs. 1).
+    variante_a = _festsetzung(zve, **gemeinsam)
+    # Variante B: Kapitalerträge im Tarif (§ 32d Abs. 6, Günstigerprüfung).
+    variante_b = _festsetzung(zve + bemessung_kap, **gemeinsam)
+
+    guenstigerpruefung = None
+    if variante_a is None:
+        est = est_tariflich = None
+        tarif_soli = tarif_kist = None
         est_gesamt = soli_gesamt = kist_gesamt = None
     else:
-        est_tariflich = q2(est_tariflich)
-        # § 35a mindert die tarifliche Steuer. Ein Überhang verfällt: er wird
-        # weder erstattet noch vorgetragen — sonst erfände der Report hier eine
-        # Erstattung, die es nicht gibt.
-        est = q2(max(est_tariflich - ermaessigung_35a, NULL))
-        tarif_soli = q2(soli(est, werte_jahr, verheiratet))
-        tarif_kist = q2(est * kist_satz) if kist_satz is not None else None
+        gesamt_a = q2(variante_a["gesamt"] + kap_est + kap_soli + (kap_kist or NULL))
+        gesamt_b = variante_b["gesamt"]
+        # § 32d Abs. 6 verlangt den Vergleich „einschließlich Zuschlagsteuern“ und
+        # setzt voraus, dass es GÜNSTIGER ist — bei Gleichstand bleibt es bei der
+        # Abgeltungsteuer, denn der Antrag muss gestellt werden.
+        guenstiger = bemessung_kap > 0 and gesamt_b < gesamt_a
+        # Ausgewiesen, aber NICHT angewandt: § 32d Abs. 6 wirkt nur „auf Antrag“,
+        # und das ELSTER-Mapping dieses Reports enthält keine Antragszeile. Würde
+        # hier stillschweigend umgeschaltet, stünde im Report eine Erstattung, die
+        # es ohne den Antrag nicht gibt — und das ausgewiesene zvE passte nicht
+        # mehr zur danebenstehenden Steuer.
+        guenstigerpruefung = {
+            "tarif_guenstiger": guenstiger,
+            "vorteil": str(q2(max(gesamt_a - gesamt_b, NULL))),
+            "angewendet": False,
+            "mit_abgeltungsteuer": {
+                "einkommensteuer": str(q2(variante_a["est"] + kap_est)),
+                "soli": str(q2(variante_a["soli"] + kap_soli)),
+                "kirchensteuer": str(q2(variante_a["kist"] + (kap_kist or NULL))),
+                "gesamt": str(gesamt_a),
+            },
+            "mit_tarif": {
+                "einkommensteuer": str(variante_b["est"]),
+                "soli": str(variante_b["soli"]),
+                "kirchensteuer": str(variante_b["kist"]),
+                "gesamt": str(gesamt_b),
+            },
+        }
+        est_tariflich = variante_a["est_tariflich"]
+        est = variante_a["est"]
+        tarif_soli = variante_a["soli"]
+        tarif_kist = variante_a["kist"] if kist_satz is not None else None
         est_gesamt = q2(est + kap_est)
         soli_gesamt = q2(tarif_soli + kap_soli)
-        kist_gesamt = None
-        if kist_satz is not None:
-            kist_gesamt = q2((tarif_kist or NULL) + (kap_kist or NULL))
+        kist_gesamt = (q2((tarif_kist or NULL) + (kap_kist or NULL))
+                       if kist_satz is not None else None)
+
+    if guenstigerpruefung and guenstigerpruefung["tarif_guenstiger"]:
+        hinweise.append(
+            f"Günstigerprüfung (§ 32d Abs. 6 EStG): die Kapitalerträge zum Tarif zu "
+            f"versteuern wäre um {fmt_eur(guenstigerpruefung['vorteil'])} günstiger als "
+            f"die Abgeltungsteuer — verglichen einschließlich Soli und Kirchensteuer, "
+            f"wie es das Gesetz verlangt. Dieser Report rechnet weiter mit der "
+            f"Abgeltungsteuer, denn die Günstigerprüfung wirkt nur AUF ANTRAG: dafür "
+            f"ist in der Anlage KAP das entsprechende Feld anzukreuzen. Wird der "
+            f"Antrag gestellt, fällt die Abschlusszahlung um diesen Betrag "
+            f"günstiger aus.")
 
     if lohnersatz > 0:
         hinweise.append(
@@ -1794,6 +1857,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
                 "besonderer_steuersatz": str(
                     besonderer_steuersatz(zve, lohnersatz, jahr, verheiratet) or NULL),
             } if lohnersatz > 0 else None),
+            "guenstigerpruefung": guenstigerpruefung,
             "einkommensteuer_schaetzung": (None if est is None else str(est)),
             "soli_schaetzung": (None if tarif_soli is None else str(tarif_soli)),
             "kirchensteuer_schaetzung": (None if tarif_kist is None else str(tarif_kist)),

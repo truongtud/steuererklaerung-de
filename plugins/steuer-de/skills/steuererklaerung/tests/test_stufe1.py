@@ -133,6 +133,69 @@ def test_lohnersatz_hinweis():
     assert "§ 32b" in text and "steuerfrei" in text, f"Hinweis fehlt: {text!r}"
 
 
+# ── Günstigerprüfung § 32d Abs. 6 ────────────────────────────────────────────
+@case
+def test_guenstigerpruefung_greift_bei_niedrigem_tarif():
+    """Wer wenig verdient und Kapitalerträge hat, fährt mit dem Tarif besser als
+    mit 25 % Abgeltungsteuer. Bisher empfahl der Report den höheren Betrag."""
+    r = bau(steuerdaten(anlage_n={"bruttoarbeitslohn": "14000", "lohnsteuer": "0"},
+                        anlage_kap={"kapitalertraege": "10000", "anrechenbare_kest": "0"}))
+    g = r["berechnung"]["guenstigerpruefung"]
+    eq(g["tarif_guenstiger"], True, "der Tarif muss hier günstiger sein")
+    eq(g["angewendet"], False, "aber angewandt wird er nicht — § 32d Abs. 6 nur auf Antrag")
+    assert D(g["vorteil"]) > 0, f"der Vorteil muss beziffert sein: {g}"
+    assert D(g["mit_tarif"]["gesamt"]) < D(g["mit_abgeltungsteuer"]["gesamt"]), \
+        f"sonst darf nicht umgeschaltet werden: {g}"
+
+
+@case
+def test_guenstigerpruefung_bleibt_bei_hohem_einkommen_aus():
+    g = bau(steuerdaten(anlage_n={"bruttoarbeitslohn": "90000", "lohnsteuer": "20000"},
+                        anlage_kap={"kapitalertraege": "10000", "anrechenbare_kest": "0"})
+            )["berechnung"]["guenstigerpruefung"]
+    eq(g["tarif_guenstiger"], False, "bei 42 % Grenzsteuersatz bleibt die Abgeltungsteuer")
+
+
+@case
+def test_guenstigerpruefung_vergleicht_mit_zuschlagsteuern():
+    """§ 32d Abs. 6 verlangt den Vergleich der Einkommensteuer 'einschließlich
+    Zuschlagsteuern' — bei Kirchensteuerpflicht kann das Ergebnis kippen."""
+    sd = steuerdaten(anlage_n={"bruttoarbeitslohn": "14000", "lohnsteuer": "0"},
+                     anlage_kap={"kapitalertraege": "10000", "anrechenbare_kest": "0"})
+    sd["steuerpflichtiger"] = {"name": "T", "verheiratet": False, "kirchensteuersatz": "9"}
+    g = bau(sd)["berechnung"]["guenstigerpruefung"]
+    for variante in ("mit_tarif", "mit_abgeltungsteuer"):
+        teile = g[variante]
+        summe = (D(teile["einkommensteuer"]) + D(teile["soli"])
+                 + D(teile["kirchensteuer"]))
+        eq(D(teile["gesamt"]), summe, f"{variante}: gesamt = ESt + Soli + KiSt")
+
+
+@case
+def test_beide_varianten_werden_ausgewiesen():
+    """Ausgewiesen wird beides, nicht nur das bessere — sonst kann der Nutzer
+    die Empfehlung nicht nachvollziehen."""
+    g = bau(steuerdaten(anlage_kap={"kapitalertraege": "5000", "anrechenbare_kest": "0"})
+            )["berechnung"]["guenstigerpruefung"]
+    for variante in ("mit_tarif", "mit_abgeltungsteuer"):
+        assert variante in g, f"{variante} fehlt: {g}"
+
+
+@case
+def test_guenstigerpruefung_hinweis_nennt_den_antrag():
+    r = bau(steuerdaten(anlage_n={"bruttoarbeitslohn": "14000", "lohnsteuer": "0"},
+                        anlage_kap={"kapitalertraege": "10000", "anrechenbare_kest": "0"}))
+    text = " ".join(r["hinweise"])
+    assert "Anlage KAP" in text and "ANTRAG" in text, \
+        f"ohne Antrag bleibt es bei 25 % — das muss dastehen: {text!r}"
+
+
+@case
+def test_ohne_kapitalertraege_keine_umschaltung():
+    g = bau(steuerdaten())["berechnung"]["guenstigerpruefung"]
+    eq(g["tarif_guenstiger"], False, "ohne Kapitalerträge gibt es nichts umzuschalten")
+
+
 if __name__ == "__main__":
     fails = []
     for fn in CASES:
