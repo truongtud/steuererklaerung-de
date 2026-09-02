@@ -16,7 +16,8 @@ import json
 import os
 import re
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from calendar import monthrange
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_HALF_UP, ROUND_UP
 from typing import Iterable, Optional
 
@@ -247,6 +248,106 @@ def haltefrist_erfuellt(anschaffung, veraeusserung) -> bool:
     a = anschaffung.date() if isinstance(anschaffung, datetime) else anschaffung
     v = veraeusserung.date() if isinstance(veraeusserung, datetime) else veraeusserung
     return v > jahresfrist_ende(a)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Fristen nach der Abgabenordnung
+# ─────────────────────────────────────────────────────────────────────────────
+
+BEKANNTGABE_TAGE = 4          # § 122 Abs. 2 Nr. 1 AO, Übermittlung im Inland
+FESTSETZUNGSFRIST_JAHRE = 4   # § 169 Abs. 2 Nr. 2 AO
+
+
+def ostersonntag(jahr: int) -> date:
+    """Gaußsche Osterformel (anonyme gregorianische Variante).
+
+    Gebraucht für Karfreitag, Ostermontag, Himmelfahrt und Pfingstmontag — vier
+    der neun bundesweiten Feiertage hängen am Osterdatum.
+    """
+    a, b, c = jahr % 19, jahr // 100, jahr % 100
+    d, e = b // 4, b % 4
+    g = (b - (b + 8) // 25 + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = c // 4, c % 4
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    monat = (h + l - 7 * m + 114) // 31
+    tag = ((h + l - 7 * m + 114) % 31) + 1
+    return date(jahr, monat, tag)
+
+
+def feiertage_bundesweit(jahr: int) -> set:
+    """Die in **allen** Ländern gesetzlichen Feiertage.
+
+    Länderfeiertage fehlen bewusst: dafür bräuchte es das Bundesland und eine
+    gepflegte Tabelle. Die Folge ist kontrolliert — ein übersehener
+    Länderfeiertag macht ein Fristende **einen Tag zu früh**, nie zu spät. Wer
+    sich nach der errechneten Frist richtet, ist damit auf der sicheren Seite.
+    """
+    o = ostersonntag(jahr)
+    return {
+        date(jahr, 1, 1),                 # Neujahr
+        o - timedelta(days=2),            # Karfreitag
+        o + timedelta(days=1),            # Ostermontag
+        date(jahr, 5, 1),                 # Tag der Arbeit
+        o + timedelta(days=39),           # Christi Himmelfahrt
+        o + timedelta(days=50),           # Pfingstmontag
+        date(jahr, 10, 3),                # Tag der Deutschen Einheit
+        date(jahr, 12, 25), date(jahr, 12, 26),
+    }
+
+
+def ist_werktag(tag: date) -> bool:
+    """§ 108 Abs. 3 AO: Sonnabend, Sonntag und gesetzliche Feiertage zählen nicht."""
+    return tag.weekday() < 5 and tag not in feiertage_bundesweit(tag.year)
+
+
+def naechster_werktag(tag: date) -> date:
+    while not ist_werktag(tag):
+        tag += timedelta(days=1)
+    return tag
+
+
+def bekanntgabe(aufgabe_zur_post: date) -> date:
+    """§ 122 Abs. 2 Nr. 1 AO: im Inland gilt ein Bescheid am **vierten** Tag nach
+    der Aufgabe zur Post als bekannt gegeben.
+
+    Seit dem Postrechtsmodernisierungsgesetz vier statt drei Tage — wer noch mit
+    drei rechnet, nennt eine um einen Tag zu kurze Einspruchsfrist.
+    """
+    return naechster_werktag(aufgabe_zur_post + timedelta(days=BEKANNTGABE_TAGE))
+
+
+def _einen_monat_spaeter(tag: date) -> date:
+    """§ 188 Abs. 2 BGB, mit Abs. 3 für Monatsenden: gibt es den Tag im
+    Folgemonat nicht, endet die Frist mit dessen letztem Tag."""
+    monat = tag.month % 12 + 1
+    jahr = tag.year + (1 if tag.month == 12 else 0)
+    return date(jahr, monat, min(tag.day, monthrange(jahr, monat)[1]))
+
+
+def einspruchsfrist_ende(bekanntgabe_tag: date) -> date:
+    """§ 355 Abs. 1 AO: ein Monat nach Bekanntgabe, Ende nach § 108 Abs. 3 AO."""
+    return naechster_werktag(_einen_monat_spaeter(bekanntgabe_tag))
+
+
+def offene_veranlagungszeitraeume(heute: Optional[date] = None) -> list:
+    """Jahre, für die eine Steuererklärung noch abgegeben werden kann.
+
+    § 169 Abs. 2 Nr. 2 AO nennt vier Jahre; nach § 170 Abs. 1 AO beginnt die
+    Frist mit Ablauf des Kalenderjahres, in dem die Steuer entstanden ist. Für
+    die Antragsveranlagung (§ 46 Abs. 2 Nr. 8 EStG) heißt das etwa: der
+    Veranlagungszeitraum 2022 läuft noch bis zum 31.12.2026.
+
+    Gibt Paare (Jahr, letzter Abgabetag), aufsteigend.
+    """
+    heute = heute or date.today()
+    offen = []
+    for jahr in range(heute.year - FESTSETZUNGSFRIST_JAHRE, heute.year + 1):
+        ende = date(jahr + FESTSETZUNGSFRIST_JAHRE, 12, 31)
+        if ende >= heute:
+            offen.append((jahr, ende))
+    return offen
 
 
 # ─────────────────────────────────────────────────────────────────────────────

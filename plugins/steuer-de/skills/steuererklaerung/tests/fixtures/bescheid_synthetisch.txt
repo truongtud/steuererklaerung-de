@@ -1,0 +1,33 @@
+# SYNTHETISCHER Einkommensteuerbescheid, frei erfunden, im Aufbau eines echten.
+# Kein Original und kein geschwaerztes Original: ein geschwaerzter Bescheid waere
+# weiterhin ein personenbezogenes Dokument und hat in diesem Repo nichts zu suchen.
+# Die Betraege gehen absichtlich glatt auf, damit der Summenabgleich greift.
+
+Finanzamt Musterstadt
+Steuernummer 123/456/78901
+
+Bescheid für 2024 über Einkommensteuer, Solidaritätszuschlag und Kirchensteuer
+
+Datum: 02.03.2026
+
+Besteuerungsgrundlagen
+Gesamtbetrag der Einkünfte                                    77.242,00
+ab Sonderausgaben                                             11.050,00
+ab außergewöhnliche Belastungen                                    0,00
+Zu versteuerndes Einkommen                                    66.192,00
+
+Festsetzung
+Festgesetzte Einkommensteuer                                  16.280,00
+Solidaritätszuschlag                                               0,00
+Kirchensteuer                                                  1.465,20
+
+Anrechnung von Steuerabzugsbeträgen
+Lohnsteuer                                                    17.000,00
+Kapitalertragsteuer                                              200,00
+Kirchensteuer (einbehalten)                                    1.530,00
+
+Erstattung                                                       984,80
+
+Rechtsbehelfsbelehrung
+Gegen diesen Bescheid kann innerhalb eines Monats nach Bekanntgabe Einspruch
+eingelegt werden.

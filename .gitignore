@@ -9,6 +9,11 @@ arbeit/
 steuerdaten.json
 transactions.json
 taxreport.json
+# Ein Steuerbescheid enthält Steuer-ID, Steuernummer und das Finanzamt.
+bescheid.json
+bescheid.pdf
+bescheid.txt
+bescheidpruefung.json
 # Ausnahme: das synthetische Beispiel (erfundene Daten, siehe beispiel/README.md)
 !beispiel/steuerdaten.json
 !beispiel/transactions.json

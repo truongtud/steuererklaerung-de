@@ -106,6 +106,65 @@ def test_haltefrist():
     assert not sl.haltefrist_erfuellt(datetime(2023, 1, 10, 23, 0), datetime(2024, 1, 10, 1, 0))
 
 
+# ── Fristen nach der Abgabenordnung ──────────────────────────────────────────
+@case
+def test_ostersonntag():
+    """Basis für Karfreitag, Ostermontag, Himmelfahrt und Pfingstmontag."""
+    eq(sl.ostersonntag(2024), date(2024, 3, 31))
+    eq(sl.ostersonntag(2025), date(2025, 4, 20))
+    eq(sl.ostersonntag(2026), date(2026, 4, 5))
+
+
+@case
+def test_bekanntgabe_am_vierten_tag():
+    """§ 122 Abs. 2 Nr. 1 AO — seit dem Postrechtsmodernisierungsgesetz der
+    VIERTE Tag, nicht mehr der dritte. Wer mit drei rechnet, nennt eine zu kurze
+    Einspruchsfrist, und das ist hier die teuerste Sorte Fehler."""
+    eq(sl.bekanntgabe(date(2026, 3, 2)), date(2026, 3, 6), "Montag + 4 = Freitag")
+
+
+@case
+def test_bekanntgabe_verschiebt_sich_auf_den_werktag():
+    eq(sl.bekanntgabe(date(2026, 3, 5)), date(2026, 3, 9), "Donnerstag + 4 = Montag")
+    eq(sl.bekanntgabe(date(2026, 3, 4)), date(2026, 3, 9), "Sonntag → Montag")
+
+
+@case
+def test_einspruchsfrist_ein_monat():
+    """§ 355 Abs. 1 AO: ein Monat nach Bekanntgabe; das Ende wird nach
+    § 108 Abs. 3 AO auf den nächsten Werktag geschoben."""
+    eq(sl.einspruchsfrist_ende(date(2026, 3, 6)), date(2026, 4, 7),
+       "6.4.2026 ist Ostermontag")
+    eq(sl.einspruchsfrist_ende(date(2026, 1, 15)), date(2026, 2, 16),
+       "15.2.2026 ist ein Sonntag")
+
+
+@case
+def test_einspruchsfrist_am_monatsende():
+    """§ 188 Abs. 3 BGB: gibt es den Tag im Folgemonat nicht, endet die Frist mit
+    dessen letztem Tag."""
+    eq(sl.einspruchsfrist_ende(date(2026, 1, 31)), date(2026, 3, 2),
+       "28.2.2026 ist ein Samstag → Montag")
+
+
+@case
+def test_feiertage_sind_keine_werktage():
+    assert not sl.ist_werktag(date(2026, 4, 6)), "Ostermontag"
+    assert not sl.ist_werktag(date(2026, 10, 3)), "Tag der Deutschen Einheit"
+    assert not sl.ist_werktag(date(2026, 12, 26)), "zweiter Weihnachtstag"
+    assert sl.ist_werktag(date(2026, 4, 7)), "Dienstag nach Ostern"
+
+
+@case
+def test_offene_veranlagungszeitraeume():
+    """§ 169 Abs. 2 Nr. 2 i.V.m. § 170 Abs. 1 AO: vier Jahre ab Ablauf des
+    Kalenderjahres. Am 02.09.2026 ist 2022 noch offen — bis 31.12.2026."""
+    offen = dict(sl.offene_veranlagungszeitraeume(date(2026, 9, 2)))
+    assert 2022 in offen, f"2022 muss offen sein: {sorted(offen)}"
+    eq(offen[2022], date(2026, 12, 31))
+    assert 2021 not in offen, "2021 ist abgelaufen"
+
+
 # ── Tarif ────────────────────────────────────────────────────────────────────
 @case
 def test_tarif_stuetzpunkte():
