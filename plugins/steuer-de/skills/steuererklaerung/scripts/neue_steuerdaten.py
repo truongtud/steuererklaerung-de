@@ -215,8 +215,8 @@ def main(argv=None) -> int:
         f.write("\n")
     print(f"\n{args.out} angelegt — enthält nur die Blöcke, die zu dir gehören. "
           f"Alles Weitere steht in assets/steuerdaten_vorlage.json.")
-    print("Die Datei enthält später echte Steuerdaten: nicht committen "
-          "(.gitignore sperrt sie bereits).")
+    print("Die Datei enthält später echte Steuerdaten — sie gehört in kein "
+          "Repository und in keine Cloud-Freigabe.")
     return 0
 
 

@@ -69,10 +69,15 @@ Unterschreiben, kein fertiger Schriftsatz und keine Rechtsberatung.
 ## Datenschutz
 
 Ein Bescheid enthält Steuer-ID, Steuernummer und das Finanzamt. `bescheid.pdf`,
-`bescheid.txt`, `bescheid.json` und `bescheidpruefung.json` sind deshalb in der Tiefe
-per `.gitignore` gesperrt — wie `steuerdaten.json`. Die Testfixture ist **synthetisch**:
-kein Original und kein geschwärztes Original, denn ein geschwärzter Bescheid bliebe ein
-personenbezogenes Dokument.
+`bescheid.txt`, `bescheid.json` und `bescheidpruefung.json` gehören in kein Repository
+und in keine Cloud-Freigabe.
+
+*In diesem Repository* sperrt die `.gitignore` sie zusätzlich in der Tiefe. Wer den Skill
+installiert hat, arbeitet dagegen in seinem eigenen Verzeichnis — dort greift diese
+Sperre nicht, und er muss selbst darauf achten.
+
+Die Testfixture ist **synthetisch**: kein Original und kein geschwärztes Original, denn
+ein geschwärzter Bescheid bliebe ein personenbezogenes Dokument.
 
 ## Noch offene Jahre
 

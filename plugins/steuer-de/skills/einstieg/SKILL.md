@@ -96,8 +96,9 @@ Klar sagen, was als Nächstes passiert:
 
 ## Datenschutz
 
-`steuerdaten.json` enthält gleich echte Steuerdaten. Sie ist per `.gitignore` gesperrt und
-gehört in kein Repository. Darauf einmal hinweisen, wenn die Datei angelegt ist.
+`steuerdaten.json` enthält gleich echte Steuerdaten — Name, Steuer-Identifikationsnummer,
+Einkommen. Darauf einmal hinweisen, wenn die Datei angelegt ist: sie gehört in kein
+Repository, in keine Cloud-Freigabe und in keinen Chat.
 
 ## Keine Steuerberatung
 

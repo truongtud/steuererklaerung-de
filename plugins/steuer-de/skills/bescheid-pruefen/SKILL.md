@@ -67,9 +67,8 @@ einzulegen (§ 355 Abs. 1 AO). Deshalb steht die Frist ganz vorn, nicht am Ende.
 ## Datenschutz
 
 Ein Bescheid enthält Steuer-ID, Steuernummer und das Finanzamt. `bescheid.pdf`,
-`bescheid.txt`, `bescheid.json` und `bescheidpruefung.json` sind per `.gitignore`
-gesperrt. Diese Dateien **nie** in ein Repository committen und ihren Inhalt nicht
-weitergeben.
+`bescheid.txt`, `bescheid.json` und `bescheidpruefung.json` **nie** in ein Repository
+committen und ihren Inhalt nicht weitergeben.
 
 ## Wenn kein Report vorliegt
 
