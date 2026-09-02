@@ -222,6 +222,26 @@ def render_html(report: dict) -> str:
 
     disclaimer, hinweise = report_texte(report)
     disc_html = "".join(f"<li>{esc(x)}</li>" for x in disclaimer) or "<li>—</li>"
+    # Was die Schätzung NICHT enthält, mit Richtung — sonst kann der Leser die
+    # Zahl darüber nicht einordnen.
+    unsicher = report.get("unsicherheit") or {}
+    unsicher_block = ""
+    if unsicher.get("posten"):
+        zeilen = "".join(
+            f"<tr><td>{esc(p['posten'])}</td>"
+            f"<td class=\"r\">{esc(p['richtung'])}</td>"
+            f"<td>{esc(p.get('groessenordnung') or '—')}</td>"
+            f"<td>{esc(p['fundstelle'])}</td></tr>"
+            for p in unsicher["posten"])
+        unsicher_block = (
+            '<div class="note"><strong>Was diese Schätzung nicht enthält</strong>'
+            f'<p>Gesamtbild: <strong>{esc(unsicher.get("gesamtrichtung", "—"))}</strong>. '
+            'Die Richtung sagt, wie die ausgewiesene Steuer vom tatsächlichen Ergebnis '
+            'abweichen dürfte.</p>'
+            '<table><thead><tr><th>Posten</th><th>Wirkung auf die Steuer</th>'
+            '<th>Größenordnung</th><th>Fundstelle</th></tr></thead>'
+            f'<tbody>{zeilen}</tbody></table></div>')
+
     hinweis_block = ""
     if hinweise:
         hinweis_block = ('<div class="note"><strong>Weitere Hinweise</strong><ul>'
@@ -315,6 +335,7 @@ footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
 <h2>ELSTER-Feld-Mapping (manuelle Eingabe)</h2>
 <table>{row(["Anlage", "Zeile", "Bezeichnung", "Wert"], header=True)}{el_rows}</table>
 
+{unsicher_block}
 <div class="note"><strong>Wichtige Hinweise</strong><ul>{disc_html}</ul></div>
 {hinweis_block}
 <footer>Erstellt mit dem Skill „Steuererklärung Deutschland“ · keine Steuerberatung · Endkontrolle durch Steuerberater</footer>
@@ -597,6 +618,18 @@ def render_pdf(report: dict, out_path: Path):
         pdf.set_font(F, "", 9)
         pdf.multi_cell(pdf.epw, 5, T("Keine Mapping-Zeilen im Report."),
                        new_x="LMARGIN", new_y="NEXT")
+
+    unsicher = report.get("unsicherheit") or {}
+    if unsicher.get("posten"):
+        section("Was diese Schätzung nicht enthält")
+        pdf.set_font(F, "", 9)
+        pdf.multi_cell(pdf.epw, 5, T(f"Gesamtbild: {unsicher.get('gesamtrichtung', '—')}"),
+                       new_x="LMARGIN", new_y="NEXT")
+        for p in unsicher["posten"]:
+            groesse = p.get("groessenordnung") or "—"
+            pdf.set_x(pdf.l_margin)
+            pdf.multi_cell(pdf.epw, 5, T(f"- {p['posten']}: Steuer {p['richtung']} "
+                                         f"({groesse}; {p['fundstelle']})"))
 
     disclaimer, hinweise = report_texte(report)
     section("Wichtige Hinweise")

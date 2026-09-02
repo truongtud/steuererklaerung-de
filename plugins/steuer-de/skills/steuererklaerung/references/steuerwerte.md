@@ -181,4 +181,10 @@ Schätzung mit Vorjahreswerten ist Orientierung, keine Zahl für eine Erklärung
 - Keine Kinderfreibeträge im Tarif, keine Gewerbesteueranrechnung, keine
   Vorauszahlungen.
 
+Jeder Report führt diese verbleibenden Lücken als **Unsicherheitsbilanz** mit: je Posten
+die Wirkungsrichtung auf die Steuer, eine Größenordnung — soweit sie sich aus vorhandenen
+Zahlen ableiten lässt, sonst gar nicht — und die Fundstelle. Dazu ein Gesamtbild, ob die
+Schätzung eher zu hoch oder zu niedrig liegt. Posten, deren Wirkung vom Personenkreis
+abhängt, zählen als „offen" und färben das Gesamtbild nicht.
+
 → Die Schätzung dient der Orientierung. Die verbindliche Zahl liefert ELSTER.

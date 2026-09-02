@@ -1,7 +1,7 @@
 {
   "meta": {
     "steuerjahr": 2024,
-    "erstellt": "2026-09-02T21:05:58.010762+00:00",
+    "erstellt": "2026-09-02T21:10:15.083400+00:00",
     "waehrung": "EUR",
     "veranlagung": "Einzelveranlagung",
     "steuerpflichtiger": {
@@ -583,5 +583,22 @@
     "Zeilennummern sind Orientierung — ELSTER ändert die Layouts jährlich. Jede Zeile vor dem Absenden im Formular gegenprüfen.",
     "Krypto-Endkontrolle durch Steuerberater und Abgleich mit der ELSTER-Berechnung vor Einreichung.",
     "§ 23-Verlustvortrag aus Vorjahren: 900,00 € von 900,00 € wurden mit den § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG). Der verbrauchte Betrag muss in Anlage SO beantragt werden und steht künftig nicht mehr zur Verfügung."
-  ]
+  ],
+  "unsicherheit": {
+    "posten": [
+      {
+        "posten": "Kürzung des Vorsorge-Höchstbetrags für Beamte und Versorgungsanwärter nicht gerechnet",
+        "richtung": "offen",
+        "groessenordnung": "nur bei diesem Personenkreis; sonst ohne Wirkung",
+        "fundstelle": "§ 10 Abs. 3 Satz 3 EStG"
+      },
+      {
+        "posten": "Geleistete Vorauszahlungen nicht angerechnet",
+        "richtung": "offen",
+        "groessenordnung": "in Höhe der tatsächlich geleisteten Vorauszahlungen",
+        "fundstelle": "§ 37 EStG"
+      }
+    ],
+    "gesamtrichtung": "keine gerichtete Abweichung erkennbar"
+  }
 }

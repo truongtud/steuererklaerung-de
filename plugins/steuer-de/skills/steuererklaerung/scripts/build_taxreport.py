@@ -1641,6 +1641,52 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
             f"das Finanzamt selbst mit Quittung nicht an. Beides steht nicht in den "
             f"Zahlen und wurde hier nicht geprüft.")
 
+    # --- Unsicherheitsbilanz ---
+    # Der Disclaimer sagt, WAS fehlt. Hier steht, in welche RICHTUNG es wirkt und
+    # wie groß es ist, soweit sich das aus vorhandenen Zahlen ableiten lässt.
+    # Die Abweichungen heben sich nicht auf — ohne die Richtung kann der Leser
+    # die Zahl nicht einordnen. Erfundene Größenordnungen gibt es hier nicht:
+    # wo sich nichts ableiten lässt, steht die Richtung allein.
+    unsicherheit: list = []
+
+    def _offen(posten, richtung, fundstelle, groessenordnung=None):
+        unsicherheit.append({"posten": posten, "richtung": richtung,
+                             "groessenordnung": groessenordnung,
+                             "fundstelle": fundstelle})
+
+    if not vorsorge_gegliedert and vorsorge_summe > 0:
+        _offen("Vorsorgeaufwendungen ohne Höchstbetragsberechnung", "zu niedrig",
+               "§ 10 Abs. 3 und 4 EStG",
+               "der über dem Höchstbetrag liegende Teil der Beiträge")
+    elif vorsorge_details is not None:
+        # "offen", nicht "zu niedrig": ob die Kürzung überhaupt greift, hängt am
+        # Personenkreis, und den geben die Eingabedaten nicht her. Als gerichteter
+        # Posten würde er das Gesamtbild verfälschen.
+        _offen("Kürzung des Vorsorge-Höchstbetrags für Beamte und "
+               "Versorgungsanwärter nicht gerechnet", "offen",
+               "§ 10 Abs. 3 Satz 3 EStG",
+               "nur bei diesem Personenkreis; sonst ohne Wirkung")
+    if kinder:
+        _offen("Kinderfreibetrag und Günstigerprüfung gegen das Kindergeld nicht "
+               "gerechnet", "zu hoch", "§ 31, § 32 Abs. 6 EStG",
+               "bis zu mehreren hundert Euro je Kind")
+    if guenstigerpruefung and guenstigerpruefung["tarif_guenstiger"]:
+        _offen("Günstigerprüfung ausgewiesen, aber nicht angewandt", "zu hoch",
+               "§ 32d Abs. 6 EStG", fmt_eur(guenstigerpruefung["vorteil"]))
+    _offen("Geleistete Vorauszahlungen nicht angerechnet", "offen", "§ 37 EStG",
+           "in Höhe der tatsächlich geleisteten Vorauszahlungen")
+
+    _zu_niedrig = sum(1 for p_ in unsicherheit if p_["richtung"] == "zu niedrig")
+    _zu_hoch = sum(1 for p_ in unsicherheit if p_["richtung"] == "zu hoch")
+    if not (_zu_niedrig or _zu_hoch):
+        gesamtrichtung = "keine gerichtete Abweichung erkennbar"
+    elif _zu_niedrig > _zu_hoch:
+        gesamtrichtung = "Schätzung eher zu niedrig"
+    elif _zu_hoch > _zu_niedrig:
+        gesamtrichtung = "Schätzung eher zu hoch"
+    else:
+        gesamtrichtung = "uneindeutig"
+
     # Der Disclaimer nennt nur, was für DIESEN Lauf zutrifft. Ein pauschaler
     # Vorbehalt, der längst Gerechnetes weiter als Lücke führt, macht die
     # übrigen Vorbehalte unglaubwürdig.
@@ -1991,6 +2037,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
         "protokoll": protokoll,
         "warnungen": warnungen,
         "disclaimer": disclaimer,
+        "unsicherheit": {"posten": unsicherheit, "gesamtrichtung": gesamtrichtung},
     }
 
     # Die davon-Zeilen-Auslegung ist die folgenreichste Annahme der KAP-Rechnung —

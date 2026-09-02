@@ -137,6 +137,65 @@ def test_altes_feld_anzusetzen_wird_unveraendert_uebernommen():
     eq(r["berechnung"]["abzug_agb"], "1500.00", "keine zweite Kürzung")
 
 
+# ── Unsicherheitsbilanz ──────────────────────────────────────────────────────
+@case
+def test_unsicherheitsbilanz_nennt_richtung_und_fundstelle():
+    """Der Disclaimer zählte bisher auf, was fehlt — aber nicht, in welche
+    Richtung es wirkt. Weil sich die Abweichungen nicht aufheben, konnte der
+    Leser die Zahl nicht einordnen."""
+    u = bau(steuerdaten())["unsicherheit"]
+    assert u["posten"], "die Bilanz darf nicht leer sein"
+    for p_ in u["posten"]:
+        assert p_["richtung"] in ("zu niedrig", "zu hoch", "offen"), p_
+        assert p_["fundstelle"], f"jeder Posten braucht eine Fundstelle: {p_}"
+    assert u["gesamtrichtung"] in (
+        "Schätzung eher zu niedrig", "Schätzung eher zu hoch", "uneindeutig",
+        "keine gerichtete Abweichung erkennbar"), u
+
+
+@case
+def test_posten_ohne_bekannte_wirkung_faerbt_das_gesamtbild_nicht():
+    """Die Beamten-Kürzung greift nur bei einem Personenkreis, den die Daten
+    nicht hergeben. Als gerichteter Posten würde sie jedem Angestellten ein
+    'zu niedrig' anhängen, das für ihn nicht stimmt."""
+    r = bau(steuerdaten(vorsorge={"basisversorgung": {"rentenversicherung": "8000"}}))
+    beamte = [p_ for p_ in r["unsicherheit"]["posten"] if "Beamte" in p_["posten"]]
+    assert beamte, r["unsicherheit"]["posten"]
+    eq(beamte[0]["richtung"], "offen")
+    eq(r["unsicherheit"]["gesamtrichtung"], "keine gerichtete Abweichung erkennbar")
+
+
+@case
+def test_gerechnete_posten_stehen_nicht_mehr_in_der_bilanz():
+    """Was Stufe 1 und 2 rechnen, darf nicht weiter als Lücke geführt werden —
+    sonst verlieren die übrigen Posten an Gewicht."""
+    r = bau(steuerdaten(vorsorge={"basisversorgung": {"rentenversicherung": "8000"}},
+                        aussergewoehnliche_belastungen={"aufwendungen": "5000"}))
+    namen = " ".join(p_["posten"] for p_ in r["unsicherheit"]["posten"])
+    for erledigt in ("Höchstbetragsberechnung", "Progressionsvorbehalt",
+                     "zumutbare Belastung"):
+        assert erledigt not in namen, f"{erledigt!r} wird gerechnet, steht aber drin: {namen}"
+
+
+@case
+def test_ungegliederte_vorsorge_erscheint_als_posten():
+    r = bau(steuerdaten(vorsorge={"rentenversicherung": "8000"}))
+    posten = {p_["posten"]: p_ for p_ in r["unsicherheit"]["posten"]}
+    treffer = [p_ for name, p_ in posten.items() if "Vorsorge" in name]
+    assert treffer, f"die ungedeckelte Vorsorge fehlt: {list(posten)}"
+    eq(treffer[0]["richtung"], "zu niedrig", "voller Abzug → Steuer zu niedrig")
+
+
+@case
+def test_guenstigerpruefung_erscheint_mit_beziffertem_betrag():
+    r = bau(steuerdaten(anlage_n={"bruttoarbeitslohn": "14000", "lohnsteuer": "0"},
+                        anlage_kap={"kapitalertraege": "10000", "anrechenbare_kest": "0"}))
+    treffer = [p_ for p_ in r["unsicherheit"]["posten"] if "nstigerpr" in p_["posten"]]
+    assert treffer, r["unsicherheit"]["posten"]
+    eq(treffer[0]["richtung"], "zu hoch")
+    assert treffer[0]["groessenordnung"], "hier ist der Betrag bekannt und gehört genannt"
+
+
 if __name__ == "__main__":
     fails = []
     for fn in CASES:
