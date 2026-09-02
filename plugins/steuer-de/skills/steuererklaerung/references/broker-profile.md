@@ -442,9 +442,6 @@ python scripts/profile_wizard.py neuer_report.pdf --id mein-broker
 
 # 3. Gegen den echten Report laufen lassen
 python scripts/parse_broker.py neuer_report.pdf -o test.json
-
-# 4. Test ergänzen und die Suite fahren
-python3 tests/run_tests.py
 ```
 
 Der Wizard extrahiert den Text, rät Erkennungsmuster, Tabellenbereiche, Spaltenzuordnung

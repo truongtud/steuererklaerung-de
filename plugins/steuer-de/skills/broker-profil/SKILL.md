@@ -34,9 +34,8 @@ Ablauf:
    im Report unabhängig ausgewiesenen Gesamtwert vergleichen.
 5. **Gegen den echten Report laufen lassen**: `python3 scripts/parse_broker.py <report>`.
    Ergebnis Zeile für Zeile gegen das Original prüfen, nicht nur den grünen Haken.
-6. **Fixture prüfen und Test ergänzen**, dann `python3 tests/run_tests.py`. Das Fixture
-   landet im Repository — die vom Wizard gemeldeten Restrisiken der Anonymisierung
-   durchgehen, bevor es committet wird.
+6. **Fixture prüfen.** Die vom Wizard gemeldeten Restrisiken der Anonymisierung
+   durchgehen, bevor die Datei irgendwo landet.
 7. **`geprueft_am` setzen** — erst jetzt, nach Schritt 5. Vorher bleibt `status`
    auf `ungeprueft`.
 

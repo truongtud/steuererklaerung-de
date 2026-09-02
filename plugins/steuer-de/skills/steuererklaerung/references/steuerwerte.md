@@ -119,8 +119,7 @@ Danach von Hand:
 2. **`quelle`** eintragen: das Änderungsgesetz mit Fundstelle im Bundesgesetzblatt. Das
    nennt die BMF-Historie nicht, und es ist die Angabe, die man in einer Rückfrage ans
    Finanzamt zitiert. Was das Skript zuletzt geprüft hat, steht daneben in `beleg`.
-3. Die Tabellen oben nachziehen; `tests/test_steuerwerte_json.py` prüft sie gegen die JSON.
-4. `python3 tests/run_tests.py` — der Stetigkeitstest läuft über alle Jahre.
+3. Die Tabellen oben nachziehen — sie müssen mit der JSON übereinstimmen.
 
 **Kinderwerte früherer Jahre** holt das Skript ebenfalls nicht: § 32 Abs. 6 und § 66
 EStG nennen keinen Veranlagungszeitraum und liegen nur in der geltenden Fassung vor.

@@ -80,7 +80,6 @@ pip install fpdf2 pdfplumber pymupdf pytesseract pdf2image --break-system-packag
 # gescannte PDFs zusätzlich (System):
 #   apt-get install -y tesseract-ocr tesseract-ocr-deu poppler-utils
 pip install docling --break-system-packages   # optional, beste Tabellenqualität
-python3 tests/run_tests.py                    # Selbsttest: muss grün sein
 ```
 
 ### Schritt 0 — Broker-Reports einlesen
@@ -252,16 +251,6 @@ Nur die gewünschten Formate wählen, die Dateien anschließend an den Nutzer au
   Vorzeichenregeln, wie ein neuer Broker angebunden wird. **Bei jedem neuen Broker hierher.**
 - `references/pdf-ingestion.md` — Backends, Spalten-Erkennung, Summenabgleich,
   Verifikations-Checkliste, Troubleshooting.
-
-## Tests
-
-`python3 tests/run_tests.py` — **483 Fälle in 18 Dateien**: Tarif-Stützpunkte und
-Zonenstetigkeit, Zahlenparser (DE/EN, Vorzeichen), Fristen nach AO und BGB, FIFO mit
-Teillosen und Gebühren, Freigrenzen- und Verlusttopf-Aggregation über mehrere Quellen,
-KAP-Quellen, § 35a, Progressionsvorbehalt, Günstigerprüfungen, Vorsorge-Höchstbetrag,
-zumutbare Belastung, Kinder, Bescheidprüfung, Profil-Validierung, den Wizard samt
-Anonymisierung, ELSTER-Export und die Schnittstellen zwischen den Skripten. **Nach jeder Änderung laufen lassen** — die Steuerwerte-Tests fangen
-falsch abgeschriebene Konstanten, die Kontrakt-Tests auseinanderlaufende Schlüsselnamen.
 
 ## Grenzen (bewusst nicht automatisiert)
 
