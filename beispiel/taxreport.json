@@ -1,7 +1,7 @@
 {
   "meta": {
     "steuerjahr": 2024,
-    "erstellt": "2026-09-02T21:10:15.083400+00:00",
+    "erstellt": "2026-09-02T21:24:41.576753+00:00",
     "waehrung": "EUR",
     "veranlagung": "Einzelveranlagung",
     "steuerpflichtiger": {
@@ -573,7 +573,8 @@
     "Krypto-zu-Krypto-Tausch = Veräußerung des abgegebenen Coins zum EUR-Marktwert; die Tauschgebühr wird als Anschaffungsnebenkosten des erhaltenen Coins aktiviert.",
     "Endkontrolle durch Steuerberater — dies ist keine Steuerberatung.",
     "§ 23-Verlustvortrag aus Vorjahren (900,00 €): 900,00 € wurden mit den steuerpflichtigen § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG), 0,00 € bleiben vortragsfähig.",
-    "§ 35a EStG: 456,00 € Steuerermäßigung angesetzt (20 % der Aufwendungen, je Topf gedeckelt). Begünstigt sind nur Arbeits-, Maschinen- und Fahrtkosten — Material zählt nicht, auch nicht anteilig. Die Rechnung muss unbar bezahlt sein; eine Barzahlung erkennt das Finanzamt selbst mit Quittung nicht an. Beides steht nicht in den Zahlen und wurde hier nicht geprüft."
+    "§ 35a EStG: 456,00 € Steuerermäßigung angesetzt (20 % der Aufwendungen, je Topf gedeckelt). Begünstigt sind nur Arbeits-, Maschinen- und Fahrtkosten — Material zählt nicht, auch nicht anteilig. Die Rechnung muss unbar bezahlt sein; eine Barzahlung erkennt das Finanzamt selbst mit Quittung nicht an. Beides steht nicht in den Zahlen und wurde hier nicht geprüft.",
+    "Noch offene Veranlagungszeiträume: 2022 (bis 31.12.2026), 2023 (bis 31.12.2027), 2024 (bis 31.12.2028), 2025 (bis 31.12.2029), 2026 (bis 31.12.2030). Wer nicht zur Abgabe verpflichtet ist, kann freiwillig abgeben (Antragsveranlagung, § 46 Abs. 2 Nr. 8 EStG), solange die vierjährige Festsetzungsfrist läuft (§ 169 Abs. 2 Nr. 2 i.V.m. § 170 Abs. 1 AO). Für zurückliegende Jahre lohnt der Blick besonders dann, wenn Lohnsteuer einbehalten wurde."
   ],
   "protokoll": [],
   "warnungen": [],

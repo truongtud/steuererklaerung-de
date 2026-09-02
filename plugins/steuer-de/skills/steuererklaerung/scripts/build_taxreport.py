@@ -63,6 +63,7 @@ from steuerlib import (  # noqa: E402
     est_mit_progressionsvorbehalt,
     freigrenze_23,
     jahr_mit_werten,
+    offene_veranlagungszeitraeume,
     steuerermaessigung_35a,
     normiere_kirchensteuersatz,
     q2,
@@ -1640,6 +1641,19 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
             f"anteilig. Die Rechnung muss unbar bezahlt sein; eine Barzahlung erkennt "
             f"das Finanzamt selbst mit Quittung nicht an. Beides steht nicht in den "
             f"Zahlen und wurde hier nicht geprüft.")
+
+    # Wer nicht abgeben muss, kann vier Jahre rückwirkend freiwillig abgeben.
+    # Für viele ist das der greifbarste Nutzen des ganzen Skills — und er kostet
+    # nichts als diesen Hinweis.
+    offen = offene_veranlagungszeitraeume()
+    if offen:
+        liste = ", ".join(f"{j} (bis {ende.strftime('%d.%m.%Y')})" for j, ende in offen)
+        hinweise.append(
+            f"Noch offene Veranlagungszeiträume: {liste}. Wer nicht zur Abgabe "
+            f"verpflichtet ist, kann freiwillig abgeben (Antragsveranlagung, "
+            f"§ 46 Abs. 2 Nr. 8 EStG), solange die vierjährige Festsetzungsfrist "
+            f"läuft (§ 169 Abs. 2 Nr. 2 i.V.m. § 170 Abs. 1 AO). Für zurückliegende "
+            f"Jahre lohnt der Blick besonders dann, wenn Lohnsteuer einbehalten wurde.")
 
     # --- Unsicherheitsbilanz ---
     # Der Disclaimer sagt, WAS fehlt. Hier steht, in welche RICHTUNG es wirkt und

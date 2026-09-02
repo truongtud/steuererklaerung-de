@@ -250,6 +250,8 @@ Tesseract mit deutschem Sprachpaket — die SKILL.md nennt die genauen Kommandos
 | **Steuerermäßigung § 35a** | Minijob, haushaltsnahe Dienstleistungen und Handwerker — 20 % je Topf mit eigenem Höchstbetrag, gedeckelt auf die Steuer |
 | **Progressionsvorbehalt § 32b** | Eltern-, Arbeitslosen-, Kranken- und Kurzarbeitergeld heben den Satz, ohne selbst besteuert zu werden |
 | **Günstigerprüfung § 32d Abs. 6** | beide Varianten gerechnet und ausgewiesen; angewandt wird sie nicht, denn sie wirkt nur auf Antrag |
+| **Bescheidprüfung** | Bescheid gegen den eigenen Report, Position für Position; Einspruchsfrist nach § 122 Abs. 2, § 355 Abs. 1 und § 108 Abs. 3 AO; Einspruchsentwurf |
+| **Offene Jahre** | welche Veranlagungszeiträume noch abgegeben werden können (§ 169 Abs. 2 Nr. 2 AO) |
 | **Unsicherheitsbilanz** | jeder Report sagt, welche Lücken bleiben, in welche Richtung sie wirken und wie groß sie sind |
 | **Zumutbare Belastung § 33 Abs. 3** | stufenweise nach BFH VI R 75/14 — der höhere Satz gilt nur für den übersteigenden Teil |
 | **Vorsorge-Höchstbetrag § 10 Abs. 3/4** | Basisversorgung auf den Höchstbeitrag zur knappschaftlichen RV gedeckelt (aus Anlage 2 SGB VI amtlich abgeleitet), Kranken-/Pflegebeiträge bleiben nach Satz 4 auch darüber abziehbar |
@@ -286,6 +288,7 @@ skills/steuererklaerung/
 ├── scripts/
 │   ├── steuerlib.py            Zahlenlogik; liest die Steuerwerte aus der JSON
 │   ├── fetch_steuerwerte.py    holt § 32a EStG / § 3 SolZG (Pflege, nicht Pipeline)
+│   ├── pruefe_bescheid.py      Steuerbescheid gegen den Report, Einspruchsfrist
 │   ├── brokerprofile.py        Profil-Engine: Erkennung, Anwendung, Summenabgleich
 │   ├── profiles/*.json         ein Broker = eine Profildatei
 │   ├── parse_broker.py         ein Einstiegspunkt für alle Broker

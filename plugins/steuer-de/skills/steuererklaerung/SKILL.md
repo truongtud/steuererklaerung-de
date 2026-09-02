@@ -28,6 +28,7 @@ JSON/manuell ─────────────────────┘ 
 
 scripts/steuerlib.py      ── ein Zahlenparser, eine Fristenlogik, alle Steuerwerte
 scripts/fetch_steuerwerte.py ─ holt § 32a EStG / § 3 SolZG (Pflege, nicht Pipeline)
+scripts/pruefe_bescheid.py  ── Steuerbescheid gegen den Report halten, Fristen
 scripts/brokerprofile.py  ── Profil-Engine: Erkennung, Anwendung, Summenabgleich
 scripts/profiles/*.json   ── ein Broker = eine Profildatei
 ```
@@ -238,6 +239,8 @@ Nur die gewünschten Formate wählen, die Dateien anschließend an den Nutzer au
 - `references/steuerwerte.md` — Tarif, Freigrenzen, Pauschbeträge je Jahr; wie ein neues
   Jahr ergänzt wird (`fetch_steuerwerte.py`). Bei jedem neuen Steuerjahr zuerst hierher.
   Die Zahlen selbst stehen in `references/steuerwerte.json`.
+- `references/bescheid.md` — Steuerbescheid prüfen: Fristenkette mit Fundstellen,
+  was geprüft wird, warum nichts geraten wird.
 - `references/krypto-steuer.md` — § 23 / § 22 Nr. 3, FIFO, taggenaue Haltefrist,
   Freigrenze über alle Broker, Verlustvortrag, kanonisches Schema, Edge-Cases.
 - `references/anlagen-referenz.md` — `steuerdaten.json`-Schema, ELSTER-Zuordnung je Anlage,

@@ -196,6 +196,16 @@ def test_guenstigerpruefung_erscheint_mit_beziffertem_betrag():
     assert treffer[0]["groessenordnung"], "hier ist der Betrag bekannt und gehört genannt"
 
 
+# ── Offene Veranlagungszeiträume ─────────────────────────────────────────────
+@case
+def test_hinweis_auf_offene_veranlagungszeitraeume():
+    """Für viele der greifbarste Nutzen: dass ein zurückliegendes Jahr noch
+    abgegeben werden kann. Vier Jahre rückwirkend, § 169 Abs. 2 Nr. 2 AO."""
+    text = " ".join(bau(steuerdaten())["hinweise"])
+    assert "Antragsveranlagung" in text and "§ 46 Abs. 2 Nr. 8" in text, \
+        f"der Hinweis fehlt: {text[:400]!r}"
+
+
 if __name__ == "__main__":
     fails = []
     for fn in CASES:
