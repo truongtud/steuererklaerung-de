@@ -1,11 +1,14 @@
 # Steuerwerte nach Jahr — Referenz
 
-**Alle hier genannten Werte stehen im Code an genau einer Stelle: `scripts/steuerlib.py`.**
-Diese Datei ist die menschenlesbare Fassung davon und dient der Prüfung — wer einen Wert
-ändert, ändert ihn in `steuerlib.py` und hier, sonst nirgends. In den übrigen Skripten
-stehen bewusst keine Steuerkonstanten mehr.
+**Alle hier genannten Werte stehen an genau einer Stelle: `references/steuerwerte.json`.**
+`scripts/steuerlib.py` liest sie von dort, die übrigen Skripte lesen sie aus `steuerlib`;
+Steuerkonstanten stehen sonst nirgends im Code. Diese Datei ist die menschenlesbare
+Fassung derselben Zahlen — `tests/test_steuerwerte_json.py` vergleicht die Tabellen unten
+Zelle für Zelle mit der JSON, eine der beiden allein zu ändern schlägt also fehl.
 
-Zuletzt gegen öffentliche Quellen geprüft: **31.08.2026** (2022–2026).
+Zuletzt gegen die amtlichen Quellen geprüft: **02.09.2026** (2022–2026), mit
+`scripts/fetch_steuerwerte.py` gegen die BMF-Tarifhistorie und die amtliche XML-Fassung
+von § 32a EStG und § 3 SolZG.
 Vor jeder Einreichung erneut verifizieren — Werte ändern sich jährlich, teils rückwirkend.
 
 ## Freibeträge / Freigrenzen / Pauschalen
@@ -32,7 +35,8 @@ Die Freigrenzen nach § 23 und § 22 Nr. 3 gelten dagegen **pro Person**.
 
 ## § 32a EStG — Einkommensteuertarif (Grundtarif)
 
-In `steuerlib.py` als `TARIF`-Dict für **2022 bis 2026** hinterlegt. Zonenformel:
+In `steuerwerte.json` unter `tarif` für **2022 bis 2026** hinterlegt, in
+`steuerlib.py` als `TARIF`-Dict daraus gebaut. Zonenformel:
 
 | Jahr | GFB | Zone 2 bis | Zone 3 bis | a₂ | c₃ | a₃ | k₄ | k₅ |
 |---|---|---|---|---|---|---|---|---|
@@ -72,21 +76,60 @@ Die Milderungszone ist kein Detail: Bei einer ESt von 18.200 € (2024) sind es 
 
 ## Neues Steuerjahr ergänzen
 
-1. Grundfreibetrag, Zonengrenzen und Koeffizienten aus § 32a EStG in der geltenden Fassung
-   holen (gesetze-im-internet.de), Soli-Freigrenze aus § 3 Abs. 3 SolZG.
-2. In `steuerlib.py` in `TARIF`, `SOLI_FREIGRENZE`, `FREIGRENZE_23`, `SPARER_PB`,
-   `AN_PAUSCHBETRAG` eintragen — und in der Tabelle oben.
-3. `python3 tests/run_tests.py` — der Stetigkeitstest läuft automatisch über alle Jahre.
+```bash
+S=plugins/steuer-de/skills/steuererklaerung/scripts
+python3 $S/fetch_steuerwerte.py --jahre 2022-2027              # nur anzeigen
+python3 $S/fetch_steuerwerte.py --jahre 2022-2027 --schreiben  # übernehmen
+```
 
-## Ein Jahr ohne hinterlegten Tarif
+`fetch_steuerwerte.py` benutzt ausschließlich amtliche Quellen:
 
-Ist für das Steuerjahr kein `TARIF` hinterlegt, wird der Report trotzdem **gebaut**. Nur
-die ESt-Schätzung entfällt — und mit ihr alles, was auf ihr aufbaut:
+- **Tarifhistorie des Bundesministeriums der Finanzen** (bmf-steuerrechner.de) — je Seite
+  ein Tarifzeitraum mit der „Formel nach § 32a EStG“, zurück bis 1958. Das Jahr steht in
+  der Seitenüberschrift, die Zuordnung ist also keine Annahme. Der Dateiname trägt ein
+  Datum und wird von der Startseite geholt, nicht fest verdrahtet.
+- **Amtliche XML-Fassung von EStG und SolZG** (gesetze-im-internet.de) — daraus die
+  Freigrenze des § 3 Abs. 3 SolZG; der Tarif des geltenden Jahres wird damit gegen die
+  BMF-Historie gehalten.
+
+Vor dem Schreiben prüft das Skript jeden Tarif auf Stetigkeit an den Zonengrenzen und die
+beiden Quellen gegeneinander — stimmt etwas nicht, wird nichts geschrieben. Ohne
+`--schreiben` zeigt es nur, was sich ändern würde. Zum Lesen des PDF wird PyMuPDF
+gebraucht (`pip install pymupdf`), dieselbe Bibliothek wie in `scripts/parse_pdf.py`.
+
+Danach von Hand:
+
+1. **Sparer-Pauschbetrag** (§ 20 Abs. 9 EStG), **Arbeitnehmer-Pauschbetrag**
+   (§ 9a Satz 1 Nr. 1a EStG) und **Freigrenze § 23** (§ 23 Abs. 3 Satz 5 EStG) für das
+   neue Jahr in der JSON eintragen — die holt das Skript bewusst nicht. Es legt sie als
+   `null` an: **niemals 0**. Eine 0 hieße „kein Pauschbetrag“ und ginge still in die
+   Berechnung ein; `null` heißt „noch nicht ermittelt“, hält das Jahr aus der Tabelle
+   und löst den Ersatzwert des nächstgelegenen Jahres samt Warnung aus (siehe unten).
+2. **`quelle`** eintragen: das Änderungsgesetz mit Fundstelle im Bundesgesetzblatt. Das
+   nennt die BMF-Historie nicht, und es ist die Angabe, die man in einer Rückfrage ans
+   Finanzamt zitiert. Was das Skript zuletzt geprüft hat, steht daneben in `beleg`.
+3. Die Tabellen oben nachziehen; `tests/test_steuerwerte_json.py` prüft sie gegen die JSON.
+4. `python3 tests/run_tests.py` — der Stetigkeitstest läuft über alle Jahre.
+
+Die **Soli-Freigrenzen früherer Jahre** prüft das Skript nicht nach: amtlich
+veröffentlicht ist nur die geltende Fassung des § 3 SolZG, eine maschinenlesbare
+Fassungshistorie gibt es nicht. Es lässt sie unangetastet und sagt im Lauf, welche Jahre
+das betrifft.
+
+Das Skript geht als einziges hier ins Netz und ist **nicht** Teil der Report-Pipeline:
+ein Steuerreport hängt nie davon ab, ob ein Server erreichbar ist.
+
+## Ein Jahr mit unvollständigen Werten
+
+Der Report wird in jedem Fall **gebaut**. Zwei Lücken sind zu unterscheiden.
+
+**Kein Tarif hinterlegt.** Dann entfällt die ESt-Schätzung — und mit ihr alles, was auf
+ihr aufbaut:
 
 | | Verhalten |
 |---|---|
 | ESt, Soli, Kirchensteuer (Tarif) | `null`; `ergebnis.status` ist `"nicht berechenbar"` mit Begründung, es gibt keinen Nachzahlung/Erstattung-Saldo |
-| Arbeitnehmer-Pauschbetrag, Sparer-Pauschbetrag, Freigrenze § 23 | **Wert des nächstgelegenen hinterlegten Jahres**, plus Warnung: *„Für 2030 ist kein § 32a-Tarif hinterlegt; Pauschbeträge und Freigrenzen wurden ersatzweise mit den Werten für 2026 angesetzt.“* |
+| Arbeitnehmer-Pauschbetrag, Sparer-Pauschbetrag, Freigrenze § 23, Soli-Freigrenze | **Werte des nächstgelegenen vollständig hinterlegten Jahres**, plus Warnung: *„Für 2030 ist kein § 32a-Tarif hinterlegt; Pauschbeträge, Freigrenzen und die Soli-Freigrenze wurden ersatzweise mit den Werten für 2026 angesetzt.“* |
 | Sonderausgaben-Pauschbetrag, Freigrenze § 22 Nr. 3 | 36 € bzw. 256 € — im Gesetz jahresunabhängig, daher unberührt |
 | zvE, Einkünfte je Anlage, Abgeltungsteuer, Verlusttöpfe, ELSTER-Mapping | werden normal gerechnet |
 
@@ -97,13 +140,22 @@ steuerpflichtiger Betrag, und das ist eine schlechtere Auskunft als ein um ein J
 veralteter Pauschbetrag mit Warnung. Der Ausweichwert wird auf den hinterlegten Bereich
 gekappt, also nach oben wie nach unten.
 
+**Tarif hinterlegt, Pauschbeträge noch nicht.** Genau das legt `fetch_steuerwerte.py`
+für ein neues Jahr an: `tarif` und `soli_freigrenze` stehen, die drei von Hand gepflegten
+Werte sind `null`. Die ESt wird dann **normal gerechnet** — der Tarif ist ja da —, und für
+Pauschbeträge, Freigrenzen und Soli-Freigrenze greift derselbe Ersatzwert des
+nächstgelegenen vollständigen Jahres, mit der Warnung *„Für 2027 sind Pauschbeträge und
+Freigrenzen noch nicht hinterlegt; … ersatzweise mit den Werten für 2026 angesetzt.“*
+Maßgeblich ist dafür nicht, ob ein Tarif hinterlegt ist, sondern ob **alle** Jahreswerte
+es sind (`steuerlib.jahr_mit_werten`).
+
 **Anders bei `krypto_fifo.py` im Alleinlauf:** dort steht bewusst kein Ersatzwert. Fehlt
 das Jahr, wird das **rohe Netto** mit `"freigrenze_angewendet": false` und einer eigenen
 Warnung ausgewiesen — `build_taxreport.py` behandelt eine solche Quelle danach wie jede
 andere Rohquelle und wendet die Freigrenze selbst an. Beim Lauf über `build_taxreport.py`
 erscheinen deshalb **beide** Warnungen; das ist kein Widerspruch, sondern die Reihenfolge.
 
-In jedem Fall gilt: die Werte nach dem Abschnitt oben in `steuerlib.py` nachtragen. Eine
+In jedem Fall gilt: die Werte nach dem Abschnitt oben in `steuerwerte.json` nachtragen. Eine
 Schätzung mit Vorjahreswerten ist Orientierung, keine Zahl für eine Erklärung.
 
 ## Vereinfachungen der ESt-Schätzung (bewusst)

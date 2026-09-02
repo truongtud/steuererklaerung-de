@@ -407,11 +407,11 @@ def _freigrenze_23(jahr: int, warnungen: list) -> Optional[Decimal]:
         return sl.freigrenze_23(jahr)
     except KeyError as e:
         warnungen.append(
-            f"Freigrenze § 23 für {jahr} ist in scripts/steuerlib.py nicht hinterlegt "
+            f"Freigrenze § 23 für {jahr} ist in references/steuerwerte.json nicht hinterlegt "
             f"({e.args[0]}). Es wurde KEINE Freigrenze angewendet: ausgewiesen wird das rohe "
             f"Nettoergebnis mit 'freigrenze_angewendet': false, "
             f"'steuerpflichtiger_betrag_eur' ist damit eher zu hoch. Bitte den Wert für "
-            f"{jahr} prüfen und in scripts/steuerlib.py (FREIGRENZE_23) ergänzen."
+            f"{jahr} prüfen und in references/steuerwerte.json (freigrenze_23) ergänzen."
         )
         return None
 

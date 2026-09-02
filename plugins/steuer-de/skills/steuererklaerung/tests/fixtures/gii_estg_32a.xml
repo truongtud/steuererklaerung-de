@@ -1,0 +1,107 @@
+<!-- Eine Norm aus der amtlichen XML-Fassung, unveraendert.
+     Quelle: https://www.gesetze-im-internet.de/estg/xml.zip -->
+<norm builddate="20260804215509" doknr="BJNR010050934BJNE009842123">
+    <metadaten>
+        <jurabk>EStG</jurabk>
+        <enbez>§ 32a</enbez>
+        <titel format="XML">Einkommensteuertarif</titel>
+    </metadaten>
+    <textdaten>
+        <text format="XML">
+            <Content>
+                <P>(1) <SUP class="Rec">1</SUP>Die tarifliche Einkommensteuer bemisst sich nach dem auf volle Euro
+                    abgerundeten zu versteuernden Einkommen. <SUP class="Rec">2</SUP>Sie beträgt ab dem
+                    Veranlagungszeitraum 2026 vorbehaltlich der §§ 32b, 32d, 34, 34a, 34b und 34c jeweils in Euro für zu
+                    versteuernde Einkommen
+                    <DL Font="normal" Type="arabic">
+                        <DT>1.</DT>
+                        <DD Font="normal">
+                            <LA Size="normal">bis 12 348 Euro (Grundfreibetrag):</LA>
+                            <LA Size="normal">0;</LA>
+                        </DD>
+                        <DT>2.</DT>
+                        <DD Font="normal">
+                            <LA Size="normal">von 12 349 Euro bis 17 799 Euro:</LA>
+                            <LA Size="normal">(914,51 • y + 1 400) • y;</LA>
+                        </DD>
+                        <DT>3.</DT>
+                        <DD Font="normal">
+                            <LA Size="normal">von 17 800 Euro bis 69 878 Euro:</LA>
+                            <LA Size="normal">(173,10 • z + 2 397) • z + 1 034,87;</LA>
+                        </DD>
+                        <DT>4.</DT>
+                        <DD Font="normal">
+                            <LA Size="normal">von 69 879 Euro bis 277 825 Euro:</LA>
+                            <LA Size="normal">0,42 • x – 11 135,63;</LA>
+                        </DD>
+                        <DT>5.</DT>
+                        <DD Font="normal">
+                            <LA Size="normal">von 277 826 Euro an:</LA>
+                            <LA Size="normal">0,45 • x – 19 470,38.</LA>
+                        </DD>
+                    </DL>
+                    <SUP class="Rec">3</SUP>Die Größe „y“ ist ein Zehntausendstel des den Grundfreibetrag übersteigenden
+                    Teils des auf einen vollen Euro-Betrag abgerundeten zu versteuernden Einkommens. <SUP class="Rec">
+                        4</SUP>Die Größe „z“ ist ein Zehntausendstel des 17 799 Euro übersteigenden Teils des auf einen
+                    vollen Euro-Betrag abgerundeten zu versteuernden Einkommens. <SUP class="Rec">5</SUP>Die Größe „x“
+                    ist das auf einen vollen Euro-Betrag abgerundete zu versteuernde Einkommen. <SUP class="Rec">6</SUP>Der
+                    sich ergebende Steuerbetrag ist auf den nächsten vollen Euro-Betrag abzurunden.
+                </P>
+                <P>(2) bis (4) (weggefallen)</P>
+                <P>(5) Bei Ehegatten, die nach den §§ 26, 26b zusammen zur Einkommensteuer veranlagt werden, beträgt die
+                    tarifliche Einkommensteuer vorbehaltlich der §§ 32b, 32d, 34, 34a, 34b und 34c das Zweifache des
+                    Steuerbetrags, der sich für die Hälfte ihres gemeinsam zu versteuernden Einkommens nach Absatz 1
+                    ergibt (Splitting-Verfahren).
+                </P>
+                <P>(6) <SUP class="Rec">1</SUP>Das Verfahren nach Absatz 5 ist auch anzuwenden zur Berechnung der
+                    tariflichen Einkommensteuer für das zu versteuernde Einkommen
+                    <DL Font="normal" Type="arabic">
+                        <DT>1.</DT>
+                        <DD Font="normal">
+                            <LA Size="normal">bei einem verwitweten Steuerpflichtigen für den Veranlagungszeitraum, der
+                                dem Kalenderjahr folgt, in dem der Ehegatte verstorben ist, wenn der Steuerpflichtige
+                                und sein verstorbener Ehegatte im Zeitpunkt seines Todes die Voraussetzungen des § 26
+                                Absatz 1 Satz 1 erfüllt haben,
+                            </LA>
+                        </DD>
+                        <DT>2.</DT>
+                        <DD Font="normal">
+                            <LA Size="normal">bei einem Steuerpflichtigen, dessen Ehe in dem Kalenderjahr, in dem er
+                                sein Einkommen bezogen hat, aufgelöst worden ist, wenn in diesem Kalenderjahr
+                                <DL Font="normal" Type="alpha">
+                                    <DT>a)</DT>
+                                    <DD Font="normal">
+                                        <LA Size="normal">der Steuerpflichtige und sein bisheriger Ehegatte die
+                                            Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllt haben,
+                                        </LA>
+                                    </DD>
+                                    <DT>b)</DT>
+                                    <DD Font="normal">
+                                        <LA Size="normal">der bisherige Ehegatte wieder geheiratet hat und</LA>
+                                    </DD>
+                                    <DT>c)</DT>
+                                    <DD Font="normal">
+                                        <LA Size="normal">der bisherige Ehegatte und dessen neuer Ehegatte ebenfalls die
+                                            Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen.
+                                        </LA>
+                                    </DD>
+                                </DL>
+                            </LA>
+                        </DD>
+                    </DL>
+                    <SUP class="Rec">2</SUP>Voraussetzung für die Anwendung des Satzes 1 ist, dass der Steuerpflichtige
+                    nicht nach den §§ 26, 26a einzeln zur Einkommensteuer veranlagt wird.
+                </P>
+            </Content>
+        </text>
+        <fussnoten>
+            <Content>
+                <P>(+++ § 32a: Zur Anwendung vgl. § 52 +++)<BR/>§ 32a Abs. 5 (F. 23.10.2000 u. ff. F.): Nach Maßgabe der
+                    Entscheidungsformel mit Art. 3 Abs. 1 GG unvereinbar gem. BVerfGE v. 7.5.2013 I 1647 (2 BvR 909/06,
+                    2 BvR 1981/06, 2 BvR 288/07); zur Umsetzung der Anforderungen des BVerfG vgl. G v. 15.7.2013 I 2397
+                    mWv 19.7.2013
+                </P>
+            </Content>
+        </fussnoten>
+    </textdaten>
+</norm>

@@ -134,6 +134,16 @@ def test_tarif_2024_ist_die_geaenderte_fassung():
 
 
 @case
+def test_est_aus_tarif_rechnet_mit_uebergebenen_werten():
+    """Damit fetch_steuerwerte.py frisch geladene Werte prüfen kann, bevor sie
+    in die JSON wandern — ohne die Zonenformel ein zweites Mal zu schreiben."""
+    eq(sl.est_aus_tarif(D("50000"), sl.TARIF[2025]), sl.est_grundtarif(D("50000"), 2025),
+       "gleiche Werte → gleiches Ergebnis")
+    erfunden = dict(sl.TARIF[2025], gfb=D("99000"))
+    eq(sl.est_aus_tarif(D("50000"), erfunden), D("0"), "unter dem übergebenen Grundfreibetrag")
+
+
+@case
 def test_splitting():
     est_einzel = sl.est_grundtarif(D("30000"), 2025)
     eq(sl.est_tarif(D("60000"), 2025, True), est_einzel * 2, "Splitting = 2 × ESt(zvE/2)")

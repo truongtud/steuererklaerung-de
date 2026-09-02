@@ -58,6 +58,7 @@ from steuerlib import (  # noqa: E402
     est_tarif,
     fmt_eur,
     freigrenze_23,
+    jahr_mit_werten,
     normiere_kirchensteuersatz,
     q2,
     soli,
@@ -1003,9 +1004,10 @@ def _als_quellenliste(krypto) -> list:
 def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     jahr = lies_steuerjahr(steuerdaten)
     tarif_hinterlegt = jahr in TARIF
-    # Für Pauschbeträge/Freigrenzen auf das nächstgelegene hinterlegte Jahr ausweichen,
-    # damit der Report auch für unbekannte Jahre gebaut wird — die ESt bleibt dann None.
-    werte_jahr = jahr if tarif_hinterlegt else min(max(jahr, min(TARIF)), max(TARIF))
+    # Für Pauschbeträge/Freigrenzen auf das nächstgelegene *vollständig* hinterlegte
+    # Jahr ausweichen, damit der Report auch dann gebaut wird, wenn das Steuerjahr
+    # unbekannt ist oder erst seinen Tarif hat — die ESt bleibt ohne Tarif None.
+    werte_jahr = jahr_mit_werten(jahr)
 
     tp = _dict_feld(steuerdaten, "steuerpflichtiger")
     verheiratet = bool(tp.get("verheiratet") or steuerdaten.get("zusammenveranlagung"))
@@ -1037,10 +1039,12 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
         print(f"WARNUNG: {befund['meldung']}", file=sys.stderr)
         warnungen.append(befund["meldung"])
 
-    if not tarif_hinterlegt:
+    if werte_jahr != jahr:
+        fehlt = ("ist kein § 32a-Tarif hinterlegt" if not tarif_hinterlegt
+                 else "sind Pauschbeträge und Freigrenzen noch nicht hinterlegt")
         warnungen.append(
-            f"Für {jahr} ist kein § 32a-Tarif hinterlegt; Pauschbeträge und Freigrenzen wurden "
-            f"ersatzweise mit den Werten für {werte_jahr} angesetzt.")
+            f"Für {jahr} {fehlt}; Pauschbeträge, Freigrenzen und die Soli-Freigrenze "
+            f"wurden ersatzweise mit den Werten für {werte_jahr} angesetzt.")
 
     # --- Kirchensteuersatz zuerst: 9 darf nicht das Neunfache der ESt ergeben ---
     try:
@@ -1440,7 +1444,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
         est_gesamt = soli_gesamt = kist_gesamt = None
     else:
         est = q2(est)
-        tarif_soli = q2(soli(est, jahr, verheiratet))
+        tarif_soli = q2(soli(est, werte_jahr, verheiratet))
         tarif_kist = q2(est * kist_satz) if kist_satz is not None else None
         est_gesamt = q2(est + kap_est)
         soli_gesamt = q2(tarif_soli + kap_soli)

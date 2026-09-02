@@ -1,0 +1,106 @@
+{
+  "schema": 1,
+  "hinweis": "Jahresabhängige Steuerwerte — die einzige Quelle für scripts/steuerlib.py. Werte als Zeichenkette, damit Decimal sie exakt liest. Erzeugt und geprüft mit scripts/fetch_steuerwerte.py; references/steuerwerte.md ist die menschenlesbare Fassung und wird von tests/test_steuerwerte_json.py gegen diese Datei geprüft.",
+  "jahre": {
+    "2022": {
+      "tarif": {
+        "gfb": "10347",
+        "z2": "14926",
+        "z3": "58596",
+        "z4": "277825",
+        "a2": "1088.67",
+        "c3": "869.32",
+        "a3": "206.43",
+        "k4": "9336.45",
+        "k5": "17671.20"
+      },
+      "soli_freigrenze": "16956",
+      "freigrenze_23": "600",
+      "sparer_pb": "801",
+      "an_pauschbetrag": "1200",
+      "quelle": "§ 32a EStG i.d.F. Artikel 1 Steuerentlastungsgesetz 2022 vom 23.05.2022 BGBl. I S. 749",
+      "geprueft": "2026-09-02",
+      "beleg": "Tarifhistorie des Bundesministeriums der Finanzen, 2025_10_14_Tarifhistorie_Steuerrechner.pdf"
+    },
+    "2023": {
+      "tarif": {
+        "gfb": "10908",
+        "z2": "15999",
+        "z3": "62809",
+        "z4": "277825",
+        "a2": "979.18",
+        "c3": "966.53",
+        "a3": "192.59",
+        "k4": "9972.98",
+        "k5": "18307.73"
+      },
+      "soli_freigrenze": "17543",
+      "freigrenze_23": "600",
+      "sparer_pb": "1000",
+      "an_pauschbetrag": "1230",
+      "quelle": "§ 32a EStG i.d.F. Artikel 2 Inflationsausgleichsgesetz (InflAusG) vom 08.12.2022 BGBl. I S. 2230",
+      "geprueft": "2026-09-02",
+      "beleg": "Tarifhistorie des Bundesministeriums der Finanzen, 2025_10_14_Tarifhistorie_Steuerrechner.pdf"
+    },
+    "2024": {
+      "tarif": {
+        "gfb": "11784",
+        "z2": "17005",
+        "z3": "66760",
+        "z4": "277825",
+        "a2": "954.80",
+        "c3": "991.21",
+        "a3": "181.19",
+        "k4": "10636.31",
+        "k5": "18971.06"
+      },
+      "soli_freigrenze": "18130",
+      "freigrenze_23": "1000",
+      "sparer_pb": "1000",
+      "an_pauschbetrag": "1230",
+      "quelle": "§ 32a EStG i.d.F. Artikel 1 Gesetz zur steuerlichen Freistellung des Existenzminimums 2024 vom 02.12.2024 BGBl. 2024 I Nr. 386",
+      "geprueft": "2026-09-02",
+      "beleg": "Tarifhistorie des Bundesministeriums der Finanzen, 2025_10_14_Tarifhistorie_Steuerrechner.pdf"
+    },
+    "2025": {
+      "tarif": {
+        "gfb": "12096",
+        "z2": "17443",
+        "z3": "68480",
+        "z4": "277825",
+        "a2": "932.30",
+        "c3": "1015.13",
+        "a3": "176.64",
+        "k4": "10911.92",
+        "k5": "19246.67"
+      },
+      "soli_freigrenze": "19950",
+      "freigrenze_23": "1000",
+      "sparer_pb": "1000",
+      "an_pauschbetrag": "1230",
+      "quelle": "§ 32a EStG i.d.F. Artikel 1 Steuerfortentwicklungsgesetz (SteFeG) vom 23.12.2024 BGBl. 2024 I Nr. 449",
+      "geprueft": "2026-09-02",
+      "beleg": "Tarifhistorie des Bundesministeriums der Finanzen, 2025_10_14_Tarifhistorie_Steuerrechner.pdf"
+    },
+    "2026": {
+      "tarif": {
+        "gfb": "12348",
+        "z2": "17799",
+        "z3": "69878",
+        "z4": "277825",
+        "a2": "914.51",
+        "c3": "1034.87",
+        "a3": "173.10",
+        "k4": "11135.63",
+        "k5": "19470.38"
+      },
+      "soli_freigrenze": "20350",
+      "freigrenze_23": "1000",
+      "sparer_pb": "1000",
+      "an_pauschbetrag": "1230",
+      "quelle": "§ 32a EStG i.d.F. Artikel 2 Steuerfortentwicklungsgesetz (SteFeG) vom 23.12.2024 BGBl. 2024 I Nr. 449",
+      "geprueft": "2026-09-02",
+      "beleg": "Tarifhistorie des Bundesministeriums der Finanzen, 2025_10_14_Tarifhistorie_Steuerrechner.pdf"
+    }
+  }
+}

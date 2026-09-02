@@ -12,6 +12,8 @@ Keine Steuerberatung. Werte vor Verwendung gegen `references/steuerwerte.md` pr�
 """
 from __future__ import annotations
 
+import json
+import os
 import re
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
@@ -31,6 +33,10 @@ class ParseError(ValueError):
 
 class PlausibilityError(ValueError):
     """Geparste Summe weicht von der im Report ausgewiesenen Summe ab."""
+
+
+class SteuerwerteError(RuntimeError):
+    """references/steuerwerte.json fehlt oder ist unlesbar."""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -244,44 +250,92 @@ def haltefrist_erfuellt(anschaffung, veraeusserung) -> bool:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Jahresabhängige Steuerwerte  (Quelle: references/steuerwerte.md)
+# Jahresabhängige Steuerwerte  (Quelle: references/steuerwerte.json)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# § 32a Abs. 1 EStG, Grundtarif. Zonen: (obergrenze, faktor, summand, konstante)
-# 2024 in der Fassung des Gesetzes zur steuerlichen Freistellung des
-# Existenzminimums 2024 v. 02.12.2024 (Grundfreibetrag rückwirkend 11.784 €).
-TARIF = {
-    2022: {"gfb": D("10347"), "z2": D("14926"), "z3": D("58596"), "z4": D("277825"),
-           "a2": D("1088.67"), "c3": D("869.32"), "a3": D("206.43"),
-           "k4": D("9336.45"), "k5": D("17671.20")},
-    2023: {"gfb": D("10908"), "z2": D("15999"), "z3": D("62809"), "z4": D("277825"),
-           "a2": D("979.18"), "c3": D("966.53"), "a3": D("192.59"),
-           "k4": D("9972.98"), "k5": D("18307.73")},
-    2024: {"gfb": D("11784"), "z2": D("17005"), "z3": D("66760"), "z4": D("277825"),
-           "a2": D("954.80"), "c3": D("991.21"), "a3": D("181.19"),
-           "k4": D("10636.31"), "k5": D("18971.06")},
-    2025: {"gfb": D("12096"), "z2": D("17443"), "z3": D("68480"), "z4": D("277825"),
-           "a2": D("932.30"), "c3": D("1015.13"), "a3": D("176.64"),
-           "k4": D("10911.92"), "k5": D("19246.67")},
-    2026: {"gfb": D("12348"), "z2": D("17799"), "z3": D("69878"), "z4": D("277825"),
-           "a2": D("914.51"), "c3": D("1034.87"), "a3": D("173.10"),
-           "k4": D("11135.63"), "k5": D("19470.38")},
-}
+# Alle jahresabhängigen Werte stehen in references/steuerwerte.json und werden
+# hier beim Import gelesen — Tarif nach § 32a Abs. 1 EStG, Soli-Freigrenze nach
+# § 3 Abs. 3 SolZG, Pauschbeträge und die Freigrenze nach § 23 EStG. Gepflegt
+# wird die JSON mit scripts/fetch_steuerwerte.py; references/steuerwerte.md ist
+# die menschenlesbare Fassung davon.
+# STEUER_DE_WERTE zeigt auf eine andere Wertedatei — gedacht für Tests und für
+# einen Probelauf mit einem Entwurf, nicht für den Alltag.
+STEUERWERTE_JSON = os.environ.get("STEUER_DE_WERTE") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "references", "steuerwerte.json")
 
+
+def _lade_steuerwerte(pfad: str = STEUERWERTE_JSON) -> dict:
+    """Jahr → Werte. Fehlt oder bricht die Datei, wird geworfen: eine
+    Steuerberechnung ohne hinterlegte Werte darf nicht anlaufen."""
+    try:
+        with open(pfad, encoding="utf-8") as f:
+            daten = json.load(f)
+        # `null` heißt „für dieses Jahr noch nicht ermittelt“ — der Wert fehlt
+        # dann in der jeweiligen Tabelle, und der dokumentierte Ersatzwert des
+        # nächstgelegenen Jahres greift (mit Warnung). Eine 0 stünde dagegen für
+        # „kein Pauschbetrag“ und wäre eine stille Falschangabe.
+        jahre = {
+            int(jahr): {
+                "tarif": {k: D(v) for k, v in e["tarif"].items()},
+                **{k: (None if e[k] is None else D(e[k]))
+                   for k in ("soli_freigrenze", "freigrenze_23",
+                             "sparer_pb", "an_pauschbetrag")},
+            }
+            for jahr, e in daten["jahre"].items()
+        }
+    except (OSError, ValueError, KeyError, TypeError, InvalidOperation) as e:
+        raise SteuerwerteError(
+            f"Steuerwerte aus {os.path.normpath(pfad)} nicht lesbar: {e}"
+        ) from e
+    if not jahre:
+        raise SteuerwerteError(f"{os.path.normpath(pfad)} enthält kein Steuerjahr.")
+    return jahre
+
+
+_WERTE = _lade_steuerwerte()
+
+JAHRESWERTE = ("soli_freigrenze", "freigrenze_23", "sparer_pb", "an_pauschbetrag")
+
+
+def _tabelle(name: str) -> dict:
+    """Jahre ohne hinterlegten Wert bleiben draußen, statt mit 0 dazustehen."""
+    return {j: w[name] for j, w in _WERTE.items() if w[name] is not None}
+
+
+# Jahre, für die *alle* Jahreswerte hinterlegt sind. Ein Jahr kann einen
+# § 32a-Tarif haben und trotzdem noch keine Pauschbeträge — genau diesen Zustand
+# legt fetch_steuerwerte.py für ein neues Jahr an.
+_VOLLSTAENDIGE_JAHRE = sorted(
+    j for j, w in _WERTE.items() if all(w[k] is not None for k in JAHRESWERTE))
+
+
+def jahr_mit_werten(jahr: int) -> int:
+    """Das nächstgelegene Jahr, für das Pauschbeträge, Freigrenzen und die
+    Soli-Freigrenze vollständig hinterlegt sind.
+
+    Ohne diesen Umweg liefe ein Jahr mit Tarif, aber ohne Pauschbeträge, in
+    einen KeyError statt in den dokumentierten Ersatzwert mit Warnung.
+    """
+    if not _VOLLSTAENDIGE_JAHRE:
+        raise SteuerwerteError(
+            "Kein Jahr in den Steuerwerten hat vollständige Pauschbeträge und "
+            "Freigrenzen — references/steuerwerte.json prüfen.")
+    return min(max(jahr, _VOLLSTAENDIGE_JAHRE[0]), _VOLLSTAENDIGE_JAHRE[-1])
+
+
+TARIF = {j: w["tarif"] for j, w in _WERTE.items()}
 # Freigrenze tarifliche ESt für den Solidaritätszuschlag (Einzelveranlagung;
 # bei Zusammenveranlagung verdoppelt). § 3 Abs. 3 SolZG.
-SOLI_FREIGRENZE = {2022: D("16956"), 2023: D("17543"), 2024: D("18130"),
-                   2025: D("19950"), 2026: D("20350")}
+SOLI_FREIGRENZE = _tabelle("soli_freigrenze")
+FREIGRENZE_23 = _tabelle("freigrenze_23")
+SPARER_PB = _tabelle("sparer_pb")
+AN_PAUSCHBETRAG = _tabelle("an_pauschbetrag")
+
 SOLI_SATZ = D("0.055")
 SOLI_MILDERUNG = D("0.119")  # § 4 Satz 2 SolZG
 
-FREIGRENZE_23 = {2022: D("600"), 2023: D("600"), 2024: D("1000"),
-                 2025: D("1000"), 2026: D("1000")}
-FREIGRENZE_22_3 = D("256")  # § 22 Nr. 3 Satz 2 EStG, seit Jahren unverändert
-SPARER_PB = {2022: D("801"), 2023: D("1000"), 2024: D("1000"),
-             2025: D("1000"), 2026: D("1000")}
-AN_PAUSCHBETRAG = {2022: D("1200"), 2023: D("1230"), 2024: D("1230"),
-                   2025: D("1230"), 2026: D("1230")}
+# Jahresunabhängig im Gesetz — stehen deshalb hier und nicht in der JSON.
+FREIGRENZE_22_3 = D("256")  # § 22 Nr. 3 Satz 2 EStG
 SONDERAUSGABEN_PB = D("36")
 KIST_SAETZE = (D("0.08"), D("0.09"))
 
@@ -289,10 +343,10 @@ KIST_SAETZE = (D("0.08"), D("0.09"))
 def _jahreswert(tabelle: dict, jahr: int, name: str) -> Decimal:
     if jahr in tabelle:
         return tabelle[jahr]
-    letztes = max(tabelle)
+    bekannt = f"bekannt bis {max(tabelle)}" if tabelle else "kein Jahr hinterlegt"
     raise KeyError(
-        f"{name} für {jahr} nicht hinterlegt (bekannt bis {letztes}). "
-        f"Aktuellen Wert prüfen und in scripts/steuerlib.py ergänzen."
+        f"{name} für {jahr} nicht hinterlegt ({bekannt}). Aktuellen Wert prüfen "
+        f"und in references/steuerwerte.json ergänzen."
     )
 
 
@@ -309,12 +363,12 @@ def an_pauschbetrag(jahr: int) -> Decimal:
     return _jahreswert(AN_PAUSCHBETRAG, jahr, "Arbeitnehmer-Pauschbetrag")
 
 
-def est_grundtarif(zve: Decimal, jahr: int) -> Optional[Decimal]:
-    """Tarifliche ESt nach § 32a Abs. 1 (Grundtarif), auf volle Euro abgerundet.
-    None, wenn für das Jahr kein Tarif hinterlegt ist."""
-    t = TARIF.get(jahr)
-    if t is None:
-        return None
+def est_aus_tarif(zve: Decimal, t: dict) -> Decimal:
+    """Die Zonenformel des § 32a Abs. 1 mit einem *übergebenen* Satz Tarifwerte.
+
+    Getrennt von est_grundtarif, damit fetch_steuerwerte.py frisch geladene
+    Werte prüfen kann, bevor sie in references/steuerwerte.json landen.
+    """
     x = D(max(zve, D("0")))
     if x <= t["gfb"]:
         return D("0")
@@ -329,6 +383,13 @@ def est_grundtarif(zve: Decimal, jahr: int) -> Optional[Decimal]:
     else:
         est = D("0.45") * x - t["k5"]
     return euro_abrunden(est)
+
+
+def est_grundtarif(zve: Decimal, jahr: int) -> Optional[Decimal]:
+    """Tarifliche ESt nach § 32a Abs. 1 (Grundtarif), auf volle Euro abgerundet.
+    None, wenn für das Jahr kein Tarif hinterlegt ist."""
+    t = TARIF.get(jahr)
+    return None if t is None else est_aus_tarif(zve, t)
 
 
 def est_tarif(zve: Decimal, jahr: int, zusammenveranlagung: bool = False) -> Optional[Decimal]:

@@ -25,13 +25,17 @@ PDF/CSV-Reports ─▶ 0) einlesen ───┐
 JSON/manuell ─────────────────────┘                                                  HTML · PDF · ELSTER
 
 scripts/steuerlib.py      ── ein Zahlenparser, eine Fristenlogik, alle Steuerwerte
+scripts/fetch_steuerwerte.py ─ holt § 32a EStG / § 3 SolZG (Pflege, nicht Pipeline)
 scripts/brokerprofile.py  ── Profil-Engine: Erkennung, Anwendung, Summenabgleich
 scripts/profiles/*.json   ── ein Broker = eine Profildatei
 ```
 
-**`scripts/steuerlib.py` ist die einzige Stelle mit Steuerkonstanten und Zahlenlogik.**
-Wer einen Wert ändert, ändert ihn dort (und in `references/steuerwerte.md`). Grundregel des
-Codes: **bei unlesbarer Eingabe wird abgebrochen, nie still 0 angenommen.**
+**`references/steuerwerte.json` ist die einzige Stelle mit jahresabhängigen Werten**,
+`scripts/steuerlib.py` die einzige mit Zahlenlogik; die Tabellen in
+`references/steuerwerte.md` sind dieselben Zahlen zum Nachlesen und werden von
+`tests/test_steuerwerte_json.py` gegen die JSON geprüft. Gepflegt wird die JSON mit
+`scripts/fetch_steuerwerte.py` aus dem Gesetzestext. Grundregel des Codes: **bei
+unlesbarer Eingabe wird abgebrochen, nie still 0 angenommen.**
 
 ## Slash-Befehle
 
@@ -187,7 +191,8 @@ Freigrenzen und Verlusttöpfe gehören hierher und nicht in die Parser: § 23, �
 handgepflegte Werte aus `steuerdaten.json` werden **addiert**; ist eine Kennzahl in beiden
 belegt, weist der Report das getrennt aus, damit eine Doppelerfassung auffällt.
 Fehlt für ein Jahr der Tarif, wird die Schätzung übersprungen und darauf hingewiesen —
-dann die Werte nach `references/steuerwerte.md` in `steuerlib.py` ergänzen.
+dann `scripts/fetch_steuerwerte.py` laufen lassen, wie in `references/steuerwerte.md`
+unter „Neues Steuerjahr ergänzen“ beschrieben.
 
 ### Schritt 4 — Exportieren
 
@@ -229,7 +234,8 @@ Nur die gewünschten Formate wählen, die Dateien anschließend an den Nutzer au
 ## Reference-Dateien (bei Bedarf lesen)
 
 - `references/steuerwerte.md` — Tarif, Freigrenzen, Pauschbeträge je Jahr; wie ein neues
-  Jahr ergänzt wird. Bei jedem neuen Steuerjahr zuerst hierher.
+  Jahr ergänzt wird (`fetch_steuerwerte.py`). Bei jedem neuen Steuerjahr zuerst hierher.
+  Die Zahlen selbst stehen in `references/steuerwerte.json`.
 - `references/krypto-steuer.md` — § 23 / § 22 Nr. 3, FIFO, taggenaue Haltefrist,
   Freigrenze über alle Broker, Verlustvortrag, kanonisches Schema, Edge-Cases.
 - `references/anlagen-referenz.md` — `steuerdaten.json`-Schema, ELSTER-Zuordnung je Anlage,

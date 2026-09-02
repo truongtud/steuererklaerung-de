@@ -275,10 +275,11 @@ Der Hauptskill:
 skills/steuererklaerung/
 ├── SKILL.md                    Ablauf und Regeln
 ├── assets/                     Vorlage für steuerdaten.json
-├── references/                 Steuerwerte, Krypto-Recht, Anlagen-Schema,
-│                               Broker-Profile, PDF-Ingestion
+├── references/                 Steuerwerte (Tabelle + steuerwerte.json), Krypto-Recht,
+│                               Anlagen-Schema, Broker-Profile, PDF-Ingestion
 ├── scripts/
-│   ├── steuerlib.py            einzige Quelle für Zahlenlogik und Steuerwerte
+│   ├── steuerlib.py            Zahlenlogik; liest die Steuerwerte aus der JSON
+│   ├── fetch_steuerwerte.py    holt § 32a EStG / § 3 SolZG (Pflege, nicht Pipeline)
 │   ├── brokerprofile.py        Profil-Engine: Erkennung, Anwendung, Summenabgleich
 │   ├── profiles/*.json         ein Broker = eine Profildatei
 │   ├── parse_broker.py         ein Einstiegspunkt für alle Broker
@@ -290,7 +291,7 @@ skills/steuererklaerung/
 │   ├── krypto_fifo.py          FIFO-Engine § 23 / § 22 Nr. 3
 │   ├── build_taxreport.py      Anlagen, Tarif, Verlusttöpfe, ELSTER-Mapping
 │   └── export_report.py        HTML / PDF / ELSTER
-└── tests/                      368 Fälle, 10 Dateien
+└── tests/                      13 Dateien
 ```
 
 Zwei Konstruktionsprinzipien, die den Unterschied machen:
@@ -329,18 +330,44 @@ einzeln lauffähig, wenn nur ein Bereich interessiert:
 | [`test_profile_wizard.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_profile_wizard.py) | Entwurfserzeugung, zirkuläre Abgleiche, Anonymisierung |
 | [`test_export.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_export.py) | Disclaimer in jedem Format, CSV-Notation, Escaping |
 | [`test_integration.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_integration.py) | Pipeline end-to-end, Schnittstellen zwischen den Skripten |
+| [`test_steuerwerte_json.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_steuerwerte_json.py) | Vollständigkeit der `steuerwerte.json` — und dass die Tabellen in `steuerwerte.md` **Zelle für Zelle dasselbe sagen** |
+| [`test_fetch_steuerwerte.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_fetch_steuerwerte.py) | Gesetzestext → Zahlen, an echten Seitenausschnitten; ohne Netz |
+| [`test_beispiel.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_beispiel.py) | das eingecheckte `beispiel/` gegen das, was der Code heute erzeugt |
 
 CI läuft bei jedem Push auf **Python 3.10 bis 3.14**, dazu ein Vorschau-Lauf auf der
 3.15-Beta, der fehlschlagen darf ([Workflow](.github/workflows/tests.yml)).
 
 ## Ein neues Steuerjahr ergänzen
 
-Alle jahresabhängigen Werte stehen an genau einer Stelle: `scripts/steuerlib.py`, gespiegelt
-in `references/steuerwerte.md`. Neue Werte aus § 32a EStG und § 3 Abs. 3 SolZG eintragen,
-dann `python3 tests/run_tests.py` — der Stetigkeitstest über die Tarifzonen prüft sie
-automatisch mit. Fehlt ein Jahr, wird der Report weiterhin gebaut, aber die ESt-Schätzung
-entfällt und Pauschbeträge greifen ersatzweise auf das nächstgelegene hinterlegte Jahr
-zurück, mit Warnung — statt eine Zahl zu erfinden.
+Alle jahresabhängigen Werte stehen an genau einer Stelle: `references/steuerwerte.json`,
+gespiegelt in `references/steuerwerte.md`. Den Tarif nach § 32a EStG und die Freigrenze
+nach § 3 Abs. 3 SolZG holt `scripts/fetch_steuerwerte.py` aus dem Gesetzestext:
+
+```bash
+S=plugins/steuer-de/skills/steuererklaerung/scripts
+python3 $S/fetch_steuerwerte.py --jahre 2022-2027              # zeigt nur den Unterschied
+python3 $S/fetch_steuerwerte.py --jahre 2022-2027 --schreiben  # übernimmt ihn
+```
+
+Beides kommt aus **amtlichen Quellen**, zwei unabhängigen Veröffentlichungen des Bundes:
+
+| Quelle | liefert |
+|---|---|
+| [Tarifhistorie des BMF](https://www.bmf-steuerrechner.de/) (PDF) | § 32a je Tarifzeitraum, zurück bis 1958 — das Jahr steht in der Seitenüberschrift, die Zuordnung ist keine Annahme |
+| [gesetze-im-internet.de](https://www.gesetze-im-internet.de/estg/__32a.html) (amtliche XML) | die geltende Fassung von § 32a EStG und § 3 SolZG |
+
+Vor dem Schreiben prüft das Skript jeden Tarif auf Stetigkeit an den Zonengrenzen und
+hält die BMF-Historie gegen das EStG; widersprechen sie sich, schreibt es nichts.
+Pauschbeträge, die Freigrenze nach § 23 und die Fundstelle im Bundesgesetzblatt bleiben
+Handarbeit — das Skript legt sie für ein neues Jahr als `null` an und meldet sie, setzt
+aber nie eine 0. Soli-Freigrenzen **früherer** Jahre kann es nicht nachprüfen: eine
+amtliche Fassungshistorie des § 3 SolZG gibt es nicht; der Lauf sagt, welche Jahre das
+betrifft. Danach `python3 tests/run_tests.py`. Das Skript ist Pflegewerkzeug und **nicht**
+Teil der Pipeline — kein Report hängt daran, ob ein Server erreichbar ist.
+
+Fehlt ein Jahr, wird der Report weiterhin gebaut, aber die ESt-Schätzung entfällt und
+Pauschbeträge greifen ersatzweise auf das nächstgelegene hinterlegte Jahr zurück, mit
+Warnung — statt eine Zahl zu erfinden.
 
 ## Rechtsstand
 

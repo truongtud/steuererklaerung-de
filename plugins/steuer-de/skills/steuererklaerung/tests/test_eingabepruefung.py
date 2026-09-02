@@ -476,7 +476,7 @@ def test_fifo_unbekanntes_jahr_wendet_keine_freigrenze_an():
 
     w = [x for x in res["warnungen"] if "Freigrenze § 23 für 2018" in x]
     eq(len(w), 1, f"die fehlende Freigrenze muss gewarnt werden: {res['warnungen']}")
-    assert "steuerlib.py" in w[0] and "FREIGRENZE_23" in w[0], w[0]
+    assert "steuerwerte.json" in w[0] and "freigrenze_23" in w[0], w[0]
     assert "600" not in w[0] and "1.000" not in w[0], \
         f"es darf kein Ersatzwert mehr genannt werden: {w[0]}"
 
