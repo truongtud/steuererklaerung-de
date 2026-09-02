@@ -1,7 +1,7 @@
 {
   "meta": {
     "steuerjahr": 2024,
-    "erstellt": "2026-08-30T20:25:11.177435+00:00",
+    "erstellt": "2026-09-02T20:33:49.981259+00:00",
     "waehrung": "EUR",
     "veranlagung": "Einzelveranlagung",
     "steuerpflichtiger": {
@@ -307,6 +307,8 @@
     "abzug_agb": "0.00",
     "zu_versteuerndes_einkommen": "65162.00",
     "tarif": "Grundtarif",
+    "einkommensteuer_tariflich_schaetzung": "16736.00",
+    "steuerermaessigung_35a": "0.00",
     "einkommensteuer_schaetzung": "16736.00",
     "soli_schaetzung": "0.00",
     "kirchensteuer_schaetzung": "1506.24",

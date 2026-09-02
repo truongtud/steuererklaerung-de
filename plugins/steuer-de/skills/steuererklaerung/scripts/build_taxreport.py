@@ -59,6 +59,7 @@ from steuerlib import (  # noqa: E402
     fmt_eur,
     freigrenze_23,
     jahr_mit_werten,
+    steuerermaessigung_35a,
     normiere_kirchensteuersatz,
     q2,
     soli,
@@ -183,7 +184,7 @@ FELDER_OBERSTE_EBENE = {
     "steuerjahr", "tax_year", "zusammenveranlagung", "steuerpflichtiger",
     "anlage_n", "anlage_kap", "anlage_so", "anlage_v", "anlage_s", "anlage_g",
     "vorsorge", "sonderausgaben", "aussergewoehnliche_belastungen", "kinder",
-    "krypto_transaktionen",
+    "krypto_transaktionen", "steuerermaessigungen",
 }
 
 FELDER_JE_BLOCK = {
@@ -206,7 +207,12 @@ FELDER_JE_BLOCK = {
     "anlage_s": {"gewinn"},
     "anlage_g": {"gewinn"},
     "aussergewoehnliche_belastungen": {"anzusetzen"},
+    "steuerermaessigungen": {"paragraph_35a"},
 }
+
+# § 35a kennt genau drei Töpfe mit je eigenem Höchstbetrag — anders als die
+# Freiform-Blöcke sind die Namen hier fest, ein Tippfehler wäre sonst still 0.
+FELDER_35A = {"minijob_haushalt", "haushaltsnahe_dienstleistungen", "handwerkerleistungen"}
 
 # Absichtlich frei benennbare Positions-Dicts — hier ist JEDER Schlüssel gültig
 # (er wird summiert und ins ELSTER-Mapping übernommen), also wird nicht gewarnt.
@@ -251,6 +257,10 @@ def pruefe_unbekannte_felder(steuerdaten: dict) -> list:
     pruefe(steuerdaten, FELDER_OBERSTE_EBENE, "(oberste Ebene)", "")
     for block, bekannt in FELDER_JE_BLOCK.items():
         pruefe(steuerdaten.get(block), bekannt, block, f"{block}.")
+    ermaessigungen = steuerdaten.get("steuerermaessigungen")
+    if isinstance(ermaessigungen, dict):
+        pruefe(ermaessigungen.get("paragraph_35a"), FELDER_35A,
+               "steuerermaessigungen.paragraph_35a", "steuerermaessigungen.paragraph_35a.")
     return befunde
 
 
@@ -1019,6 +1029,7 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     s = _dict_feld(steuerdaten, "anlage_s")
     g = _dict_feld(steuerdaten, "anlage_g")
     vorsorge = _dict_feld(steuerdaten, "vorsorge")
+    p35a = _dict_feld(_dict_feld(steuerdaten, "steuerermaessigungen"), "paragraph_35a")
     sonder = _dict_feld(steuerdaten, "sonderausgaben")
     agb = _dict_feld(steuerdaten, "aussergewoehnliche_belastungen")
     kinder = pruefe_kinder(steuerdaten.get("kinder"))
@@ -1437,13 +1448,26 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
     # Clamp bleibt hier: ein negatives zvE gibt es nicht (Verlustabzug § 10d gesondert).
     zve = max(summe_einkuenfte - vorsorge_summe - sonder_summe - agb_summe, NULL)
 
-    est = est_tarif(zve, jahr, verheiratet)
-    if est is None:
+    ermaessigung_35a = steuerermaessigung_35a(
+        _betrag(p35a.get("minijob_haushalt"),
+                "steuerermaessigungen.paragraph_35a.minijob_haushalt"),
+        _betrag(p35a.get("haushaltsnahe_dienstleistungen"),
+                "steuerermaessigungen.paragraph_35a.haushaltsnahe_dienstleistungen"),
+        _betrag(p35a.get("handwerkerleistungen"),
+                "steuerermaessigungen.paragraph_35a.handwerkerleistungen"))
+
+    est_tariflich = est_tarif(zve, jahr, verheiratet)
+    if est_tariflich is None:
+        est = None
         tarif_soli = None
         tarif_kist = None
         est_gesamt = soli_gesamt = kist_gesamt = None
     else:
-        est = q2(est)
+        est_tariflich = q2(est_tariflich)
+        # § 35a mindert die tarifliche Steuer. Ein Überhang verfällt: er wird
+        # weder erstattet noch vorgetragen — sonst erfände der Report hier eine
+        # Erstattung, die es nicht gibt.
+        est = q2(max(est_tariflich - ermaessigung_35a, NULL))
         tarif_soli = q2(soli(est, werte_jahr, verheiratet))
         tarif_kist = q2(est * kist_satz) if kist_satz is not None else None
         est_gesamt = q2(est + kap_est)
@@ -1451,6 +1475,15 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
         kist_gesamt = None
         if kist_satz is not None:
             kist_gesamt = q2((tarif_kist or NULL) + (kap_kist or NULL))
+
+    if ermaessigung_35a > 0:
+        hinweise.append(
+            f"§ 35a EStG: {fmt_eur(ermaessigung_35a)} Steuerermäßigung angesetzt "
+            f"(20 % der Aufwendungen, je Topf gedeckelt). Begünstigt sind nur "
+            f"Arbeits-, Maschinen- und Fahrtkosten — Material zählt nicht, auch nicht "
+            f"anteilig. Die Rechnung muss unbar bezahlt sein; eine Barzahlung erkennt "
+            f"das Finanzamt selbst mit Quittung nicht an. Beides steht nicht in den "
+            f"Zahlen und wurde hier nicht geprüft.")
 
     # --- Nachzahlung / Erstattung ---
     # Die von den Depots einbehaltenen Beträge (KESt, Soli, KiSt) sind Vorauszahlungen
@@ -1735,6 +1768,9 @@ def build(steuerdaten: dict, krypto=None, kap_quellen=None):
             "abzug_agb": str(q2(agb_summe)),
             "zu_versteuerndes_einkommen": str(q2(zve)),
             "tarif": "Splitting" if verheiratet else "Grundtarif",
+            "einkommensteuer_tariflich_schaetzung": (
+                None if est_tariflich is None else str(est_tariflich)),
+            "steuerermaessigung_35a": str(ermaessigung_35a),
             "einkommensteuer_schaetzung": (None if est is None else str(est)),
             "soli_schaetzung": (None if tarif_soli is None else str(tarif_soli)),
             "kirchensteuer_schaetzung": (None if tarif_kist is None else str(tarif_kist)),

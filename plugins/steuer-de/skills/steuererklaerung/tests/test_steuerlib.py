@@ -178,6 +178,31 @@ def test_soli_splitting_und_jahre():
     assert sl.soli(D("20000"), 2025) > 0
 
 
+# ── § 35a ────────────────────────────────────────────────────────────────────
+@case
+def test_35a_zwanzig_prozent_je_topf():
+    # § 35a Abs. 1/2/3: je 20 %, gedeckelt auf 510 / 4.000 / 1.200 €.
+    eq(sl.steuerermaessigung_35a(D("0"), D("1000"), D("0")), D("200.00"), "20 % von 1.000")
+    eq(sl.steuerermaessigung_35a(D("1000"), D("0"), D("0")), D("200.00"), "Minijob unter Deckel")
+    eq(sl.steuerermaessigung_35a(D("0"), D("0"), D("1000")), D("200.00"), "Handwerker")
+
+
+@case
+def test_35a_deckelt_je_topf_einzeln():
+    """Jeder Topf hat seinen eigenen Höchstbetrag; ein Überhang im einen Topf
+    darf nicht den anderen auffüllen."""
+    eq(sl.steuerermaessigung_35a(D("99000"), D("0"), D("0")), D("510.00"), "Deckel Minijob")
+    eq(sl.steuerermaessigung_35a(D("0"), D("99000"), D("0")), D("4000.00"), "Deckel haushaltsnah")
+    eq(sl.steuerermaessigung_35a(D("0"), D("0"), D("99000")), D("1200.00"), "Deckel Handwerker")
+    eq(sl.steuerermaessigung_35a(D("99000"), D("99000"), D("99000")), D("5710.00"),
+       "alle drei Deckel zusammen")
+
+
+@case
+def test_35a_ohne_aufwand_ist_null():
+    eq(sl.steuerermaessigung_35a(D("0"), D("0"), D("0")), D("0.00"))
+
+
 # ── Kirchensteuersatz ────────────────────────────────────────────────────────
 @case
 def test_kirchensteuersatz():

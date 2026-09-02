@@ -414,6 +414,35 @@ def soli(est: Decimal, jahr: int, zusammenveranlagung: bool = False) -> Decimal:
     return q2(min(est * SOLI_SATZ, SOLI_MILDERUNG * (est - fg)))
 
 
+# § 35a EStG — Steuerermäßigung für haushaltsnahe Leistungen. Die Höchstbeträge
+# stehen jahresunabhängig im Gesetz und bleiben deshalb hier, nicht in
+# references/steuerwerte.json.
+PARAGRAF_35A_SATZ = D("0.20")
+PARAGRAF_35A_HOECHSTBETRAG = {
+    "minijob": D("510"),          # Abs. 1: geringfügige Beschäftigung im Haushalt
+    "haushaltsnah": D("4000"),    # Abs. 2: haushaltsnahe Dienstleistungen, Pflege
+    "handwerker": D("1200"),      # Abs. 3: Handwerkerleistungen
+}
+
+
+def steuerermaessigung_35a(minijob: Decimal, haushaltsnah: Decimal,
+                           handwerker: Decimal) -> Decimal:
+    """§ 35a EStG: je Topf 20 % der Aufwendungen, jeder mit eigenem Höchstbetrag.
+
+    Die drei Höchstbeträge sind getrennt — ein Überhang im einen Topf füllt den
+    anderen **nicht** auf. Begünstigt sind nur Arbeits-, Maschinen- und
+    Fahrtkosten (§ 35a Abs. 5); Material zählt nicht, und die Rechnung muss
+    unbar bezahlt sein. Beides steht nicht in den Zahlen und kann hier nicht
+    geprüft werden — der Report weist darauf hin.
+    """
+    summe = D("0")
+    for wert, topf in ((minijob, "minijob"), (haushaltsnah, "haushaltsnah"),
+                       (handwerker, "handwerker")):
+        aufwand = max(D(wert), D("0"))
+        summe += min(aufwand * PARAGRAF_35A_SATZ, PARAGRAF_35A_HOECHSTBETRAG[topf])
+    return q2(summe)
+
+
 def normiere_kirchensteuersatz(wert) -> Optional[Decimal]:
     """Akzeptiert 0.09 wie auch 9 (Prozent) und weist Unsinn zurück.
 
