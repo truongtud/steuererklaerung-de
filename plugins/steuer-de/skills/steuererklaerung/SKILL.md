@@ -255,11 +255,12 @@ Nur die gewünschten Formate wählen, die Dateien anschließend an den Nutzer au
 
 ## Tests
 
-`python3 tests/run_tests.py` — **368 Fälle in 10 Dateien**: Tarif-Stützpunkte und
-Zonenstetigkeit, Zahlenparser (DE/EN, Vorzeichen), Fristen-Grenzfälle, FIFO mit Teillosen
-und Gebühren, Freigrenzen- und Verlusttopf-Aggregation über mehrere Quellen, KAP-Quellen,
-Profil-Validierung, den Wizard samt Anonymisierung, ELSTER-Export und die Schnittstellen
-zwischen den Skripten. **Nach jeder Änderung laufen lassen** — die Steuerwerte-Tests fangen
+`python3 tests/run_tests.py` — **483 Fälle in 18 Dateien**: Tarif-Stützpunkte und
+Zonenstetigkeit, Zahlenparser (DE/EN, Vorzeichen), Fristen nach AO und BGB, FIFO mit
+Teillosen und Gebühren, Freigrenzen- und Verlusttopf-Aggregation über mehrere Quellen,
+KAP-Quellen, § 35a, Progressionsvorbehalt, Günstigerprüfungen, Vorsorge-Höchstbetrag,
+zumutbare Belastung, Kinder, Bescheidprüfung, Profil-Validierung, den Wizard samt
+Anonymisierung, ELSTER-Export und die Schnittstellen zwischen den Skripten. **Nach jeder Änderung laufen lassen** — die Steuerwerte-Tests fangen
 falsch abgeschriebene Konstanten, die Kontrakt-Tests auseinanderlaufende Schlüsselnamen.
 
 ## Grenzen (bewusst nicht automatisiert)
