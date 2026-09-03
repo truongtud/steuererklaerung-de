@@ -2,7 +2,7 @@
   "name": "steuer-de",
   "displayName": "Steuererklärung Deutschland",
   "description": "Deutsche Einkommensteuererklärung: TaxReport über alle Anlagen, Krypto-FIFO nach § 23 EStG mit taggenauer Haltefrist, Kapitalerträge mit Verlusttöpfen, Broker- und Börsen-Import über Profildateien (Koinly, eToro, Kraken, Coinbase, Bitpanda, Binance), Export als HTML, PDF und ELSTER-Feld-Mapping. Orientierung, keine Steuerberatung.",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "author": {
     "name": "Tien Truong Nguyen",
     "url": "https://github.com/truongtud"
