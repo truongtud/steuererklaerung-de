@@ -2,59 +2,84 @@
   "id": "lohnsteuerbescheinigung",
   "titel": "Ausdruck der elektronischen Lohnsteuerbescheinigung",
   "hinweis": "Die Feldnummern stammen aus der Musterbekanntmachung des BMF, nicht aus dem Gesetz. § 41b EStG bestätigt Inhalt und Reihenfolge — insbesondere die Trennung der Rentenversicherungsbeiträge nach Arbeitgeber- und Arbeitnehmeranteil (Absatz 1 Satz 2 Nummer 11) —, aber nicht die Nummerierung. Deshalb muss zu jeder Nummer auch die Beschriftung passen; sonst wird der Wert gemeldet statt übernommen.",
-  "erkennung": ["Lohnsteuerbescheinigung"],
+  "erkennung": [
+    "Lohnsteuerbescheinigung"
+  ],
   "felder": [
     {
       "nummer": "3",
-      "beschriftung": ["Bruttoarbeitslohn"],
+      "beschriftung": [
+        "Bruttoarbeitslohn"
+      ],
       "ziel": "anlage_n.bruttoarbeitslohn"
     },
     {
       "nummer": "4",
-      "beschriftung": ["Lohnsteuer"],
+      "beschriftung": [
+        "Lohnsteuer"
+      ],
       "ziel": "anlage_n.lohnsteuer"
     },
     {
       "nummer": "5",
-      "beschriftung": ["Solidaritätszuschlag"],
+      "beschriftung": [
+        "Solidaritätszuschlag"
+      ],
       "ziel": "anlage_n.soli"
     },
     {
       "nummer": "6",
-      "beschriftung": ["Kirchensteuer"],
+      "beschriftung": [
+        "Kirchensteuer"
+      ],
       "ziel": "anlage_n.kirchensteuer"
     },
     {
       "nummer": "22a",
-      "beschriftung": ["Arbeitgeberanteil", "Rentenversicherung"],
+      "beschriftung": [
+        "Arbeitgeberanteil",
+        "Rentenversicherung"
+      ],
       "ziel": "vorsorge.arbeitgeberanteil_steuerfrei"
     },
     {
       "nummer": "22a",
-      "beschriftung": ["Arbeitgeberanteil", "Rentenversicherung"],
+      "beschriftung": [
+        "Arbeitgeberanteil",
+        "Rentenversicherung"
+      ],
       "ziel": "vorsorge.basisversorgung.rentenversicherung",
       "summieren": true,
       "warum": "§ 10 Abs. 3 rechnet mit dem Gesamtbeitrag; Nr. 22a und 23a zusammen ergeben ihn."
     },
     {
       "nummer": "23a",
-      "beschriftung": ["Arbeitnehmeranteil", "Rentenversicherung"],
+      "beschriftung": [
+        "Arbeitnehmeranteil",
+        "Rentenversicherung"
+      ],
       "ziel": "vorsorge.basisversorgung.rentenversicherung",
       "summieren": true
     },
     {
       "nummer": "25",
-      "beschriftung": ["Krankenversicherung"],
+      "beschriftung": [
+        "Krankenversicherung"
+      ],
       "ziel": "vorsorge.kranken_pflege_basis.krankenversicherung"
     },
     {
       "nummer": "26",
-      "beschriftung": ["Pflegeversicherung"],
+      "beschriftung": [
+        "Pflegeversicherung"
+      ],
       "ziel": "vorsorge.kranken_pflege_basis.pflegeversicherung"
     },
     {
       "nummer": "27",
-      "beschriftung": ["Arbeitslosenversicherung"],
+      "beschriftung": [
+        "Arbeitslosenversicherung"
+      ],
       "ziel": "vorsorge.sonstige.arbeitslosenversicherung"
     }
   ],
@@ -64,6 +89,18 @@
       "brutto": "anlage_n.bruttoarbeitslohn",
       "beitrag": "vorsorge.basisversorgung.rentenversicherung",
       "warum": "Der Gesamtbeitrag muss ungefähr dem Beitragssatz auf den Bruttolohn entsprechen, gedeckelt auf die allgemeine Beitragsbemessungsgrenze. Fängt Zahlendreher um Größenordnungen."
+    },
+    {
+      "art": "anteil_plausibel",
+      "wert": "anlage_n.kirchensteuer",
+      "basis": "anlage_n.lohnsteuer",
+      "saetze": [
+        "0.08",
+        "0.09"
+      ],
+      "toleranz": "0.02",
+      "bezeichnung": "Kirchensteuer",
+      "warum": "Die Kirchensteuer beträgt 8 % (Bayern, Baden-Württemberg) oder sonst 9 % der Lohnsteuer. Passt sie zu keinem der beiden Sätze, wurde vermutlich die falsche Zeile gelesen."
     }
   ]
 }

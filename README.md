@@ -77,21 +77,28 @@ Kommandos zum Selbst-Erzeugen — liegt in [`beispiel/`](beispiel/).
 ## Wie es funktioniert
 
 ```
-                    ┌─ Bescheinigung ─▶ parse_bescheinigung.py ─▶ steuerdaten.json ─┐
-  ein Ordner mit    │                    (Nummer + Beschriftung)                    │
-  allen Papieren ──▶┤                                                               │
-  importiere_       ├─ Broker/Börse ──▶ parse_broker.py ────────┐                   │
-  unterlagen.py     │                   Summenabgleich          │                   │
-                    ├─ fremdes PDF ───▶ parse_pdf.py ───────────┤                   │
-                    │                                           ▼                   ▼
-                    └─ Bescheid ──────▶ /bescheid-pruefen    build_taxreport.py ◀────┘
-                                                              Freigrenzen einmal
-                                                              Verlusttöpfe, § 32a
-                                                              § 35a, § 32b, § 31
-                                                                      │
-                                                                      ▼
-                                                              export_report.py
-                                                          HTML · PDF · ELSTER-Mapping
+   unterlagen/            importiere_unterlagen.py
+   alle Papiere  ──────▶  erkennt je Datei den Typ · nichts wird geraten
+                                       │
+        ┌──────────────────┬───────────┴───────┬────────────────────┐
+        ▼                  ▼                   ▼                    ▼
+  Bescheinigung      Broker / Börse      Steuerbescheid       nicht erkannt
+        │                  │                   │                    │
+ parse_bescheinigung  parse_broker      /bescheid-pruefen     gemeldet und
+ Nummer + Beschrif-   Summenabgleich    (eigener Befehl)      liegen gelassen
+ tung müssen passen   gegen den Report
+        │                  │
+        ▼                  ▼
+  steuerdaten.json   *.krypto_result.json · *.kap_result.json
+        └─────────┬────────┘
+                  ▼
+          build_taxreport.py
+          Freigrenzen und Verlusttöpfe EINMAL über alle Quellen
+          § 32a · § 32b · § 32d · § 35a · § 31 · § 10 Abs. 3/4 · § 33 Abs. 3
+                  ▼
+           export_report.py            HTML · PDF · ELSTER-Mapping
+                  ▼
+           Schritt 5: Zeile für Zeile durch das ELSTER-Formular
 ```
 
 **Schritt 0 — einsortieren.** `importiere_unterlagen.py` nimmt einen ganzen Ordner und

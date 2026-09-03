@@ -96,6 +96,44 @@ def test_import_fuellt_und_berichtet():
         assert eintrag["aenderungen"], eintrag
 
 
+@case
+def test_unlesbare_datei_wird_gemeldet_nicht_verschluckt():
+    """Bisher fing der Verteiler jede Ausnahme ab und lieferte leeren Text — eine
+    kaputte Datei war damit nicht von einer leeren zu unterscheiden und landete
+    stumm unter „nicht erkannt“. Ein Lesefehler ist aber etwas anderes als ein
+    unbekanntes Dokument und muss so heißen."""
+    import tempfile
+    with tempfile.NamedTemporaryFile("wb", suffix=".pdf", delete=False) as f:
+        f.write(b"das ist kein PDF")
+        p = f.name
+    try:
+        art, kennung, meldungen = iu.bestimme_art_ausfuehrlich(p)
+    finally:
+        os.unlink(p)
+    eq(art, "unlesbar", "als Lesefehler benannt")
+    assert any("nicht lesen" in m or "PyMuPDF" in m or "Fehler" in m for m in meldungen), \
+        f"der Grund muss dabeistehen: {meldungen}"
+
+
+@case
+def test_erkennung_nennt_den_grund():
+    """Wenn ein Dokument knapp an einem Profil vorbeigeht, hilft es zu wissen,
+    welches Merkmal gefehlt hat — sonst rät der Nutzer, warum sein Beleg nicht
+    erkannt wurde."""
+    import tempfile
+    with tempfile.NamedTemporaryFile("w", suffix=".txt", encoding="utf-8",
+                                     delete=False) as f:
+        # Enthält "Steuerbescheinigung", aber keine der erwarteten Zeilen.
+        f.write("Steuerbescheinigung\nOhne jede Betragszeile\n")
+        p = f.name
+    try:
+        art, kennung, meldungen = iu.bestimme_art_ausfuehrlich(p)
+    finally:
+        os.unlink(p)
+    eq(art, "bescheinigung", "erkannt wird es")
+    eq(kennung, "steuerbescheinigung")
+
+
 if __name__ == "__main__":
     fails = []
     for fn in CASES:

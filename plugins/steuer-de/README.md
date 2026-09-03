@@ -62,18 +62,28 @@ Quelle stehen unterhalb einer Trennzeile und werden ausdrücklich nicht eingetra
 ## Wie es funktioniert
 
 ```
-                  ┌─ Bescheinigung ──▶ parse_bescheinigung.py ─▶ steuerdaten.json ─┐
-ein Ordner mit    │                     (Nummer + Beschriftung)                    │
-allen Papieren ──▶┤                                                                │
-importiere_       ├─ Broker/Börse ───▶ parse_broker.py ────────┐                   │
-unterlagen.py     │                    Summenabgleich          ▼                   ▼
-                  └─ Bescheid ───────▶ /bescheid-pruefen   build_taxreport.py ◀─────┘
-                                                           Freigrenzen einmal
-                                                           § 32a, § 35a, § 32b, § 31
-                                                                   │
-                                                                   ▼
-                                                           export_report.py
-                                                       HTML · PDF · ELSTER-Mapping
+   unterlagen/            importiere_unterlagen.py
+   alle Papiere  ──────▶  erkennt je Datei den Typ · nichts wird geraten
+                                       │
+        ┌──────────────────┬───────────┴───────┬────────────────────┐
+        ▼                  ▼                   ▼                    ▼
+  Bescheinigung      Broker / Börse      Steuerbescheid       nicht erkannt
+        │                  │                   │                    │
+ parse_bescheinigung  parse_broker      /bescheid-pruefen     gemeldet und
+ Nummer + Beschrif-   Summenabgleich    (eigener Befehl)      liegen gelassen
+ tung müssen passen   gegen den Report
+        │                  │
+        ▼                  ▼
+  steuerdaten.json   *.krypto_result.json · *.kap_result.json
+        └─────────┬────────┘
+                  ▼
+          build_taxreport.py
+          Freigrenzen und Verlusttöpfe EINMAL über alle Quellen
+          § 32a · § 32b · § 32d · § 35a · § 31 · § 10 Abs. 3/4 · § 33 Abs. 3
+                  ▼
+           export_report.py            HTML · PDF · ELSTER-Mapping
+                  ▼
+           Schritt 5: Zeile für Zeile durch das ELSTER-Formular
 ```
 
 Freigrenzen und Verlusttöpfe werden **einmal auf die Summe aller Quellen** angewandt, nicht

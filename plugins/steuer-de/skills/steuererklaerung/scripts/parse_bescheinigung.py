@@ -90,13 +90,37 @@ def erkenne(text: str, profile: list) -> Optional[dict]:
     return passend[0][1]
 
 
+_BETRAG_MUSTER = re.compile(r"-?\d{1,3}(?:[.\s]\d{3})*,\d{2}")
+
+
 def _betrag_der_zeile(zeile: str) -> Optional[D]:
-    """Der letzte Betrag einer Zeile — Bescheinigungen setzen ihn nach rechts."""
-    treffer = re.findall(r"(-?\d{1,3}(?:[.\s]\d{3})*,\d{2})", zeile)
-    if not treffer:
+    """Der eine Betrag einer Zeile — oder None, wenn es keinen eindeutigen gibt.
+
+    Aussortiert werden zwei Sorten Zahlen, die keine Beträge sind:
+
+      * **Prozentsätze.** Bescheinigungen nennen den Beitragssatz gern neben dem
+        Betrag („14,6 % 3.200,00“).
+      * **Werte in Klammern.** Das sind Vergleichs- oder Vorjahresangaben
+        („18.420,00 EUR (Vorjahr 17.900,00)“). Die letzte Zahl der Zeile zu
+        nehmen hieße hier, den Vorjahreswert in die Steuererklärung zu tragen —
+        und das sähe im Ergebnis völlig plausibel aus.
+
+    Bleiben danach mehrere Kandidaten, wird **nicht** geraten: der Aufrufer
+    meldet die Zeile als mehrdeutig.
+    """
+    kandidaten = []
+    for m in _BETRAG_MUSTER.finditer(zeile):
+        rest = zeile[m.end():]
+        if re.match(r"\s*%", rest):
+            continue
+        davor, danach = zeile[:m.start()], zeile[m.end():]
+        if davor.count("(") > davor.count(")") and ")" in danach:
+            continue  # steht innerhalb einer Klammer
+        kandidaten.append(m.group(0))
+    if len(kandidaten) != 1:
         return None
     try:
-        return sl.to_decimal(treffer[-1], locale_hint="de")
+        return sl.to_decimal(kandidaten[0], locale_hint="de")
     except sl.ParseError:
         return None
 
@@ -194,6 +218,9 @@ def _pruefe(profil: dict, werte: dict) -> list:
         if pruefung.get("art") == "hinweis":
             meldungen.append(pruefung["text"])
             continue
+        if pruefung.get("art") == "anteil_plausibel":
+            meldungen += _pruefe_anteil(pruefung, werte)
+            continue
         if pruefung.get("art") != "rentenbeitrag_plausibel":
             continue
         brutto, beitrag = werte.get(pruefung["brutto"]), werte.get(pruefung["beitrag"])
@@ -210,6 +237,27 @@ def _pruefe(profil: dict, werte: dict) -> list:
                 f"({RV_SATZ * 100:.1f} % auf {sl.fmt_eur(grundlage)}). Bitte die Nummern "
                 f"22a und 23a im Dokument nachsehen — ein Zahlendreher wäre hier teuer.")
     return meldungen
+
+
+def _pruefe_anteil(pruefung: dict, werte: dict) -> list:
+    """Ein Betrag muss ein bekannter Anteil eines anderen sein.
+
+    Für die Kirchensteuer: 8 oder 9 Prozent der Lohnsteuer. Solche festen
+    Verhältnisse sind die schärfsten Prüfungen, die ohne Zusatzwissen möglich
+    sind — sie fangen eine verlesene Zeile, deren Betrag für sich genommen
+    plausibel aussieht.
+    """
+    wert, basis = werte.get(pruefung["wert"]), werte.get(pruefung["basis"])
+    if wert is None or basis is None or basis <= 0 or wert == 0:
+        return []
+    toleranz = D(pruefung.get("toleranz", "0.02"))
+    anteil = wert / basis
+    if any(abs(anteil - D(satz)) <= toleranz for satz in pruefung["saetze"]):
+        return []
+    erwartet = " oder ".join(f"{D(s) * 100:.0f} %" for s in pruefung["saetze"])
+    return [f"{pruefung['bezeichnung']}: {sl.fmt_eur(wert)} sind {anteil * 100:.1f} % "
+            f"von {sl.fmt_eur(basis)} — erwartet wären {erwartet}. "
+            f"{pruefung.get('warum', '')}".strip()]
 
 
 def _setze(daten: dict, pfad: str, wert: str) -> None:
@@ -287,7 +335,18 @@ def fehlende_felder(steuerdaten: dict, beantwortet=None, prefix: str = "") -> li
     return offen
 
 
+# Ein Scan liefert über die reine Textebene fast nichts. Unterhalb dieser Grenze
+# lohnt der Umweg über die Tabellenerkennung samt OCR aus parse_pdf.py.
+MINDESTZEICHEN = 200
+
+
 def text_aus_datei(pfad: str) -> str:
+    """Text eines Belegs — mit OCR-Rückfall für gescannte Dokumente.
+
+    Wirft bei einem Lesefehler, statt leeren Text zu liefern: eine unlesbare
+    Datei ist etwas anderes als eine leere, und der Unterschied muss beim
+    Aufrufer ankommen.
+    """
     if not pfad.lower().endswith(".pdf"):
         with open(pfad, encoding="utf-8") as f:
             return f.read()
@@ -296,8 +355,29 @@ def text_aus_datei(pfad: str) -> str:
     except ImportError as e:
         raise BescheinigungFehler(
             "Zum Lesen des PDF fehlt PyMuPDF — `pip install pymupdf`.") from e
-    with fitz.open(pfad) as doc:
-        return "\n".join(seite.get_text() for seite in doc)
+    try:
+        with fitz.open(pfad) as doc:
+            text = "\n".join(seite.get_text() for seite in doc)
+    except Exception as e:
+        raise BescheinigungFehler(f"{os.path.basename(pfad)} lässt sich nicht "
+                                  f"lesen: {e}") from e
+
+    if len(text.strip()) >= MINDESTZEICHEN:
+        return text
+    # Zu wenig Text für ein Formular: vermutlich ein Scan. parse_pdf.py bringt
+    # die Backends samt OCR mit — dieselbe Bibliothek, dieselben Optionen.
+    try:
+        import parse_pdf
+        auszug = parse_pdf.extract(pfad, backend="auto")
+        seiten = auszug.get("pages") or []
+        ocr = "\n".join(s.get("text", "") for s in seiten)
+        if len(ocr.strip()) > len(text.strip()):
+            return ocr
+    except Exception:
+        # OCR ist eine Zugabe. Schlägt sie fehl, gilt der Text, den es gibt —
+        # und der Aufrufer meldet ihn als zu dünn.
+        pass
+    return text
 
 
 def main(argv=None) -> int:

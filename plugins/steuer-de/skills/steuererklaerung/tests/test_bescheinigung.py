@@ -76,6 +76,34 @@ def test_rentenversicherung_wird_zum_gesamtbeitrag_summiert():
     eq(werte["vorsorge.arbeitgeberanteil_steuerfrei"], D("7300.00"), "nur 22a")
 
 
+# ── Betragserkennung ─────────────────────────────────────────────────────────
+@case
+def test_prozentsatz_ist_kein_betrag():
+    """Bescheinigungen nennen oft den Beitragssatz neben dem Betrag."""
+    eq(pb._betrag_der_zeile("25. Beiträge KV 14,6 % 3.200,00"), D("3200.00"))
+
+
+@case
+def test_vergleichswert_in_klammern_gewinnt_nicht():
+    """„4. Lohnsteuer 18.420,00 EUR (Vorjahr 17.900,00)“ — die letzte Zahl der
+    Zeile ist hier der Vorjahreswert. Wer sie nimmt, trägt einen falschen Betrag
+    in die Steuererklärung, und die Zahl sieht plausibel aus."""
+    eq(pb._betrag_der_zeile("4. Lohnsteuer 18.420,00 EUR (Vorjahr 17.900,00)"),
+       D("18420.00"))
+
+
+@case
+def test_zwei_gleichrangige_betraege_sind_mehrdeutig():
+    """Bleiben nach dem Aussortieren zwei Kandidaten übrig, wird nicht geraten —
+    lieber gemeldet als der falsche von beiden."""
+    eq(pb._betrag_der_zeile("Beitrag 1.000,00 Zuschuss 2.000,00"), None)
+
+
+@case
+def test_datum_ist_kein_betrag():
+    eq(pb._betrag_der_zeile("Zeitraum 01.01.2024 bis 31.12.2024"), None)
+
+
 # ── Die Sicherheitsregel ─────────────────────────────────────────────────────
 @case
 def test_nummer_ohne_passende_beschriftung_wird_nicht_uebernommen():
@@ -107,6 +135,22 @@ def test_unplausibler_rentenbeitrag_wird_gemeldet():
     _, meldungen = pb.extrahiere(text, profil())
     assert any("Rentenversicherung" in m or "Beitrag" in m for m in meldungen), \
         f"der unplausible Beitrag wurde nicht gemeldet: {meldungen}"
+
+
+@case
+def test_kirchensteuer_muss_zum_satz_passen():
+    """Die Kirchensteuer ist 8 oder 9 Prozent der Lohnsteuer — ein enger,
+    prüfbarer Zusammenhang. Passt sie zu keinem der beiden Sätze, wurde
+    vermutlich die falsche Zeile gelesen."""
+    text = fixture(LSTB)
+    _, ok = pb.extrahiere(text, profil())
+    assert not any("Kirchensteuer" in m for m in ok), \
+        f"1.658 / 18.420 = 9 % — das darf nicht meckern: {ok}"
+
+    verlesen = text.replace("1.658,00", "5.658,00")
+    _, meldungen = pb.extrahiere(verlesen, profil())
+    assert any("Kirchensteuer" in m for m in meldungen), \
+        f"31 % Kirchensteuer muss auffallen: {meldungen}"
 
 
 # ── Füllen der Vorlage ───────────────────────────────────────────────────────

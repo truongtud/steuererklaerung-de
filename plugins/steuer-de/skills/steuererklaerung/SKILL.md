@@ -20,12 +20,33 @@ Günstigerprüfung nach § 32d Abs. 6, rechnet einbehaltene Steuern an und expor
 ## Pipeline
 
 ```
-PDF/CSV-Reports ─▶ 0) einlesen ───┐
-(Broker/Exchange)                 │
-  parse_broker (Profile)          ├▶ 1) normalisieren ▶ 2) FIFO ▶ 3) Report bauen ▶ 4) exportieren
-  parse_pdf (generisch)           │    parse_inputs    krypto_fifo  build_taxreport   export_report
-JSON/manuell ─────────────────────┘                                                  HTML · PDF · ELSTER
+   unterlagen/            importiere_unterlagen.py
+   alle Papiere  ──────▶  erkennt je Datei den Typ · nichts wird geraten
+                                       │
+        ┌──────────────────┬───────────┴───────┬────────────────────┐
+        ▼                  ▼                   ▼                    ▼
+  Bescheinigung      Broker / Börse      Steuerbescheid       nicht erkannt
+        │                  │                   │                    │
+ parse_bescheinigung  parse_broker      /bescheid-pruefen     gemeldet und
+ Nummer + Beschrif-   Summenabgleich    (eigener Befehl)      liegen gelassen
+ tung müssen passen   gegen den Report
+        │                  │
+        ▼                  ▼
+  steuerdaten.json   *.krypto_result.json · *.kap_result.json
+        └─────────┬────────┘
+                  ▼
+          build_taxreport.py
+          Freigrenzen und Verlusttöpfe EINMAL über alle Quellen
+          § 32a · § 32b · § 32d · § 35a · § 31 · § 10 Abs. 3/4 · § 33 Abs. 3
+                  ▼
+           export_report.py            HTML · PDF · ELSTER-Mapping
+                  ▼
+           Schritt 5: Zeile für Zeile durch das ELSTER-Formular
+```
 
+Die Skripte dahinter:
+
+```
 scripts/steuerlib.py      ── ein Zahlenparser, eine Fristenlogik, alle Steuerwerte
 scripts/fetch_steuerwerte.py ─ holt § 32a EStG / § 3 SolZG (Pflege, nicht Pipeline)
 scripts/pruefe_bescheid.py  ── Steuerbescheid gegen den Report halten, Fristen
@@ -101,9 +122,13 @@ Das Skript entscheidet je Datei, was sie ist, und handelt entsprechend:
 | erkannt als | passiert |
 |---|---|
 | Lohnsteuer-, Steuer- oder Beitragsbescheinigung | füllt `steuerdaten.json` |
-| Broker- oder Börsenreport | wird gemeldet, danach Schritt 0b |
+| Broker- oder Börsenreport | wird gleich mit `parse_broker.py` eingelesen, samt Summenabgleich |
 | Steuerbescheid | gehört nicht hierher, sondern zu `/bescheid-pruefen` |
-| nichts davon | wird gemeldet und **liegen gelassen** |
+| nicht lesbar | Lesefehler **mit Grund** — nicht dasselbe wie „unbekannt“ |
+| nichts davon | wird gemeldet und **liegen gelassen**, mit dem Profil, das am nächsten lag |
+
+Gescannte PDFs gehen automatisch über OCR, wenn die Textebene zu dünn ist. Bleibt sie
+dünn, sagt der Lauf das — dann fehlen möglicherweise Zeilen.
 
 `steuerdaten.json` wird aus der Vorlage angelegt, falls sie fehlt. Am Ende steht, **was
 noch offen ist** — das und nur das wird danach erfragt. Die Meldungen (`!`) gehören in
