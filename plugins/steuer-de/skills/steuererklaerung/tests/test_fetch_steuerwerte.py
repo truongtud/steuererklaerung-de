@@ -196,6 +196,21 @@ def test_kinderwerte_ohne_die_normen_wirft():
           "§ 32 fehlt")
 
 
+@case
+def test_allgemeine_und_knappschaftliche_grenze_aus_derselben_zeile():
+    """Anlage 2 SGB VI führt beide Grenzen nebeneinander: erst die allgemeine,
+    dann die knappschaftliche. Die allgemeine trägt die Plausibilitätsprüfung des
+    Rentenbeitrags, die knappschaftliche den Vorsorge-Höchstbetrag — eine
+    Verwechslung wäre in beiden Richtungen still falsch."""
+    xml = fixture("gii_sgb6_anlage2.xml")
+    allgemein = fs.bbg_allgemein_aus_xml(xml)
+    knappschaft = fs.bbg_knappschaftlich_aus_xml(xml)
+    eq(allgemein[2024], D("90600"), "allgemeine BBG 2024")
+    eq(knappschaft[2024], D("111600"), "knappschaftliche BBG 2024")
+    eq(allgemein[2026], D("101400"), "allgemeine BBG 2026")
+    assert allgemein[2024] < knappschaft[2024], "die allgemeine ist die kleinere"
+
+
 # ── Selbstkontrolle vor dem Schreiben ────────────────────────────────────────
 @case
 def test_unstetiger_tarif_faellt_auf():

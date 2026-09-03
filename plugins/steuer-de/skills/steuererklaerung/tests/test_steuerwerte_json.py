@@ -215,6 +215,7 @@ def test_md_freibetragstabelle_stimmt_mit_json():
         "Sparer-Pauschbetrag (ledig)": lambda e: e["sparer_pb"],
         "Freigrenze § 23 EStG": lambda e: e["freigrenze_23"],
         "Soli-Freigrenze (tarifl. ESt, ledig)": lambda e: e["soli_freigrenze"],
+        "Beitragsbemessungsgrenze allgemeine RV": lambda e: e.get("bbg_allgemein"),
         "Beitragsbemessungsgrenze knappschaftl. RV": lambda e: e.get("bbg_knappschaftlich"),
     }
     fehlend = [j for j in jahre if j not in spalten]

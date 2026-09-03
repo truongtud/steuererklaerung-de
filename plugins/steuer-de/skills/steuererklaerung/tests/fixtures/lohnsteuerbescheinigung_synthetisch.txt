@@ -1,0 +1,25 @@
+# SYNTHETISCHE Lohnsteuerbescheinigung, frei erfunden, im Aufbau des amtlichen
+# Musters. Kein Original und kein geschwaerztes Original — ein geschwaerztes
+# waere weiterhin ein personenbezogenes Dokument.
+# Die Betraege passen zum Beispielfall: 78.500 EUR Bruttoarbeitslohn, je 7.300
+# EUR Arbeitgeber- und Arbeitnehmeranteil zur Rentenversicherung.
+
+Ausdruck der elektronischen Lohnsteuerbescheinigung für 2024
+
+Arbeitgeber: Musterfirma GmbH, Musterstadt
+eTIN / Identifikationsnummer des Arbeitnehmers: 12345678901
+Zeitraum: 01.01.2024 bis 31.12.2024
+
+ 3.  Bruttoarbeitslohn einschließlich Sachbezüge                        78.500,00
+ 4.  Einbehaltene Lohnsteuer                                            18.420,00
+ 5.  Einbehaltener Solidaritätszuschlag                                      0,00
+ 6.  Einbehaltene Kirchensteuer des Arbeitnehmers                        1.658,00
+
+15.  Steuerfreie Arbeitgeberleistungen für Fahrten Wohnung–Arbeit            0,00
+
+22a. Arbeitgeberanteil zur gesetzlichen Rentenversicherung                7.300,00
+23a. Arbeitnehmeranteil zur gesetzlichen Rentenversicherung               7.300,00
+
+25.  Arbeitnehmerbeiträge zur gesetzlichen Krankenversicherung            3.200,00
+26.  Arbeitnehmerbeiträge zur sozialen Pflegeversicherung                   550,00
+27.  Arbeitnehmerbeiträge zur Arbeitslosenversicherung                    1.030,00

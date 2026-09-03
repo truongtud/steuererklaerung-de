@@ -386,7 +386,8 @@ def _lade_steuerwerte(pfad: str = STEUERWERTE_JSON) -> dict:
                 # stehen sie NICHT in JAHRESWERTE und lösen keinen Ersatzwert
                 # für das ganze Jahr aus.
                 **{k: (None if e.get(k) is None else D(e[k]))
-                   for k in ("bbg_knappschaftlich", "beitragssatz_knappschaftlich",
+                   for k in ("bbg_knappschaftlich", "bbg_allgemein",
+                             "beitragssatz_knappschaftlich",
                              "kinderfreibetrag", "bea_freibetrag", "kindergeld_monat")},
             }
             for jahr, e in daten["jahre"].items()

@@ -297,14 +297,16 @@ def kinderwerte_aus_xml(xml: str) -> dict:
             "kindergeld_monat": _zahl(kindergeld.group(1))}
 
 
-def bbg_knappschaftlich_aus_xml(xml: str) -> dict:
-    """Anlage 2 SGB VI → Jahr → knappschaftliche Beitragsbemessungsgrenze.
+def _bbg_aus_xml(xml: str, spalte: int) -> dict:
+    """Anlage 2 SGB VI → Jahr → Beitragsbemessungsgrenze einer Spalte.
 
-    Für § 10 Abs. 3 Satz 1 EStG ist der Höchstbeitrag zur **knappschaftlichen**
-    Rentenversicherung maßgeblich. Die Tabelle führt je Zeitraum zuerst die
-    allgemeine, dann die knappschaftliche Grenze; genommen wird die letzte Zahl
-    der Zeile. Die allgemeine ist rund ein Fünftel kleiner — eine Verwechslung
-    fiele in der fertigen Steuerzahl nicht mehr auf.
+    Die Tabelle führt je Zeitraum zuerst die **allgemeine**, dann die
+    **knappschaftliche** Grenze. `spalte` ist 0 für die allgemeine und -1 für die
+    knappschaftliche. Die beiden auseinanderzuhalten ist wichtig: die
+    knappschaftliche trägt den Vorsorge-Höchstbetrag (§ 10 Abs. 3 Satz 1 EStG),
+    die allgemeine die Plausibilitätsprüfung des Rentenbeitrags. Sie
+    unterscheiden sich um rund ein Fünftel — eine Verwechslung fiele in der
+    fertigen Steuerzahl nicht mehr auf.
     """
     # Nur Anlage 2. Anlage 2a führt dieselben Zeiträume für das Beitrittsgebiet;
     # über die ganze XML gesucht überschriebe sie die West-Werte, und für 2022
@@ -324,11 +326,21 @@ def bbg_knappschaftlich_aus_xml(xml: str) -> dict:
         betraege = [_zahl(z) for z in zellen[1:]
                     if re.fullmatch(rf"\s*{_ZAHL}\s*", z) and _zahl(z) > 1000]
         if betraege:
-            grenzen[int(jahr.group(1))] = betraege[-1]
+            grenzen[int(jahr.group(1))] = betraege[spalte]
     if not grenzen:
         raise FetchError("Anlage 2 SGB VI: keine Beitragsbemessungsgrenze gelesen — "
                          "hat sich der Aufbau der Tabelle geändert?")
     return grenzen
+
+
+def bbg_knappschaftlich_aus_xml(xml: str) -> dict:
+    """Knappschaftliche Grenze — maßgeblich für § 10 Abs. 3 Satz 1 EStG."""
+    return _bbg_aus_xml(xml, -1)
+
+
+def bbg_allgemein_aus_xml(xml: str) -> dict:
+    """Allgemeine Grenze — trägt die Plausibilitätsprüfung des Rentenbeitrags."""
+    return _bbg_aus_xml(xml, 0)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -417,11 +429,15 @@ def bbg_holen(jahre: set, laut: bool = True) -> dict:
     Altersvorsorgeaufwendungen nach § 10 Abs. 3 Satz 1 EStG. Anders als beim
     Tarif führt die Anlage die Werte für alle Jahre, auch zurückliegende.
     """
-    alle = bbg_knappschaftlich_aus_xml(gesetz_xml(SGB6_XML))
-    gefunden = {j: alle[j] for j in sorted(jahre & set(alle))}
+    xml = gesetz_xml(SGB6_XML)
+    knapp = bbg_knappschaftlich_aus_xml(xml)
+    allgemein = bbg_allgemein_aus_xml(xml)
+    gefunden = {j: {"bbg_knappschaftlich": knapp[j], "bbg_allgemein": allgemein[j]}
+                for j in sorted(jahre & set(knapp) & set(allgemein))}
     if laut:
-        for jahr, wert in gefunden.items():
-            print(f"  BBG knappschaftlich {jahr}: {wert} €")
+        for jahr, w in gefunden.items():
+            print(f"  BBG {jahr}: allgemein {w['bbg_allgemein']} €, "
+                  f"knappschaftlich {w['bbg_knappschaftlich']} €")
     return gefunden
 
 
@@ -533,12 +549,11 @@ def zusammenfuehren(alt: dict, tarife: dict[int, tuple[dict, str]],
             if eintrag.get("beleg") != quelle:
                 aenderungen.append(f"{k}: beleg → {quelle}")
             eintrag["beleg"] = quelle
-        if jahr in bbg:
-            wert = _s(bbg[jahr])
-            if eintrag.get("bbg_knappschaftlich") != wert:
-                aenderungen.append(
-                    f"{k}: bbg_knappschaftlich {eintrag.get('bbg_knappschaftlich')} → {wert}")
-            eintrag["bbg_knappschaftlich"] = wert
+        for schluessel, wert in (bbg.get(jahr) or {}).items():
+            neu_wert = _s(wert)
+            if eintrag.get(schluessel) != neu_wert:
+                aenderungen.append(f"{k}: {schluessel} {eintrag.get(schluessel)} → {neu_wert}")
+            eintrag[schluessel] = neu_wert
         for schluessel, wert in (kinder.get(jahr) or {}).items():
             neu_wert = _s(wert)
             if eintrag.get(schluessel) != neu_wert:

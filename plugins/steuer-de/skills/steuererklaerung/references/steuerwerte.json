@@ -19,10 +19,11 @@
       "sparer_pb": "801",
       "an_pauschbetrag": "1200",
       "quelle": "§ 32a EStG i.d.F. Artikel 1 Steuerentlastungsgesetz 2022 vom 23.05.2022 BGBl. I S. 749",
-      "geprueft": "2026-09-02",
+      "geprueft": "2026-09-03",
       "beleg": "Tarifhistorie des Bundesministeriums der Finanzen, 2025_10_14_Tarifhistorie_Steuerrechner.pdf",
       "bbg_knappschaftlich": "103800",
-      "beitragssatz_knappschaftlich": "0.247"
+      "beitragssatz_knappschaftlich": "0.247",
+      "bbg_allgemein": "84600"
     },
     "2023": {
       "tarif": {
@@ -41,10 +42,11 @@
       "sparer_pb": "1000",
       "an_pauschbetrag": "1230",
       "quelle": "§ 32a EStG i.d.F. Artikel 2 Inflationsausgleichsgesetz (InflAusG) vom 08.12.2022 BGBl. I S. 2230",
-      "geprueft": "2026-09-02",
+      "geprueft": "2026-09-03",
       "beleg": "Tarifhistorie des Bundesministeriums der Finanzen, 2025_10_14_Tarifhistorie_Steuerrechner.pdf",
       "bbg_knappschaftlich": "107400",
-      "beitragssatz_knappschaftlich": "0.247"
+      "beitragssatz_knappschaftlich": "0.247",
+      "bbg_allgemein": "87600"
     },
     "2024": {
       "tarif": {
@@ -63,10 +65,11 @@
       "sparer_pb": "1000",
       "an_pauschbetrag": "1230",
       "quelle": "§ 32a EStG i.d.F. Artikel 1 Gesetz zur steuerlichen Freistellung des Existenzminimums 2024 vom 02.12.2024 BGBl. 2024 I Nr. 386",
-      "geprueft": "2026-09-02",
+      "geprueft": "2026-09-03",
       "beleg": "Tarifhistorie des Bundesministeriums der Finanzen, 2025_10_14_Tarifhistorie_Steuerrechner.pdf",
       "bbg_knappschaftlich": "111600",
-      "beitragssatz_knappschaftlich": "0.247"
+      "beitragssatz_knappschaftlich": "0.247",
+      "bbg_allgemein": "90600"
     },
     "2025": {
       "tarif": {
@@ -85,10 +88,11 @@
       "sparer_pb": "1000",
       "an_pauschbetrag": "1230",
       "quelle": "§ 32a EStG i.d.F. Artikel 1 Steuerfortentwicklungsgesetz (SteFeG) vom 23.12.2024 BGBl. 2024 I Nr. 449",
-      "geprueft": "2026-09-02",
+      "geprueft": "2026-09-03",
       "beleg": "Tarifhistorie des Bundesministeriums der Finanzen, 2025_10_14_Tarifhistorie_Steuerrechner.pdf",
       "bbg_knappschaftlich": "118800",
-      "beitragssatz_knappschaftlich": "0.247"
+      "beitragssatz_knappschaftlich": "0.247",
+      "bbg_allgemein": "96600"
     },
     "2026": {
       "tarif": {
@@ -107,13 +111,14 @@
       "sparer_pb": "1000",
       "an_pauschbetrag": "1230",
       "quelle": "§ 32a EStG i.d.F. Artikel 2 Steuerfortentwicklungsgesetz (SteFeG) vom 23.12.2024 BGBl. 2024 I Nr. 449",
-      "geprueft": "2026-09-02",
+      "geprueft": "2026-09-03",
       "beleg": "Tarifhistorie des Bundesministeriums der Finanzen, 2025_10_14_Tarifhistorie_Steuerrechner.pdf",
       "bbg_knappschaftlich": "124800",
       "beitragssatz_knappschaftlich": "0.247",
       "kinderfreibetrag": "3414",
       "bea_freibetrag": "1464",
-      "kindergeld_monat": "259"
+      "kindergeld_monat": "259",
+      "bbg_allgemein": "101400"
     }
   }
 }

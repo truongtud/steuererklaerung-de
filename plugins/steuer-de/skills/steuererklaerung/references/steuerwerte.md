@@ -22,6 +22,7 @@ Vor jeder Einreichung erneut verifizieren — Werte ändern sich jährlich, teil
 | **Freigrenze § 22 Nr. 3 EStG** | 256 € | 256 € | 256 € | 256 € | 256 € |
 | Sonderausgaben-Pauschbetrag (ledig) | 36 € | 36 € | 36 € | 36 € | 36 € |
 | **Soli-Freigrenze** (tarifl. ESt, ledig) | 16.956 € | 17.543 € | 18.130 € | 19.950 € | 20.350 € |
+| Beitragsbemessungsgrenze allgemeine RV | 84.600 € | 87.600 € | 90.600 € | 96.600 € | 101.400 € |
 | Beitragsbemessungsgrenze knappschaftl. RV | 103.800 € | 107.400 € | 111.600 € | 118.800 € | 124.800 € |
 | Beitragssatz knappschaftl. RV | 24,7 % | 24,7 % | 24,7 % | 24,7 % | 24,7 % |
 | **Höchstbetrag Altersvorsorge** (§ 10 Abs. 3) | 25.639 € | 26.528 € | 27.566 € | 29.344 € | 30.826 € |
