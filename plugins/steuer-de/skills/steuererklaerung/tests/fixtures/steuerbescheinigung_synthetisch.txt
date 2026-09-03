@@ -1,0 +1,19 @@
+# SYNTHETISCHE Steuerbescheinigung einer Bank, frei erfunden, im Aufbau des
+# amtlichen Musters. Kein Original und kein geschwaerztes Original.
+
+Steuerbescheinigung
+Bescheinigung für alle Privatkonten und/oder -depots
+
+Musterbank AG · Depot 1234567890
+Für das Kalenderjahr 2024
+
+Höhe der Kapitalerträge                                              850,00
+Höhe des in Anspruch genommenen Sparer-Pauschbetrags               1.000,00
+Kapitalertragsteuer                                                  212,50
+Solidaritätszuschlag                                                  11,68
+Kirchensteuer zur Kapitalertragsteuer                                  0,00
+Höhe des nicht ausgeglichenen Verlustes ohne Verluste
+  aus der Veräußerung von Aktien                                       0,00
+Höhe des nicht ausgeglichenen Verlustes aus der
+  Veräußerung von Aktien                                               0,00
+Summe der angerechneten ausländischen Steuer                           0,00

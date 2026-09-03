@@ -77,22 +77,30 @@ zusammenfassen. Die Unterlagenliste ist der halbe Nutzen dieses Befehls.
 Klar sagen, was als Nächstes passiert:
 
 1. Die genannten Unterlagen zusammensuchen.
-2. Die Beträge in `steuerdaten.json` eintragen. Bei der **Lohnsteuerbescheinigung** die
-   Nummern nennen: 3 Bruttoarbeitslohn, 4 Lohnsteuer, 5 Soli, 6 Kirchensteuer, sowie
-   22a und 23a für die Rentenversicherungsanteile.
+2. **Die PDFs einlesen lassen, nicht abtippen:**
+
+   ```bash
+   S=plugins/steuer-de/skills/steuererklaerung/scripts
+   python3 $S/parse_bescheinigung.py lohnsteuerbescheinigung.pdf \
+       steuerbescheinigung.pdf beitragsbescheinigung.pdf --steuerdaten steuerdaten.json
+   ```
+
+   Das Skript trägt ein, was es sicher erkennt, und sagt am Ende, was noch offen ist.
+   **Erst dann fragen** — und nur nach dem, was übrig geblieben ist.
 3. Dann `/steuererklaerung` für den ganzen Durchlauf.
 4. Kommt später der Bescheid: `/bescheid-pruefen`.
 
-## Zwei Fallen, die hier schon dazugehören
+## Zwei Fallen — die erste nimmt das Skript ab
 
 - **Vorsorgeaufwendungen:** Unter `basisversorgung` gehört der **Gesamtbeitrag** zur
-  Rentenversicherung — Arbeitnehmer- *und* Arbeitgeberanteil zusammen (Nummern 22a und
-  23a der Lohnsteuerbescheinigung) —, und der Arbeitgeberanteil zusätzlich in das eigene
-  Feld. Wer dort nur seinen eigenen Anteil einträgt, bekommt am Ende null Abzug, und das
-  sieht im Ergebnis nicht nach einem Fehler aus.
-- **§ 35a:** Einzutragen ist der **Lohnanteil** der Rechnung, kein Material, und die
-  Rechnung muss unbar bezahlt sein. Barzahlung erkennt das Finanzamt selbst mit Quittung
-  nicht an.
+  Rentenversicherung — Arbeitnehmer- *und* Arbeitgeberanteil zusammen —, und der
+  Arbeitgeberanteil zusätzlich in sein eigenes Feld. Wer von Hand nur seinen eigenen
+  Anteil einträgt, bekommt null Abzug, und das sieht im Ergebnis nicht nach einem Fehler
+  aus. Aus der Lohnsteuerbescheinigung (Nummern 22a und 23a) rechnet
+  `parse_bescheinigung.py` das richtig — ein weiterer Grund, sie einlesen zu lassen.
+- **§ 35a:** Hier gibt es keine Bescheinigung zum Einlesen. Einzutragen ist der
+  **Lohnanteil** der Rechnung, kein Material, und die Rechnung muss unbar bezahlt sein.
+  Barzahlung erkennt das Finanzamt selbst mit Quittung nicht an.
 
 ## Datenschutz
 

@@ -62,11 +62,32 @@ def lade_profile() -> list:
 
 
 def erkenne(text: str, profile: list) -> Optional[dict]:
-    """Das erste Profil, dessen Erkennungsmerkmale alle vorkommen."""
+    """Das Profil, dessen Erkennungsmerkmale passen — und nur dieses eine.
+
+    `erkennung_nicht` schließt aus. Das ist hier nötig, nicht schmückend:
+    „Lohnsteuerbescheinigung“ enthält „Steuerbescheinigung“ als Teilstring, und
+    die Lohnsteuerbescheinigung nennt Kranken- und Pflegeversicherung. Ohne
+    Ausschluss griffe das falsche Profil, und der Bruttoarbeitslohn landete in
+    den Kapitalerträgen.
+
+    Passen mehrere Profile gleich gut, wird keines genommen — lieber nachfragen
+    als das falsche Dokument auswerten.
+    """
+    klein = text.lower()
+    passend = []
     for profil in profile:
-        if all(m.lower() in text.lower() for m in profil.get("erkennung", [])):
-            return profil
-    return None
+        marker = profil.get("erkennung", [])
+        if not all(m.lower() in klein for m in marker):
+            continue
+        if any(n.lower() in klein for n in profil.get("erkennung_nicht", [])):
+            continue
+        passend.append((len(marker), profil))
+    if not passend:
+        return None
+    passend.sort(key=lambda p: p[0], reverse=True)
+    if len(passend) > 1 and passend[0][0] == passend[1][0]:
+        return None
+    return passend[0][1]
 
 
 def _betrag_der_zeile(zeile: str) -> Optional[D]:
@@ -87,6 +108,36 @@ def _zeile_zur_nummer(text: str, nummer: str) -> Optional[str]:
     return treffer[0] if len(treffer) == 1 else None
 
 
+def _zeile_zur_beschriftung(text: str, worte: list, nicht: list) -> Optional[str]:
+    """Die eine Zeile, die alle Worte enthält und keines der Ausschlusswörter.
+
+    Für Bescheinigungen ohne Feldnummern — Banken und Versicherungen
+    nummerieren nicht. Trifft mehr als eine Zeile zu, ist es nicht eindeutig,
+    und es wird nichts übernommen: „Kapitalertragsteuer“ steht auch in
+    „Kirchensteuer zur Kapitalertragsteuer“.
+
+    Beträge stehen manchmal in der Folgezeile, wenn die Beschriftung umbricht —
+    deshalb wird die nächste Zeile mitgegeben, falls die eigene keinen enthält.
+    """
+    zeilen = text.splitlines()
+    treffer = []
+    for i, zeile in enumerate(zeilen):
+        klein = zeile.lower()
+        if not all(w.lower() in klein for w in worte):
+            continue
+        if any(n.lower() in klein for n in nicht):
+            continue
+        kandidat = zeile
+        if _betrag_der_zeile(zeile) is None and i + 1 < len(zeilen):
+            kandidat = zeile + " " + zeilen[i + 1]
+        # Nur Zeilen mit Betrag zählen als Treffer. Überschriften enthalten die
+        # Beschriftung ebenfalls ("Bescheinigung über Beiträge zur Kranken- und
+        # Pflegeversicherung") und machten die Suche sonst mehrdeutig.
+        if _betrag_der_zeile(kandidat) is not None:
+            treffer.append(kandidat)
+    return treffer[0] if len(treffer) == 1 else None
+
+
 def extrahiere(text: str, profil: dict) -> tuple:
     """Dokument → (Werte je Zielpfad, Meldungen).
 
@@ -101,8 +152,16 @@ def extrahiere(text: str, profil: dict) -> tuple:
     meldungen: list = []
 
     for feld in profil["felder"]:
-        nummer, ziel = feld["nummer"], feld["ziel"]
-        zeile = _zeile_zur_nummer(text, nummer)
+        ziel = feld["ziel"]
+        nummer = feld.get("nummer")
+        if nummer:
+            zeile = _zeile_zur_nummer(text, nummer)
+        else:
+            # Ohne Feldnummer trägt allein die Beschriftung; sie muss dann
+            # eindeutig sein.
+            nummer = "„" + feld["beschriftung"][0] + "“"
+            zeile = _zeile_zur_beschriftung(text, feld["beschriftung"],
+                                            feld.get("nicht", []))
         if zeile is None:
             meldungen.append(f"Feld {nummer} ({ziel}): nicht gefunden oder mehrdeutig — "
                              f"nichts übernommen.")
@@ -132,6 +191,9 @@ def _pruefe(profil: dict, werte: dict) -> list:
     """Plausibilitätsprüfungen des Profils. Sie melden, sie verwerfen nicht."""
     meldungen = []
     for pruefung in profil.get("pruefungen", []):
+        if pruefung.get("art") == "hinweis":
+            meldungen.append(pruefung["text"])
+            continue
         if pruefung.get("art") != "rentenbeitrag_plausibel":
             continue
         brutto, beitrag = werte.get(pruefung["brutto"]), werte.get(pruefung["beitrag"])

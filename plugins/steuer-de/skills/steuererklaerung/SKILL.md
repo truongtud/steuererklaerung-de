@@ -30,6 +30,7 @@ scripts/steuerlib.py      ── ein Zahlenparser, eine Fristenlogik, alle Steue
 scripts/fetch_steuerwerte.py ─ holt § 32a EStG / § 3 SolZG (Pflege, nicht Pipeline)
 scripts/pruefe_bescheid.py  ── Steuerbescheid gegen den Report halten, Fristen
 scripts/neue_steuerdaten.py ── Startdatei und Unterlagen-Checkliste (/einstieg)
+scripts/parse_bescheinigung.py ─ Bescheinigungen lesen und die Vorlage füllen
 scripts/brokerprofile.py  ── Profil-Engine: Erkennung, Anwendung, Summenabgleich
 scripts/profiles/*.json   ── ein Broker = eine Profildatei
 ```
@@ -60,7 +61,9 @@ Wird einer davon aufgerufen, gilt zusätzlich dessen eigene Schrittfolge.
 | CSV mit beliebigen Spalten | `parse_inputs.py --format map --map mapping.json` |
 | `transactions.json` (kanonisch) | direkt in `krypto_fifo.py` / `build_taxreport.py --transactions` |
 | `steuerdaten.json` | Hand-Eingabe, Vorlage in `assets/` |
-| Lohnsteuerbescheinigung (PDF) | lesen, Nr. 3/4/5/6 nach `steuerdaten.json` übertragen |
+| Lohnsteuerbescheinigung (PDF) | `parse_bescheinigung.py` — füllt Anlage N und die Vorsorgeanteile |
+| Steuerbescheinigung der Bank (PDF) | `parse_bescheinigung.py` — füllt Anlage KAP samt Verlusttöpfen |
+| Beitragsbescheinigung KV/PV (PDF) | `parse_bescheinigung.py` — füllt die Basisabsicherung |
 
 | Ausgabe | Inhalt |
 |---|---|
@@ -136,10 +139,20 @@ achten; die vom Skript gemeldeten übersprungenen Tabellen ansehen. Details:
 
 ### Schritt 1 — Übrige Eingaben sammeln
 
-- **Einkommensdaten** in `steuerdaten.json` nach `references/anlagen-referenz.md`
-  eintragen; Vorlage: `assets/steuerdaten_vorlage.json`. Liegt eine
-  **Lohnsteuerbescheinigung** als PDF vor: Nr. 3 → `bruttoarbeitslohn`, Nr. 4 →
-  `lohnsteuer`, Nr. 5 → `soli`, Nr. 6 → `kirchensteuer`.
+- **Einkommensdaten: erst extrahieren, dann fragen.** Liegen Bescheinigungen vor, werden
+  sie eingelesen, nicht abgetippt:
+
+  ```bash
+  python3 scripts/parse_bescheinigung.py lohnsteuerbescheinigung.pdf \
+      steuerbescheinigung.pdf beitragsbescheinigung.pdf --steuerdaten steuerdaten.json
+  ```
+
+  Das Skript legt `steuerdaten.json` aus der Vorlage an, falls sie fehlt, trägt ein was
+  es sicher erkennt und nennt am Ende, **was noch offen ist**. Nur danach nachfragen —
+  und nur nach dem, was übrig bleibt. Die Meldungen (`!`) durchgehen: ein Feld, dessen
+  Beschriftung nicht passte, wurde bewusst nicht übernommen.
+- Fehlt eine Bescheinigung, werden die Werte nach `references/anlagen-referenz.md` von
+  Hand ergänzt; Vorlage: `assets/steuerdaten_vorlage.json`.
 - Unbekannte Feldnamen werden gemeldet („meintest du …?“) und **ignoriert** — die Warnung
   ernst nehmen, ein Tippfehler ist sonst stillschweigend 0 € wert. `--strict` schreibt den
   Report weiterhin, endet aber mit Rückgabecode 3, damit der Fehler nicht untergeht.

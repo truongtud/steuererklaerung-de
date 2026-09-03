@@ -168,6 +168,61 @@ def test_eine_echte_null_gilt_als_beantwortet():
     assert "anlage_n.lohnsteuer" in offen, f"das unberührte Feld fehlt weiter: {offen}"
 
 
+@case
+def test_jedes_dokument_wird_genau_seinem_profil_zugeordnet():
+    """Zwei Fallen: „Lohnsteuerbescheinigung“ enthält „Steuerbescheinigung“ als
+    Teilstring, und die Lohnsteuerbescheinigung nennt Kranken- und
+    Pflegeversicherung. Ohne Ausschlussmerkmale griffe das falsche Profil — und
+    dann stünde der Bruttoarbeitslohn in den Kapitalerträgen."""
+    erwartet = {
+        "lohnsteuerbescheinigung_synthetisch.txt": "lohnsteuerbescheinigung",
+        "steuerbescheinigung_synthetisch.txt": "steuerbescheinigung",
+        "beitragsbescheinigung_synthetisch.txt": "beitragsbescheinigung",
+    }
+    for datei, profil_id in erwartet.items():
+        p = pb.erkenne(fixture(datei), pb.lade_profile())
+        assert p is not None, f"{datei}: kein Profil erkannt"
+        eq(p["id"], profil_id, datei)
+
+
+# ── Weitere Bescheinigungen ──────────────────────────────────────────────────
+@case
+def test_steuerbescheinigung_ohne_feldnummern():
+    """Banken nummerieren ihre Felder nicht — hier trägt allein die
+    Beschriftung. Sie ist dafür amtlich vorgegeben (Muster der
+    Steuerbescheinigung)."""
+    text = fixture("steuerbescheinigung_synthetisch.txt")
+    profil = pb.erkenne(text, pb.lade_profile())
+    assert profil is not None and profil["id"] == "steuerbescheinigung", profil
+    werte, _ = pb.extrahiere(text, profil)
+    eq(werte["anlage_kap.kapitalertraege"], D("850.00"))
+    eq(werte["anlage_kap.anrechenbare_kest"], D("212.50"))
+    eq(werte["anlage_kap.einbehaltener_soli"], D("11.68"))
+
+
+@case
+def test_aktienverlust_und_sonstiger_verlust_bleiben_getrennt():
+    """Die beiden Verlusttöpfe dürfen nicht vertauscht werden: der
+    Aktien-Verlusttopf ist nach § 20 Abs. 6 Satz 4 EStG beschränkt, der andere
+    nicht. Die Beschriftungen unterscheiden sich nur durch ein Wort."""
+    text = fixture("steuerbescheinigung_synthetisch.txt")
+    werte, _ = pb.extrahiere(text, pb.erkenne(text, pb.lade_profile()))
+    assert "anlage_kap.verlust_aktien" in werte
+    assert "anlage_kap.verluste_ohne_aktien" in werte
+
+
+@case
+def test_beitragsbescheinigung():
+    text = fixture("beitragsbescheinigung_synthetisch.txt")
+    profil = pb.erkenne(text, pb.lade_profile())
+    assert profil is not None and profil["id"] == "beitragsbescheinigung", profil
+    werte, meldungen = pb.extrahiere(text, profil)
+    eq(werte["vorsorge.kranken_pflege_basis.krankenversicherung"], D("3200.00"))
+    eq(werte["vorsorge.kranken_pflege_basis.pflegeversicherung"], D("550.00"))
+    assert any("Basis" in m for m in meldungen), \
+        f"der Hinweis zur Basisabsicherung fehlt: {meldungen}"
+
+
 if __name__ == "__main__":
     fails = []
     for fn in CASES:

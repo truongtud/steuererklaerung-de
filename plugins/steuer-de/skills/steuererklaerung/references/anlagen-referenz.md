@@ -4,6 +4,20 @@ Beschreibt das Eingabeschema von `build_taxreport.py` und die Zuordnung zu den
 ELSTER-Anlagen. **Zeilennummern sind Orientierung** — ELSTER ändert die Layouts jährlich;
 vor der Eingabe in „Mein ELSTER“ prüfen. **Keine Steuerberatung.**
 
+## Woher die Werte kommen
+
+Die meisten Felder müssen **nicht** von Hand eingetragen werden.
+`scripts/parse_bescheinigung.py` liest sie aus den Bescheinigungen:
+
+| Dokument | füllt |
+|---|---|
+| Lohnsteuerbescheinigung | `anlage_n` vollständig, `vorsorge.basisversorgung` (Gesamtbeitrag aus Nr. 22a + 23a), `vorsorge.arbeitgeberanteil_steuerfrei`, Kranken-, Pflege- und Arbeitslosenversicherung |
+| Steuerbescheinigung der Bank | `anlage_kap` inkl. beider Verlusttöpfe und Quellensteuer |
+| Beitragsbescheinigung KV/PV | `vorsorge.kranken_pflege_basis` |
+
+Übernommen wird nur, was eindeutig ist; alles andere wird gemeldet und bleibt leer. Von
+Hand bleiben Werbungskosten, § 35a-Aufwendungen, Spenden und die Stammdaten.
+
 ## Eingabeschema `steuerdaten.json`
 
 ```json

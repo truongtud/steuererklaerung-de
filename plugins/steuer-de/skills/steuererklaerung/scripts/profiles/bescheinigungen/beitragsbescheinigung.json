@@ -1,0 +1,32 @@
+{
+  "id": "beitragsbescheinigung",
+  "titel": "Beitragsbescheinigung der Kranken- und Pflegeversicherung",
+  "hinweis": "Abziehbar in voller Höhe ist nur die Basisabsicherung (§ 10 Abs. 1 Nr. 3 EStG). Wahl- und Zusatzleistungen gehören nach Nr. 3a und damit in den gedeckelten Topf. Trennt die Bescheinigung das nicht, wird gemeldet statt geraten.",
+  "erkennung": [
+    "Beiträge zur Krankenversicherung"
+  ],
+  "felder": [
+    {
+      "beschriftung": [
+        "Beiträge zur Krankenversicherung"
+      ],
+      "ziel": "vorsorge.kranken_pflege_basis.krankenversicherung"
+    },
+    {
+      "beschriftung": [
+        "Pflegeversicherung"
+      ],
+      "ziel": "vorsorge.kranken_pflege_basis.pflegeversicherung"
+    }
+  ],
+  "pruefungen": [
+    {
+      "art": "hinweis",
+      "text": "Übernommen wurde die Basisabsicherung nach § 10 Abs. 1 Nr. 3 EStG. Enthält die Bescheinigung auch Wahl- oder Zusatzleistungen (Chefarzt, Einbettzimmer, Zahnzusatz), gehören diese NICHT hierher, sondern unter vorsorge.sonstige — dort sind sie nur im Rahmen des Höchstbetrags abziehbar. Bitte im Dokument nachsehen."
+    }
+  ],
+  "erkennung_nicht": [
+    "Lohnsteuerbescheinigung",
+    "Steuerbescheinigung"
+  ]
+}

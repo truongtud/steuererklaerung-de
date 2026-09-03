@@ -1,0 +1,60 @@
+{
+  "id": "steuerbescheinigung",
+  "titel": "Steuerbescheinigung der Bank oder des Depots",
+  "hinweis": "Die Beschriftungen folgen dem amtlichen Muster der Steuerbescheinigung; Feldnummern gibt es hier nicht. Deshalb trägt allein die Beschriftung — sie muss eindeutig genau einmal vorkommen, sonst wird gemeldet statt übernommen.",
+  "erkennung": [
+    "Steuerbescheinigung"
+  ],
+  "felder": [
+    {
+      "beschriftung": [
+        "Höhe der Kapitalerträge"
+      ],
+      "ziel": "anlage_kap.kapitalertraege"
+    },
+    {
+      "beschriftung": [
+        "Kapitalertragsteuer"
+      ],
+      "ziel": "anlage_kap.anrechenbare_kest",
+      "nicht": [
+        "Kirchensteuer"
+      ]
+    },
+    {
+      "beschriftung": [
+        "Solidaritätszuschlag"
+      ],
+      "ziel": "anlage_kap.einbehaltener_soli"
+    },
+    {
+      "beschriftung": [
+        "Kirchensteuer"
+      ],
+      "ziel": "anlage_kap.einbehaltene_kirchensteuer"
+    },
+    {
+      "beschriftung": [
+        "nicht ausgeglichenen Verlustes ohne"
+      ],
+      "ziel": "anlage_kap.verluste_ohne_aktien",
+      "warum": "§ 20 Abs. 6: dieser Topf ist unbeschränkt verrechenbar."
+    },
+    {
+      "beschriftung": [
+        "nicht ausgeglichenen Verlustes aus der"
+      ],
+      "ziel": "anlage_kap.verlust_aktien",
+      "warum": "§ 20 Abs. 6 Satz 4: der Aktien-Verlusttopf ist beschränkt — nicht mit dem anderen verwechseln."
+    },
+    {
+      "beschriftung": [
+        "angerechneten ausländischen Steuer"
+      ],
+      "ziel": "anlage_kap.auslaendische_quellensteuer"
+    }
+  ],
+  "erkennung_nicht": [
+    "Lohnsteuerbescheinigung"
+  ]
+}
