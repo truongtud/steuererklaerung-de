@@ -62,6 +62,7 @@ Claude Code có trong terminal, trong **app Claude Desktop (Mac/Windows)**, trê
 ```
 
 Xong. **Mở một phiên chat mới** — plugin chỉ có hiệu lực ở phiên mới. Gõ `/` sẽ thấy 6 lệnh.
+(Muốn hiểu hai lệnh đó làm gì, hoặc cài từ một thư mục trên máy: xem mục 4.)
 
 **Cập nhật khi có bản mới** (lệnh update so sánh *số phiên bản*, không so nội dung, nên phải
 làm mới cache trước):
@@ -75,7 +76,65 @@ Rồi lại mở phiên mới.
 
 ---
 
-## 4. Cách B — Claude Desktop, không có lệnh gạch chéo
+## 4. Marketplace là gì, và thêm bằng cách nào
+
+Repo này **chính là một marketplace** — một danh mục plugin, khai báo trong file
+`.claude-plugin/marketplace.json`, bên trong hiện có đúng một plugin tên `steuer-de`. Vì
+vậy việc cài luôn gồm **hai bước**: thêm marketplace vào Claude, rồi cài plugin từ
+marketplace đó.
+
+### Bước 1 — Thêm marketplace
+
+Có ba nguồn, chọn một:
+
+| Nguồn | Lệnh |
+|---|---|
+| **GitHub** (khuyến nghị) | `/plugin marketplace add truongtud/steuererklaerung-de` |
+| URL git đầy đủ | `/plugin marketplace add https://github.com/truongtud/steuererklaerung-de.git` |
+| **Thư mục trên máy** (đã clone hoặc giải nén) | `/plugin marketplace add ./đường/dẫn/steuererklaerung-de` |
+
+Đường dẫn local hữu ích khi bạn muốn thử bản sửa của mình trước khi đẩy lên GitHub.
+
+### Bước 2 — Cài plugin từ marketplace
+
+```
+/plugin install steuer-de@steuer-de
+```
+
+Cú pháp là `plugin@marketplace`. Ở đây hai chữ trùng nhau vì marketplace và plugin cùng
+tên — không phải gõ nhầm.
+
+### Quản lý về sau
+
+Trong chat thì gõ `/plugin ...`; ngoài terminal thì `claude plugin ...` — cùng bộ lệnh.
+
+| Việc | Lệnh |
+|---|---|
+| Xem các marketplace đang có | `/plugin marketplace list` |
+| **Làm mới marketplace** (bắt buộc trước khi update) | `/plugin marketplace update steuer-de` |
+| Cập nhật plugin lên bản mới | `/plugin update steuer-de@steuer-de` |
+| Xem plugin đã cài | `/plugin list` |
+| Tắt tạm / bật lại | `/plugin disable steuer-de` · `/plugin enable steuer-de` |
+| Gỡ plugin | `/plugin uninstall steuer-de@steuer-de` |
+| Gỡ hẳn marketplace | `/plugin marketplace remove steuer-de` |
+
+> **Vì sao phải làm mới trước khi update:** lệnh update so **số phiên bản** chứ không so
+> nội dung file. Chưa làm mới thì Claude vẫn thấy số cũ và báo „đã mới nhất". Và mọi thay
+> đổi chỉ có hiệu lực ở **phiên chat mới**.
+
+### Ở Claude Desktop thì sao?
+
+Các lệnh trên chỉ chạy trong **Claude Code** — kể cả khi Claude Code nằm trong app Desktop.
+**Cửa sổ chat thường của Claude Desktop không thêm được marketplace**, vì nó không có hệ
+thống plugin. Ở đó dùng [cách B](#5-cách-b--claude-desktop-không-có-lệnh-gạch-chéo).
+
+Nối repo vào một **Project** cũng không thay thế được: Claude sẽ **đọc** được mã nguồn dưới
+dạng văn bản, nhưng các script không nằm trong sandbox chạy code, nên không chạy được. Nối
+Project hợp cho việc đọc và sửa mã nguồn, không phải để dùng.
+
+---
+
+## 5. Cách B — Claude Desktop, không có lệnh gạch chéo
 
 Claude Desktop và claude.ai không cài được *plugin*, nhưng cài được **Skill** — cùng một
 bộ não, chỉ khác cách gọi. Có trên mọi gói: Free, Pro, Max, Team, Enterprise.
@@ -137,7 +196,7 @@ skill cũ rồi tải bản mới.
 
 ---
 
-## 5. Cách C — Không cài gì cả
+## 6. Cách C — Không cài gì cả
 
 Bạn vẫn có thể đính kèm giấy tờ vào Claude và hỏi. Claude sẽ đọc và giải thích được các con
 số, nói được về luật.
@@ -148,7 +207,7 @@ lượng thô**. Dùng để hiểu tình hình thì được; **đừng lấy c
 
 ---
 
-## 6. Quy trình sử dụng — ba bước
+## 7. Quy trình sử dụng — ba bước
 
 ### Bước 1: Hỏi xem cần giấy tờ gì
 
@@ -203,7 +262,7 @@ con số.
 
 ---
 
-## 7. Bạn nhận được gì
+## 8. Bạn nhận được gì
 
 | File | Nội dung |
 |---|---|
@@ -221,7 +280,7 @@ thuế tăng hay giảm, kèm ước lượng độ lớn nếu suy ra được.
 
 ---
 
-## 8. Khi có giấy báo thuế (*Steuerbescheid*)
+## 9. Khi có giấy báo thuế (*Steuerbescheid*)
 
 Vài tuần sau khi nộp, Sở thuế gửi *Steuerbescheid* về. Đưa nó cho Claude:
 
@@ -235,7 +294,7 @@ nghỉ), và soạn sẵn đơn *Einspruch* nếu cần.
 
 ---
 
-## 9. Bảng lệnh đầy đủ
+## 10. Bảng lệnh đầy đủ
 
 | Lệnh (cách A) | Nói gì nếu dùng cách B | Để làm gì |
 |---|---|---|
@@ -248,7 +307,7 @@ nghỉ), và soạn sẵn đơn *Einspruch* nếu cần.
 
 ---
 
-## 10. Gặp trục trặc
+## 11. Gặp trục trặc
 
 | Hiện tượng | Nguyên nhân & cách xử lý |
 |---|---|
@@ -263,7 +322,7 @@ nghỉ), và soạn sẵn đơn *Einspruch* nếu cần.
 
 ---
 
-## 11. Riêng tư
+## 12. Riêng tư
 
 Giấy tờ thuế chứa **dữ liệu thật**: họ tên, mã số thuế, thu nhập.
 
@@ -275,7 +334,7 @@ Giấy tờ thuế chứa **dữ liệu thật**: họ tên, mã số thuế, th
 
 ---
 
-## 12. Những gì nó **không** làm
+## 13. Những gì nó **không** làm
 
 - **Không phải tư vấn thuế**, không phải bản tính có giá trị pháp lý. ELSTER mới là nơi tính
   ràng buộc; phần soát cuối nên nhờ *Steuerberater*.
@@ -290,6 +349,6 @@ Giấy tờ thuế chứa **dữ liệu thật**: họ tên, mã số thuế, th
 
 ---
 
-## 13. Giấy phép
+## 14. Giấy phép
 
 MIT, không bảo hành. Mã nguồn: <https://github.com/truongtud/steuererklaerung-de>
