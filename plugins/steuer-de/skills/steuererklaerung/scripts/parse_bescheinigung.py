@@ -423,8 +423,8 @@ def main(argv=None) -> int:
     offen = fehlende_felder(sd, beantwortet)
     print(f"\n{args.steuerdaten} geschrieben.")
     if offen:
-        print(f"\nNoch offen ({len(offen)} Felder) — von Hand ergänzen oder die "
-              f"passende Bescheinigung nachreichen:")
+        print(f"\nIn keinem Dokument gefunden ({len(offen)} Felder) — danach fragen "
+              f"oder die passende Bescheinigung nachreichen:")
         for p in offen:
             print(f"  · {p}")
     else:

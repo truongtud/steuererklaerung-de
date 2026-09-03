@@ -95,7 +95,7 @@ Sechs Slash-Befehle stehen nach der Installation bereit:
 
 | Befehl | Wofür |
 |---|---|
-| `/einstieg [jahr]` | Vorbereitung: welche Anlagen betreffen mich, welche Unterlagen brauche ich, Startdatei anlegen |
+| `/einstieg [jahr]` | die Vorfrage: **welche Papiere muss ich zusammensuchen?** Danach nur noch in einen Ordner legen |
 | `/steuererklaerung [jahr]` | der ganze Durchlauf — einsortieren, extrahieren, rechnen, exportieren, durch ELSTER führen |
 | `/krypto-check [frage]` | eine einzelne Frage zu Haltefrist, Freigrenze, Tausch, Staking |
 | `/broker-profil [id]` | einen neuen Broker anbinden |

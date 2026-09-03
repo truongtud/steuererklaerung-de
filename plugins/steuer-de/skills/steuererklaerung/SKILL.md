@@ -197,9 +197,12 @@ hat, wirkt wie ein Werkzeug, das seine Papiere nicht gelesen hat.
 
 Typischerweise offen bleiben: Stammdaten (Name, Steuer-Identifikationsnummer),
 Werbungskosten, Aufwendungen nach § 35a und Spenden — dafür gibt es keine Bescheinigung
-zum Einlesen. Fehlt eine Bescheinigung ganz, die Werte nach
-`references/anlagen-referenz.md` von Hand ergänzen; Vorlage:
-`assets/steuerdaten_vorlage.json`.
+zum Einlesen.
+
+**Der Nutzer trägt nichts selbst ein.** Er nennt die Beträge im Gespräch, und sie werden
+für ihn in `steuerdaten.json` geschrieben; `references/anlagen-referenz.md` sagt, welches
+Feld gemeint ist. Fehlt eine ganze Bescheinigung, danach fragen und sie nachreichen
+lassen — mit dem Dokument wird der Wert genauer als aus dem Gedächtnis.
 
 - Unbekannte Feldnamen werden gemeldet („meintest du …?“) und **ignoriert** — die Warnung
   ernst nehmen, ein Tippfehler ist sonst stillschweigend 0 € wert. `--strict` schreibt den

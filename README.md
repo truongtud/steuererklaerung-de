@@ -144,7 +144,7 @@ sich der Hauptskill von selbst.
 
 | Befehl | Wofür |
 |---|---|
-| `/einstieg [jahr]` | Vorbereitung: welche Anlagen betreffen mich, welche Unterlagen brauche ich, Startdatei anlegen |
+| `/einstieg [jahr]` | die Vorfrage: **welche Papiere muss ich zusammensuchen?** Danach nur noch in einen Ordner legen |
 | `/steuererklaerung [jahr]` | der ganze Durchlauf: **alle Unterlagen hineinwerfen**, einsortieren, extrahieren, rechnen, exportieren — und Zeile für Zeile durch das ELSTER-Formular führen |
 | `/krypto-check [frage]` | eine einzelne Frage — Haltefrist, Freigrenze, Tausch, Staking — ohne kompletten Report |
 | `/broker-profil [id]` | einen neuen Broker anbinden: Entwurf aus einem echten Report, TODOs auflösen, Fixture anlegen |
@@ -318,7 +318,7 @@ steuererklaerung-de/                        das Repository (= der Marketplace)
     ├── .claude-plugin/plugin.json          Name, Version, Autor, Lizenz
     └── skills/
         ├── steuererklaerung/               ← der Hauptskill, alles Weitere unten
-        ├── einstieg/                       Vorbereitung, Unterlagen, Startdatei
+        ├── einstieg/                       welche Unterlagen brauche ich?
         ├── bescheid-pruefen/               Bescheid gegen den Report, Einspruchsfrist
         ├── krypto-check/                   Einzelfrage ohne kompletten Report
         ├── broker-profil/                  neuen Broker anbinden

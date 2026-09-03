@@ -234,7 +234,8 @@ def main(argv=None) -> int:
     if nicht_erkannt:
         print(f"\nNicht erkannt: {', '.join(nicht_erkannt)}")
     if offen:
-        print(f"\nNoch offen ({len(offen)} Felder) — danach fragen, nicht raten:")
+        print(f"\nIn keinem Dokument gefunden ({len(offen)} Felder) — danach fragen, "
+              f"nicht raten:")
         for p in offen:
             print(f"  · {p}")
     else:

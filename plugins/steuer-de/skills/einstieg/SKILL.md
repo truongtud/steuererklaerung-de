@@ -1,28 +1,32 @@
 ---
 name: einstieg
-description: Führt Schritt für Schritt in die Einkommensteuererklärung — klärt die Lebenssituation, sagt welche Anlagen betroffen sind und welche Unterlagen gebraucht werden, und legt eine passende steuerdaten.json an.
+description: Sagt, welche Unterlagen für die Einkommensteuererklärung zusammenzusuchen sind und welche Anlagen betroffen sind — die Vorbereitung vor /steuererklaerung.
 argument-hint: "[steuerjahr, z. B. 2024]"
 disable-model-invocation: true
 license: MIT — NUR Orientierung, KEINE Steuerberatung.
 ---
 
-# Einstieg in die Einkommensteuererklärung
+# Einstieg: welche Unterlagen brauche ich?
 
 Steuerjahr (falls angegeben): **$ARGUMENTS** — sonst danach fragen.
 
 Wer zum ersten Mal eine Steuererklärung macht, scheitert selten am Rechnen. Er scheitert
-daran, nicht zu wissen, **welche Papiere** er braucht und **welche Anlagen** ihn
-überhaupt betreffen. Genau das klärt dieser Befehl — und legt am Ende eine Startdatei an,
-in der nur die Blöcke stehen, die zu diesem Menschen gehören.
+daran, nicht zu wissen, **welche Papiere** er überhaupt zusammensuchen muss. Genau das —
+und nur das — klärt dieser Befehl.
 
-**Haltung:** Das ist ein Gespräch, kein Formular. Wenige Fragen, in normaler Sprache,
-eine nach der anderen. Wer nicht weiß, was gemeint ist, bekommt ein Beispiel statt einer
-Paragraphenkette. Wo eine Antwort unsicher ist, lieber den Block aufnehmen — ein
-überflüssiger leerer Block kostet nichts, ein fehlender kostet später eine ganze Runde.
+**Was der Nutzer danach tut, ist eine einzige Sache: alle Papiere in einen Ordner legen
+und `/steuererklaerung` aufrufen.** Er füllt keine Datei aus, er trägt keine Beträge ein,
+er öffnet kein Formular. Das Einlesen, Rechnen und das Ausfüllen von ELSTER übernimmt der
+Hauptskill.
 
-## Schritt 1 — Steuerjahr und ob es sich lohnt
+**Haltung:** Das ist ein Gespräch, kein Formular. Wenige Fragen in normaler Sprache, eine
+nach der anderen. Wer nicht weiß, was gemeint ist, bekommt ein Beispiel statt einer
+Paragraphenkette. Bei Unsicherheit lieber mit aufnehmen — ein Papier zu viel im Ordner
+kostet nichts, ein fehlendes kostet eine ganze Runde.
 
-Zuerst das Jahr klären. Dann sagen, ob es noch offen ist:
+## Schritt 1 — Steuerjahr, und ob es sich lohnt
+
+Zuerst das Jahr klären, dann sagen, ob es noch offen ist:
 
 ```bash
 S=plugins/steuer-de/skills/steuererklaerung/scripts
@@ -30,15 +34,15 @@ python3 -c "import sys; sys.path.insert(0,'$S'); import steuerlib as sl
 print(sl.offene_veranlagungszeitraeume())"
 ```
 
-Vier Jahre rückwirkend darf freiwillig abgegeben werden (§ 46 Abs. 2 Nr. 8 EStG,
-Festsetzungsfrist § 169 Abs. 2 Nr. 2 i.V.m. § 170 Abs. 1 AO). **Wenn ein zurückliegendes
-Jahr noch offen ist und dort Lohnsteuer einbehalten wurde, ausdrücklich darauf
-hinweisen** — das ist für viele der greifbarste Grund anzufangen.
+Vier Jahre rückwirkend darf freiwillig abgegeben werden (Antragsveranlagung,
+§ 46 Abs. 2 Nr. 8 EStG; Festsetzungsfrist § 169 Abs. 2 Nr. 2 i. V. m. § 170 Abs. 1 AO).
+**Ist ein zurückliegendes Jahr noch offen und wurde dort Lohnsteuer einbehalten, ausdrücklich
+darauf hinweisen** — für viele ist das der greifbarste Grund, überhaupt anzufangen.
 
-Auch kurz einordnen, ob überhaupt eine **Pflicht** zur Abgabe besteht (z. B. mehrere
-Arbeitgeber gleichzeitig, Steuerklasse IV mit Faktor oder V/VI, Lohnersatzleistungen über
-410 €, Nebeneinkünfte über 410 €) oder ob es eine freiwillige Abgabe wäre. Das ändert die
-Frist, nicht das Vorgehen.
+Auch kurz einordnen, ob eine **Pflicht** zur Abgabe besteht (mehrere Arbeitgeber
+gleichzeitig, Steuerklasse IV mit Faktor oder V/VI, Lohnersatzleistungen über 410 €,
+Nebeneinkünfte über 410 €) oder ob es freiwillig wäre. Das ändert die Frist, nicht das
+Vorgehen.
 
 ## Schritt 2 — Die Lebenssituation
 
@@ -49,17 +53,17 @@ Diese Fragen reichen. Einzeln stellen, nicht als Liste abfragen:
 2. **Verheiratet oder verpartnert?** Wenn ja: zusammen veranlagen? (In aller Regel
    günstiger — der Splittingtarif.)
 3. **Kinder im Haushalt?** Wie viele?
-4. **Kirchensteuerpflichtig?** Wenn ja: 8 % in Bayern und Baden-Württemberg, sonst 9 %.
+4. **Kirchensteuerpflichtig?** 8 % in Bayern und Baden-Württemberg, sonst 9 %.
 5. **Depot, Bank, Kapitalerträge?** Auch wenn nichts einbehalten wurde.
-6. **Krypto?** Wenn ja, den Hinweis geben, dass die **vollständige Historie über alle
-   Jahre** gebraucht wird — FIFO braucht die Anschaffungen der Vorjahre.
+6. **Krypto?** Wenn ja: es wird die **vollständige Historie über alle Jahre** gebraucht,
+   nicht nur das Steuerjahr — FIFO braucht die Anschaffungen der Vorjahre.
 7. **Eltern-, Arbeitslosen-, Kranken- oder Kurzarbeitergeld bezogen?**
 8. **Handwerker im Haus, Putzhilfe, oder Schornsteinfeger und Treppenhausreinigung in der
    Nebenkostenabrechnung?** Danach wird fast nie von selbst gedacht, und es ist bares
    Geld: 20 % direkt von der Steuer (§ 35a).
 9. **Größere Krankheits-, Pflege- oder Bestattungskosten?**
 
-## Schritt 3 — Startdatei anlegen
+## Schritt 3 — Die Unterlagenliste ausgeben
 
 ```bash
 S=plugins/steuer-de/skills/steuererklaerung/scripts
@@ -68,39 +72,45 @@ python3 $S/neue_steuerdaten.py --jahr 2024 \
     --kapital --handwerker -o steuerdaten.json
 ```
 
-Flags nur setzen, was auch zutrifft. Das Skript nennt die betroffenen Anlagen, die
-Unterlagen und die Frist — **diese Ausgabe vollständig weitergeben**, nicht
-zusammenfassen. Die Unterlagenliste ist der halbe Nutzen dieses Befehls.
+Flags nur setzen, was zutrifft. Das Skript nennt die betroffenen Anlagen, **die Liste der
+Unterlagen** und die Frist — diese Ausgabe vollständig weitergeben, nicht zusammenfassen.
+Die Unterlagenliste ist das Ergebnis dieses Befehls.
+
+Die dabei angelegte `steuerdaten.json` ist ein Nebenprodukt: sie merkt sich, welche
+Anlagen den Nutzer betreffen. **Er füllt darin nichts aus** — das tut `/steuererklaerung`
+aus seinen Unterlagen. Das gehört einmal klar gesagt, sonst fängt jemand an, darin zu
+tippen.
 
 ## Schritt 4 — Was jetzt zu tun ist
 
-Klar sagen, was als Nächstes passiert:
+Genau zwei Dinge, und so knapp sagen:
 
-1. Die genannten Unterlagen zusammensuchen.
-2. **Alle Papiere in einen Ordner legen** — Bescheinigungen, Broker-Reports, alles. Mehr
-   ist nicht zu tun: `/steuererklaerung` liest sie ein, ordnet sie selbst zu und fragt
-   danach nur noch nach dem, was in keinem Dokument stand.
-3. `/steuererklaerung` aufrufen. Der Befehl rechnet und führt am Ende Zeile für Zeile
-   durch das ELSTER-Formular.
-4. Kommt später der Bescheid: `/bescheid-pruefen`.
+1. **Alle Papiere in einen Ordner legen** — Bescheinigungen, Broker-Reports, Rechnungen,
+   alles aus der Liste. PDFs genügen; Scans gehen auch.
+2. **`/steuererklaerung` aufrufen.** Der Befehl sortiert jedes Dokument selbst ein, liest
+   die Beträge heraus, rechnet, erzeugt HTML, PDF und das ELSTER-Mapping — und führt
+   danach Anlage für Anlage durch das Formular.
 
-## Zwei Fallen — die erste nimmt das Skript ab
+Kommt später der Bescheid: `/bescheid-pruefen`.
 
-- **Vorsorgeaufwendungen:** Unter `basisversorgung` gehört der **Gesamtbeitrag** zur
-  Rentenversicherung — Arbeitnehmer- *und* Arbeitgeberanteil zusammen —, und der
-  Arbeitgeberanteil zusätzlich in sein eigenes Feld. Wer von Hand nur seinen eigenen
-  Anteil einträgt, bekommt null Abzug, und das sieht im Ergebnis nicht nach einem Fehler
-  aus. Aus der Lohnsteuerbescheinigung (Nummern 22a und 23a) rechnet
-  `parse_bescheinigung.py` das richtig — ein weiterer Grund, sie einlesen zu lassen.
-- **§ 35a:** Hier gibt es keine Bescheinigung zum Einlesen. Einzutragen ist der
-  **Lohnanteil** der Rechnung, kein Material, und die Rechnung muss unbar bezahlt sein.
-  Barzahlung erkennt das Finanzamt selbst mit Quittung nicht an.
+## Wofür es kein Papier zum Einlesen gibt
+
+Das meiste kommt aus den Bescheinigungen. Drei Dinge stehen in keinem Beleg, den ein
+Profil lesen könnte — sie fragt `/steuererklaerung` am Ende ab, und es hilft, sie schon
+jetzt bereitzulegen:
+
+- **Werbungskosten**: Arbeitstage und einfache Entfernung zur Arbeit, Arbeitsmittel,
+  Fortbildung, Bewerbungen, Umzug.
+- **§ 35a**: die Handwerker- und Dienstleistungsrechnungen. Begünstigt ist nur der
+  **Lohnanteil**, kein Material, und die Rechnung muss **unbar** bezahlt sein — Barzahlung
+  erkennt das Finanzamt selbst mit Quittung nicht an.
+- **Spenden** und die Stammdaten (Name, Steuer-Identifikationsnummer).
 
 ## Datenschutz
 
-`steuerdaten.json` enthält gleich echte Steuerdaten — Name, Steuer-Identifikationsnummer,
-Einkommen. Darauf einmal hinweisen, wenn die Datei angelegt ist: sie gehört in kein
-Repository, in keine Cloud-Freigabe und in keinen Chat.
+Die Unterlagen und die daraus gefüllte `steuerdaten.json` enthalten echte Steuerdaten —
+Name, Steuer-Identifikationsnummer, Einkommen. Einmal darauf hinweisen: sie gehören in
+kein Repository, in keine Cloud-Freigabe und in keinen fremden Chat.
 
 ## Keine Steuerberatung
 

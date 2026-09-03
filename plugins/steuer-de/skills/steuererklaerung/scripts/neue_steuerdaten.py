@@ -11,10 +11,12 @@ wirklich gebraucht werden.
     python3 scripts/neue_steuerdaten.py --jahr 2024 --taetigkeit angestellt \\
             --kinder 1 --kapital --handwerker -o steuerdaten.json
 
-Warum nur die passenden Blöcke: ein leerer Block lädt zum Ausfüllen ein, wo
-nichts auszufüllen ist, und eine mit Nullen gefüllte Anlage G sieht im Report
-aus wie eine Angabe. Was fehlt, lässt sich jederzeit aus
-`assets/steuerdaten_vorlage.json` nachholen.
+Die erzeugte `steuerdaten.json` ist ein **Nebenprodukt**: sie merkt sich, welche
+Anlagen den Nutzer betreffen. Ausgefüllt wird sie nicht von Hand, sondern von
+`importiere_unterlagen.py` aus den Bescheinigungen. Sie enthält nur die
+passenden Blöcke — ein leerer Block lädt zum Ausfüllen ein, wo nichts
+auszufüllen ist, und eine mit Nullen gefüllte Anlage G sieht im Report aus wie
+eine Angabe.
 
 Das Skript rechnet nichts und geht nicht ins Netz — es schreibt eine Vorlage.
 """
@@ -213,8 +215,11 @@ def main(argv=None) -> int:
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(sd, f, ensure_ascii=False, indent=2)
         f.write("\n")
-    print(f"\n{args.out} angelegt — enthält nur die Blöcke, die zu dir gehören. "
-          f"Alles Weitere steht in assets/steuerdaten_vorlage.json.")
+    print(f"\nNächster Schritt: alle Papiere aus der Liste in einen Ordner legen und "
+          f"/steuererklaerung aufrufen. Mehr ist nicht zu tun.")
+    print(f"({args.out} ist angelegt und merkt sich, welche Anlagen dich betreffen — "
+          f"du füllst darin nichts aus, das erledigt /steuererklaerung aus deinen "
+          f"Unterlagen.)")
     print("Die Datei enthält später echte Steuerdaten — sie gehört in kein "
           "Repository und in keine Cloud-Freigabe.")
     return 0
