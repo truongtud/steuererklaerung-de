@@ -11,17 +11,25 @@ Ein Claude-Plugin für die **deutsche Einkommensteuererklärung**.
 
 ## Worum es geht
 
-Wer Krypto handelt oder ein Depot bei einem ausländischen Broker hat, sitzt vor der
-Steuererklärung mit einem Stapel PDFs und CSVs, aus denen am Ende ein paar Dutzend Zahlen
-in ELSTER-Felder wandern müssen. Dazwischen liegt die eigentliche Arbeit: FIFO über die
-gesamte Anschaffungshistorie, taggenaue Haltefristen, Freigrenzen, die pro Person und nicht
-pro Broker gelten, Verlusttöpfe mit unterschiedlichen Regeln, Verlustvorträge aus Vorjahren.
+Vor der Steuererklärung sitzt man mit einem Stapel Papier: Lohnsteuerbescheinigung,
+Bescheinigungen der Bank und der Krankenkasse, dazu bei Krypto oder ausländischem Depot
+noch Broker-Reports als PDF und CSV. Am Ende müssen daraus ein paar Dutzend Zahlen in
+ELSTER-Felder wandern — und dazwischen liegt die eigentliche Arbeit.
 
-Genau das macht dieses Plugin. Es liest die Broker-Reports, rechnet Krypto nach
-FIFO/§ 23 EStG und die Kapitalerträge nach § 20/§ 32d, setzt daraus einen TaxReport über
-alle Anlagen zusammen, schätzt Einkommensteuer, Solidaritätszuschlag, Kirchensteuer und
-Abgeltungsteuer samt Nachzahlung oder Erstattung — und gibt am Ende ein
-**Feld-für-Feld-Mapping** aus, das man in „Mein ELSTER“ abtippt.
+**Der Ablauf hier ist: alles in einen Ordner legen, `/steuererklaerung` aufrufen, fertig.**
+Das Plugin sortiert jedes Dokument selbst ein, liest die Beträge heraus, fragt nur noch
+nach dem, was in keinem Papier stand, rechnet — und führt dich am Ende Anlage für Anlage
+durch das ELSTER-Formular.
+
+Gerechnet wird der ganze Weg vom Bruttolohn bis zur Abschlusszahlung: Einkünfte über alle
+Anlagen, Vorsorgeaufwendungen mit Höchstbetragsberechnung, außergewöhnliche Belastungen
+nach zumutbarer Belastung, Kinderfreibetrag gegen Kindergeld, Tarif nach § 32a mit
+Progressionsvorbehalt, Steuerermäßigung nach § 35a, Solidaritätszuschlag, Kirchensteuer und
+Abgeltungsteuer. Krypto kommt exakt dazu: FIFO über die gesamte Anschaffungshistorie,
+taggenaue Haltefristen, Freigrenzen die **pro Person** und nicht pro Broker gelten.
+
+Und wenn der Bescheid kommt, hält `/bescheid-pruefen` ihn Position für Position gegen die
+eigene Rechnung und nennt die Einspruchsfrist.
 
 Was es **nicht** tut: bei ELSTER einreichen und deine Daten irgendwohin schicken. Alles
 läuft lokal, die Ausgabe sind Dateien auf deiner Platte.
@@ -37,8 +45,11 @@ Veranlagungszeiträume **2022 bis 2026**. Nur deutsches Steuerrecht.
 | **Exchange-CSV** | Kraken (`ledgers.csv`), Coinbase, Bitpanda, Binance | Profil bildet die Spalten auf das kanonische Transaktionsschema ab |
 | **CSV, beliebige Spalten** | jede Börse | freies Spalten-Mapping über eine `mapping.json` |
 | **`transactions.json`** | selbst gepflegt oder aus einem der Wege oben | kanonisches Schema, geht direkt in die FIFO-Engine |
-| **`steuerdaten.json`** | von Hand, Vorlage liegt bei | Lohn, Werbungskosten, Vorsorge, Kapitalerträge, Kinder, Verlustvorträge |
-| **Lohnsteuerbescheinigung** | Arbeitgeber (PDF) | wird gelesen, die vier Kennziffern werden nach `steuerdaten.json` übertragen |
+| **Lohnsteuerbescheinigung** | Arbeitgeber (PDF) | füllt Anlage N und die Vorsorgeanteile — inklusive des Gesamtbeitrags zur Rentenversicherung aus Nr. 22a + 23a |
+| **Steuerbescheinigung** | Bank oder Depot (PDF) | füllt Anlage KAP samt beider Verlusttöpfe und Quellensteuer |
+| **Beitragsbescheinigung** | Kranken-/Pflegekasse (PDF) | füllt die Basisabsicherung |
+| **ein ganzer Ordner** | alles zusammen | `importiere_unterlagen.py` sortiert jede Datei selbst ein |
+| **`steuerdaten.json`** | wird gefüllt, Vorlage liegt bei | von Hand bleiben nur Stammdaten, Werbungskosten, § 35a und Spenden |
 
 Neue Broker sind **eine JSON-Datei**, kein neues Skript — siehe „Wie es funktioniert“.
 
@@ -66,20 +77,32 @@ Kommandos zum Selbst-Erzeugen — liegt in [`beispiel/`](beispiel/).
 ## Wie es funktioniert
 
 ```
-   Broker-PDF ─┐
-   Exchange-CSV ├─▶ parse_broker.py ─┐
-   (Profil)     │   Summenabgleich   │
-                │                    ├─▶ build_taxreport.py ─▶ export_report.py
-   fremdes PDF ─┴─▶ parse_pdf.py ────┤   Freigrenzen einmal     HTML · PDF · ELSTER
-   CSV ────────────▶ parse_inputs.py │   Verlusttöpfe
-                                     │   Tarif § 32a
-   steuerdaten.json ─────────────────┘   Nachzahlung
+                    ┌─ Bescheinigung ─▶ parse_bescheinigung.py ─▶ steuerdaten.json ─┐
+  ein Ordner mit    │                    (Nummer + Beschriftung)                    │
+  allen Papieren ──▶┤                                                               │
+  importiere_       ├─ Broker/Börse ──▶ parse_broker.py ────────┐                   │
+  unterlagen.py     │                   Summenabgleich          │                   │
+                    ├─ fremdes PDF ───▶ parse_pdf.py ───────────┤                   │
+                    │                                           ▼                   ▼
+                    └─ Bescheid ──────▶ /bescheid-pruefen    build_taxreport.py ◀────┘
+                                                              Freigrenzen einmal
+                                                              Verlusttöpfe, § 32a
+                                                              § 35a, § 32b, § 31
+                                                                      │
+                                                                      ▼
+                                                              export_report.py
+                                                          HTML · PDF · ELSTER-Mapping
 ```
 
-**Schritt 1 — einlesen.** `parse_broker.py` erkennt anhand der Profile in
-`scripts/profiles/`, welcher Report vorliegt, und wendet das passende an. Jeder Lauf
-vergleicht das Geparste mit den Summen, die der Report **selbst ausweist**, und bricht bei
-Abweichung ab.
+**Schritt 0 — einsortieren.** `importiere_unterlagen.py` nimmt einen ganzen Ordner und
+entscheidet je Datei, was sie ist: Bescheinigung, Broker-Report oder Steuerbescheid. Was
+keinem Profil eindeutig zuzuordnen ist, bleibt liegen und wird gemeldet — ein falsch
+einsortiertes Dokument wäre teurer als ein nicht erkanntes.
+
+**Schritt 1 — einlesen.** Bescheinigungen füllen `steuerdaten.json`; übernommen wird nur,
+was eindeutig ist. Broker-Reports gehen durch `parse_broker.py`, das anhand der Profile in
+`scripts/profiles/` erkennt, welcher Report vorliegt. Jeder Lauf vergleicht das Geparste
+mit den Summen, die der Report **selbst ausweist**, und bricht bei Abweichung ab.
 
 **Schritt 2 — rechnen.** `krypto_fifo.py` rechnet FIFO per Asset über die *gesamte*
 Historie, weist aber nur das Steuerjahr aus. Vorberechnete Reports (Koinly & Co.) gehen
@@ -93,6 +116,12 @@ prüfen, bliebe beides „steuerfrei“.
 
 **Schritt 4 — ausgeben.** `export_report.py` schreibt HTML, PDF und das ELSTER-Mapping.
 
+**Schritt 5 — durch ELSTER führen.** Die CSV auszuliefern reicht nicht: der Skill geht
+Anlage für Anlage durch, nennt je Zeile Formularzeile, Bezeichnung und Betrag, und hält an
+der Trennzeile zu den Belegen an. Dazu die Angaben, die kein Betrag sind und sonst nirgends
+stehen — etwa dass die Günstigerprüfung in der Anlage KAP *angekreuzt* werden muss, sonst
+bleibt es bei 25 %.
+
 ## So verwendest du es
 
 Die Kommandos oben und unten tippst du **nicht** selbst — das macht Claude. Du hängst deine
@@ -102,9 +131,9 @@ Dateien zurück (bzw. legt sie in einen verbundenen Ordner, wenn du einen freige
 
 ### Slash-Befehle
 
-Vier Befehle stehen nach der Installation im `/`-Menü. Sie sind der direkte Weg, wenn du
+Sechs Befehle stehen nach der Installation im `/`-Menü. Sie sind der direkte Weg, wenn du
 weißt, was du willst — sonst reicht es, dein Anliegen normal zu beschreiben, dann meldet
-sich der Skill von selbst.
+sich der Hauptskill von selbst.
 
 | Befehl | Wofür |
 |---|---|
@@ -121,16 +150,22 @@ Falls ein Name schon belegt ist, funktioniert immer die lange Form, etwa
 
 **Ein Steuerjahr durchrechnen**
 
-> 📎 *koinly-2024.pdf, etoro-taxreport-2024.pdf*
+> 📎 *lohnsteuerbescheinigung-2024.pdf, steuerbescheinigung-bank.pdf,
+> beitragsbescheinigung-kv.pdf, koinly-2024.pdf, etoro-taxreport-2024.pdf*
 >
 > „Mach mir daraus die Steuererklärung 2024. Ledig, 9 % Kirchensteuer, keine Kinder.
-> Bruttoarbeitslohn 78.500 €, Lohnsteuer 18.420 €, Kirchensteuer 1.658 €. Aus 2023 habe ich
-> noch 900 € § 23-Verlustvortrag.“
+> Aus 2023 habe ich noch 900 € § 23-Verlustvortrag.“
 
-Claude liest beide Reports, zeigt dir den Summenabgleich gegen die im Report ausgewiesenen
-Beträge, **fragt nach dem, was noch fehlt** — Vorsorgeaufwendungen, Werbungskosten,
-anrechenbare Kapitalertragsteuer — und liefert am Ende HTML, PDF und die ELSTER-CSV. Du
-musst keine `steuerdaten.json` schreiben; Claude füllt die Vorlage aus dem Gespräch.
+Die Beträge musst du **nicht** diktieren. Claude sortiert die Dokumente ein, liest die
+Bescheinigungen aus, gleicht die Broker-Reports gegen ihre eigenen Summenausweise ab und
+**fragt nur noch nach dem, was in keinem Papier stand** — Werbungskosten, Handwerker-
+rechnungen nach § 35a, Spenden. Am Ende kommen HTML, PDF und die ELSTER-CSV, und Claude
+geht mit dir Zeile für Zeile durch das Formular.
+
+Was dabei besonders zählt: aus der Lohnsteuerbescheinigung wird der **Gesamtbeitrag** zur
+Rentenversicherung gebildet (Nr. 22a + 23a), nicht nur dein eigener Anteil. Wer das von
+Hand einträgt, erwischt regelmäßig die Hälfte — und bekommt null Abzug, ohne dass es im
+Ergebnis nach einem Fehler aussieht.
 
 **Eine einzelne Frage klären**
 
@@ -190,10 +225,11 @@ so tun, als sei die Anbindung fertig. Details: `references/broker-profile.md`.
 ELSTER; die Endkontrolle gehört in die Hände eines Steuerberaters. Darüber hinaus vier
 konkrete Punkte, die du kennen solltest, bevor du einer Zahl aus diesem Plugin glaubst:
 
-1. **Die Steuerschätzung fällt systematisch zu niedrig aus.** Vorsorgeaufwendungen werden
-   in voller Höhe abgezogen — die Höchstbetragsberechnung nach § 10 Abs. 3/4 EStG ist
-   *nicht* umgesetzt. Tatsächlich ist weniger abziehbar, das zvE also höher und die echte
-   Steuer höher als hier geschätzt. Das ist die größte verbliebene Vereinfachung.
+1. **Die Steuerschätzung ist eine Schätzung — aber sie sagt dir, wie sie danebenliegt.**
+   Jeder Report führt eine *Unsicherheitsbilanz*: je verbliebener Lücke die Wirkungsrichtung
+   auf die Steuer, eine Größenordnung wo sie sich ableiten lässt, und die Fundstelle. Dazu
+   ein Gesamtbild, ob die Zahl eher zu hoch oder zu niedrig liegt. Ohne diese Richtung
+   könntest du die Zahl nicht einordnen — die Abweichungen heben sich nicht auf.
 2. **Drei der sechs Broker-Profile sind ungeprüft.** Coinbase, Bitpanda und Binance wurden
    gegen die *dokumentierten* Spaltenüberschriften gebaut, nie gegen einen echten Export.
    Sie laufen mit einer deutlichen Warnung; der Binance-Export enthält überhaupt keine
@@ -208,10 +244,12 @@ konkrete Punkte, die du kennen solltest, bevor du einer Zahl aus diesem Plugin g
    der Historie, rechnet die FIFO-Engine mit Kostenbasis 0 und weist einen zu hohen Gewinn
    aus. Sie warnt dabei — die Warnungen sind nicht dekorativ.
 
-Ebenfalls nicht gerechnet: zumutbare Belastung bei außergewöhnlichen Belastungen,
-Günstigerprüfung (KAP/Kind), Progressionsvorbehalt, Gewerbesteueranrechnung,
-Vorauszahlungen, wallet-bezogenes FIFO. Eine automatische ELSTER-Einreichung findet
-**nicht** statt.
+Nicht gerechnet: Kinderbetreuungskosten, Entlastungsbetrag für Alleinerziehende,
+Ausbildungsfreibetrag, Gewerbesteueranrechnung, geleistete Vorauszahlungen, die Kürzung des
+Vorsorge-Höchstbetrags für Beamte (§ 10 Abs. 3 Satz 3) und wallet-bezogenes FIFO. Für
+Jahre vor dem laufenden fehlen die Kinderfreibeträge — dort unterbleibt die
+Günstigerprüfung nach § 31, statt mit dem Wert eines Nachbarjahres zu rechnen. Eine
+automatische ELSTER-Einreichung findet **nicht** statt.
 
 **Deine Daten bleiben, wo sie sind.** Das Plugin liest lokale Dateien und schreibt lokale
 Dateien; es lädt nichts hoch und ruft keinen Steuerdienst auf. Die einzige Ausnahme ist
@@ -262,8 +300,8 @@ Tesseract mit deutschem Sprachpaket — die SKILL.md nennt die genauen Kommandos
 
 ## Wie es aufgebaut ist
 
-Das Repository ist ein **Marketplace** mit einem Plugin darin. Das Plugin bündelt fünf
-Skills: den Hauptskill mit der ganzen Logik und vier schlanke Einstiege, die ihn aufrufen.
+Das Repository ist ein **Marketplace** mit einem Plugin darin. Das Plugin bündelt sechs
+Skills: den Hauptskill mit der ganzen Logik und fünf schlanke Einstiege, die ihn aufrufen.
 
 ```
 steuererklaerung-de/                        das Repository (= der Marketplace)
@@ -280,7 +318,7 @@ steuererklaerung-de/                        das Repository (= der Marketplace)
         └── steuer-pruefen/                 fertigen Report gegenprüfen
 ```
 
-Die sechs Einstiege sind bewusst dünn: sie laden den Hauptskill und ergänzen nur ihre eigene
+Die fünf Einstiege sind bewusst dünn: sie laden den Hauptskill und ergänzen nur ihre eigene
 Schrittfolge. Zwei Beschreibungen desselben Ablaufs würden auseinanderlaufen.
 
 Der Hauptskill:
@@ -310,7 +348,7 @@ skills/steuererklaerung/
 │   ├── krypto_fifo.py          FIFO-Engine § 23 / § 22 Nr. 3
 │   ├── build_taxreport.py      Anlagen, Tarif, Verlusttöpfe, ELSTER-Mapping
 │   └── export_report.py        HTML / PDF / ELSTER
-└── tests/                      18 Dateien
+└── tests/                      20 Dateien
 ```
 
 Zwei Konstruktionsprinzipien, die den Unterschied machen:
@@ -334,7 +372,7 @@ cd plugins/steuer-de/skills/steuererklaerung
 python3 tests/run_tests.py
 ```
 
-[483 Fälle in 18 Dateien](plugins/steuer-de/skills/steuererklaerung/tests) — jede Datei ist
+[504 Fälle in 20 Dateien](plugins/steuer-de/skills/steuererklaerung/tests) — jede Datei ist
 einzeln lauffähig, wenn nur ein Bereich interessiert:
 
 | Datei | prüft |
@@ -349,6 +387,13 @@ einzeln lauffähig, wenn nur ein Bereich interessiert:
 | [`test_profile_wizard.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_profile_wizard.py) | Entwurfserzeugung, zirkuläre Abgleiche, Anonymisierung |
 | [`test_export.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_export.py) | Disclaimer in jedem Format, CSV-Notation, Escaping |
 | [`test_integration.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_integration.py) | Pipeline end-to-end, Schnittstellen zwischen den Skripten |
+| [`test_stufe1.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_stufe1.py) | § 35a (Deckelung bei null), Progressionsvorbehalt, Günstigerprüfung § 32d Abs. 6 |
+| [`test_stufe2.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_stufe2.py) | Vorsorge-Höchstbetrag, zumutbare Belastung, Unsicherheitsbilanz |
+| [`test_stufe2b.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_stufe2b.py) | Kinder § 31 — und dass Soli und Kirchensteuer **immer** mit Freibetrag bemessen werden |
+| [`test_bescheinigung.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_bescheinigung.py) | Bescheinigungen lesen; Nummer **und** Beschriftung müssen passen |
+| [`test_import.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_import.py) | jedes Dokument landet beim richtigen Leser — und nichts wird geraten |
+| [`test_einstieg.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_einstieg.py) | die erzeugte Startdatei läuft fehlerfrei durch den Report |
+| [`test_bescheid.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_bescheid.py) | Bescheid lesen, Fristenkette, Vergleich mit dem Report |
 | [`test_steuerwerte_json.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_steuerwerte_json.py) | Vollständigkeit der `steuerwerte.json` — und dass die Tabellen in `steuerwerte.md` **Zelle für Zelle dasselbe sagen** |
 | [`test_fetch_steuerwerte.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_fetch_steuerwerte.py) | Gesetzestext → Zahlen, an echten Seitenausschnitten; ohne Netz |
 | [`test_beispiel.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_beispiel.py) | das eingecheckte `beispiel/` gegen das, was der Code heute erzeugt |

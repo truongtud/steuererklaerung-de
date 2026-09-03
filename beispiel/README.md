@@ -30,7 +30,7 @@ Die Transaktionen decken die drei wichtigsten § 23-/§ 22-Fälle ab:
 
 Kernzahlen: § 23-Gewinn 1.482 € (der BTC-Langfristgewinn bleibt steuerfrei), nach
 Verlustvortrag 582 € steuerpflichtig; 700 € Staking nach § 22 Nr. 3; zvE 66.192 €,
-tarifliche ESt 17.105 €, abzüglich 456 € Steuerermäßigung nach § 35a (20 % von 480 €
+tarifliche ESt 17.164 €, abzüglich 456 € Steuerermäßigung nach § 35a (20 % von 480 €
 haushaltsnahen Dienstleistungen und 1.800 € Handwerkerleistungen), geschätzte
 Erstattung 2.090,46 €.
 
@@ -39,9 +39,13 @@ Die Vorsorgeaufwendungen zeigen die Höchstbetragsberechnung nach § 10 Abs. 3 u
 mit dem Gesamtbeitrag von 14.600 € drin, abzüglich des steuerfreien Arbeitgeberanteils
 von 7.300 € bleiben 7.300 €. Kranken- und Pflegeversicherung übersteigen mit 3.750 €
 den Höchstbetrag von 1.900 €, bleiben nach § 10 Abs. 4 Satz 4 aber voll abziehbar —
-dafür entfallen die 1.030 € Arbeitslosenversicherung daneben ganz. Die Hinweise am Anfang der
-CSV — insbesondere zur fehlenden Höchstbetragsberechnung der Vorsorgeaufwendungen —
-gehören zum Ergebnis dazu.
+dafür entfallen die 1.030 € Arbeitslosenversicherung daneben ganz.
+
+Die Hinweise am Anfang der CSV gehören zum Ergebnis dazu, ebenso die
+**Unsicherheitsbilanz** im Report: sie nennt je verbliebener Lücke die Wirkungsrichtung
+auf die Steuer. Für diesen Fall lautet ihr Gesamtbild „keine gerichtete Abweichung
+erkennbar“ — die offenen Posten (Beamten-Kürzung des Vorsorge-Höchstbetrags, geleistete
+Vorauszahlungen) wirken hier in keine bestimmte Richtung.
 
 ## Selbst erzeugen
 
