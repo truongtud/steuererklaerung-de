@@ -16,10 +16,14 @@ Bescheinigungen der Bank und der Krankenkasse, dazu bei Krypto oder ausländisch
 noch Broker-Reports als PDF und CSV. Am Ende müssen daraus ein paar Dutzend Zahlen in
 ELSTER-Felder wandern — und dazwischen liegt die eigentliche Arbeit.
 
-**Der Ablauf hier ist: alles in einen Ordner legen, `/steuererklaerung` aufrufen, fertig.**
-Das Plugin sortiert jedes Dokument selbst ein, liest die Beträge heraus, fragt nur noch
-nach dem, was in keinem Papier stand, rechnet — und führt dich am Ende Anlage für Anlage
-durch das ELSTER-Formular.
+**Fang mit `/einstieg` an.** Der Befehl stellt dir ein paar Fragen zu deiner Lage und sagt
+dir dann, **welche Papiere du zusammensuchen musst** — die Frage, an der die meisten schon
+scheitern, bevor sie angefangen haben.
+
+**Danach ist der Ablauf: alles in einen Ordner legen, `/steuererklaerung` aufrufen,
+fertig.** Das Plugin sortiert jedes Dokument selbst ein, liest die Beträge heraus, fragt
+nur noch nach dem, was in keinem Papier stand, rechnet — und führt dich am Ende Anlage für
+Anlage durch das ELSTER-Formular. Du füllst keine Datei aus und tippst keine Beträge ab.
 
 Gerechnet wird der ganze Weg vom Bruttolohn bis zur Abschlusszahlung: Einkünfte über alle
 Anlagen, Vorsorgeaufwendungen mit Höchstbetragsberechnung, außergewöhnliche Belastungen
@@ -136,6 +140,19 @@ Dateien an und sagst, was du willst. Voraussetzung ist nur, dass die Code-Ausfü
 aktiviert ist; das Plugin arbeitet dann in Claudes Arbeitsumgebung und gibt die fertigen
 Dateien zurück (bzw. legt sie in einen verbundenen Ordner, wenn du einen freigegeben hast).
 
+### Zuerst: `/einstieg`
+
+```
+/einstieg 2024
+```
+
+Ein paar Fragen — angestellt, verheiratet, Kinder, Depot, Handwerker im Haus — und du
+bekommst **die Liste der Papiere**, die du für genau deine Lage brauchst, dazu die
+betroffenen Anlagen und die Frist. Zwei, drei Minuten. Danach musst du nur noch sammeln.
+
+Wer seine Unterlagen schon beisammen hat, kann ihn überspringen und direkt
+`/steuererklaerung` aufrufen.
+
 ### Slash-Befehle
 
 Sechs Befehle stehen nach der Installation im `/`-Menü. Sie sind der direkte Weg, wenn du
@@ -144,7 +161,7 @@ sich der Hauptskill von selbst.
 
 | Befehl | Wofür |
 |---|---|
-| `/einstieg [jahr]` | die Vorfrage: **welche Papiere muss ich zusammensuchen?** Danach nur noch in einen Ordner legen |
+| `/einstieg [jahr]` | **hier anfangen** — die Vorfrage: welche Papiere muss ich zusammensuchen? Danach nur noch in einen Ordner legen |
 | `/steuererklaerung [jahr]` | der ganze Durchlauf: **alle Unterlagen hineinwerfen**, einsortieren, extrahieren, rechnen, exportieren — und Zeile für Zeile durch das ELSTER-Formular führen |
 | `/krypto-check [frage]` | eine einzelne Frage — Haltefrist, Freigrenze, Tausch, Staking — ohne kompletten Report |
 | `/broker-profil [id]` | einen neuen Broker anbinden: Entwurf aus einem echten Report, TODOs auflösen, Fixture anlegen |

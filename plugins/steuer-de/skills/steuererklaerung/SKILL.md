@@ -67,8 +67,10 @@ unlesbarer Eingabe wird abgebrochen, nie still 0 angenommen.**
 ## Slash-Befehle
 
 Als Plugin bringt dieser Skill sechs vom Nutzer aufrufbare Einstiege mit, die alle hierher
-zurückführen: `/einstieg` (Vorbereitung: welche Anlagen, welche Unterlagen, Startdatei),
-`/steuererklaerung` (ganzer Durchlauf), `/krypto-check` (Einzelfrage ohne Report),
+zurückführen. **Der Weg beginnt mit `/einstieg`** — er sagt, welche Papiere überhaupt
+zusammenzusuchen sind, und wer das überspringt, merkt mitten im Lauf, dass ihm eine
+Bescheinigung fehlt. Dann: `/steuererklaerung` (ganzer Durchlauf),
+`/krypto-check` (Einzelfrage ohne Report),
 `/broker-profil` (neuen Broker anbinden), `/steuer-pruefen` (fertigen Report gegenprüfen)
 und `/bescheid-pruefen` (den Steuerbescheid gegen den Report halten, mit Einspruchsfrist).
 Wird einer davon aufgerufen, gilt zusätzlich dessen eigene Schrittfolge.
@@ -82,7 +84,7 @@ Wird einer davon aufgerufen, gilt zusätzlich dessen eigene Schrittfolge.
 | CSV von Kraken, Coinbase, Bitpanda, Binance | `parse_broker.py --profil <id>` |
 | CSV mit beliebigen Spalten | `parse_inputs.py --format map --map mapping.json` |
 | `transactions.json` (kanonisch) | direkt in `krypto_fifo.py` / `build_taxreport.py --transactions` |
-| `steuerdaten.json` | Hand-Eingabe, Vorlage in `assets/` |
+| `steuerdaten.json` | wird aus den Dokumenten gefüllt; Vorlage in `assets/` |
 | **ein Ordner mit allen Papieren** | `importiere_unterlagen.py` — sortiert selbst ein |
 | Lohnsteuerbescheinigung (PDF) | `parse_bescheinigung.py` — füllt Anlage N und die Vorsorgeanteile |
 | Steuerbescheinigung der Bank (PDF) | `parse_bescheinigung.py` — füllt Anlage KAP samt Verlusttöpfen |
@@ -109,6 +111,13 @@ pip install docling --break-system-packages   # optional, beste Tabellenqualitä
 ```
 
 ### Schritt 0 — Alle Unterlagen hineinwerfen
+
+**Weiß der Nutzer noch nicht, welche Papiere er braucht, gehört er zuerst zu `/einstieg`.**
+Daran ist zu erkennen: er fragt, was er zusammensuchen soll, hat noch nichts angehängt,
+oder macht die Erklärung zum ersten Mal. Dann nicht mit einem halben Ordner anfangen —
+einmal auf `/einstieg` verweisen, kurz sagen was dort passiert (ein paar Fragen, danach
+eine Unterlagenliste), und ihn zurückkommen lassen. Wer seine Papiere schon beisammen hat,
+fängt direkt hier an.
 
 **Der Nutzer soll seine Papiere hinlegen und sonst nichts tun.** Ein Aufruf sortiert sie
 selbst ein:

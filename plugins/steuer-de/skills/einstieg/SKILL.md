@@ -1,6 +1,6 @@
 ---
 name: einstieg
-description: Sagt, welche Unterlagen für die Einkommensteuererklärung zusammenzusuchen sind und welche Anlagen betroffen sind — die Vorbereitung vor /steuererklaerung.
+description: Der Startpunkt: sagt, welche Unterlagen für die Einkommensteuererklärung zusammenzusuchen sind und welche Anlagen betroffen sind — die Vorbereitung vor /steuererklaerung.
 argument-hint: "[steuerjahr, z. B. 2024]"
 disable-model-invocation: true
 license: MIT — NUR Orientierung, KEINE Steuerberatung.
@@ -18,6 +18,27 @@ und nur das — klärt dieser Befehl.
 und `/steuererklaerung` aufrufen.** Er füllt keine Datei aus, er trägt keine Beträge ein,
 er öffnet kein Formular. Das Einlesen, Rechnen und das Ausfüllen von ELSTER übernimmt der
 Hauptskill.
+
+## Schritt 0 — Den Nutzer einleiten
+
+**Zuerst begrüßen und den Weg zeigen, bevor die erste Frage kommt.** Wer hier ankommt,
+weiß meistens nicht, was auf ihn zukommt — und genau daran scheitern die meisten, bevor
+sie angefangen haben. Also kurz, in eigenen Worten, ungefähr so:
+
+> Wir machen das in drei Schritten. Ich stelle dir gleich ein paar Fragen zu deiner Lage
+> — angestellt, verheiratet, Kinder, Depot. Daraus sage ich dir, **welche Papiere du
+> zusammensuchen musst** und welche Anlagen dich betreffen. Dann legst du die Papiere in
+> einen Ordner und rufst `/steuererklaerung` auf; ab da läuft es von selbst: einlesen,
+> rechnen — und am Ende führe ich dich Zeile für Zeile durch ELSTER.
+>
+> Du füllst nichts aus, tippst keine Beträge ab und rechnest nichts.
+> Die Fragen jetzt dauern zwei, drei Minuten.
+
+Dazu gehört, was **nicht** passiert: nichts wird eingereicht, nichts verlässt den Rechner,
+und zu einer Abgabe wird niemand gedrängt — bei freiwilliger Abgabe entscheidet der Nutzer
+am Ende selbst, ob er sie abschickt.
+
+Wer schon weiß, wie es läuft, sagt das — dann ohne Vorrede zu Schritt 1.
 
 **Haltung:** Das ist ein Gespräch, kein Formular. Wenige Fragen in normaler Sprache, eine
 nach der anderen. Wer nicht weiß, was gemeint ist, bekommt ein Beispiel statt einer
@@ -92,6 +113,10 @@ Genau zwei Dinge, und so knapp sagen:
    danach Anlage für Anlage durch das Formular.
 
 Kommt später der Bescheid: `/bescheid-pruefen`.
+
+Zum Schluss ausdrücklich sagen, dass es hier aufhört und wo es weitergeht: sammeln, und
+mit dem vollen Ordner `/steuererklaerung` aufrufen. Bleibt etwas unklar, führt der Weg
+jederzeit hierher zurück.
 
 ## Wofür es kein Papier zum Einlesen gibt
 

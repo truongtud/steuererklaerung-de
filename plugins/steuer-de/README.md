@@ -8,10 +8,13 @@ Vor der Steuererklärung sitzt man mit einem Stapel Papier: Lohnsteuerbescheinig
 Bescheinigungen von Bank und Krankenkasse, bei Krypto oder ausländischem Depot dazu
 Broker-Reports als PDF und CSV.
 
-**Der Ablauf hier ist: alles in einen Ordner legen, `/steuererklaerung` aufrufen, fertig.**
-Das Plugin sortiert jedes Dokument selbst ein, liest die Beträge heraus, fragt nur noch
-nach dem, was in keinem Papier stand, rechnet — und führt am Ende Anlage für Anlage durch
-das ELSTER-Formular.
+**Angefangen wird mit `/einstieg`:** ein paar Fragen zur Lage, und heraus kommt die Liste
+der Papiere, die für genau diesen Fall gebraucht werden.
+
+**Danach ist der Ablauf: alles in einen Ordner legen, `/steuererklaerung` aufrufen,
+fertig.** Das Plugin sortiert jedes Dokument selbst ein, liest die Beträge heraus, fragt
+nur noch nach dem, was in keinem Papier stand, rechnet — und führt am Ende Anlage für
+Anlage durch das ELSTER-Formular.
 
 Gerechnet wird der Weg vom Bruttolohn bis zur Abschlusszahlung: Einkünfte über alle Anlagen
 (N, KAP, SO, V, S, G, Vorsorgeaufwand, Sonderausgaben, außergewöhnliche Belastungen, Kind),
@@ -40,7 +43,7 @@ Ausgabe sind Dateien. Veranlagungszeiträume 2022–2026, nur deutsches Steuerre
 | Exchange-CSV | Kraken, Coinbase, Bitpanda, Binance | Profil bildet Spalten auf das kanonische Transaktionsschema ab |
 | CSV, beliebige Spalten | jede Börse | freies Spalten-Mapping über `mapping.json` |
 | `transactions.json` | selbst gepflegt | kanonisches Schema, direkt in die FIFO-Engine |
-| `steuerdaten.json` | wird gefüllt, Vorlage liegt bei | von Hand bleiben Stammdaten, Werbungskosten, § 35a und Spenden |
+| `steuerdaten.json` | wird gefüllt, Vorlage liegt bei | offen bleiben nur Stammdaten, Werbungskosten, § 35a und Spenden — danach wird gefragt |
 
 Ein neuer Broker ist **eine JSON-Profildatei**, kein neues Skript; `profile_wizard.py`
 erzeugt den Entwurf aus einem echten Report. Für Bescheinigungen gilt dasselbe:
@@ -91,11 +94,12 @@ je Report — § 23, § 22 Nr. 3 und § 20 Abs. 6 gelten personenbezogen über a
 
 ## So verwendest du es
 
-Sechs Slash-Befehle stehen nach der Installation bereit:
+Sechs Slash-Befehle stehen nach der Installation bereit — **der Weg beginnt bei
+`/einstieg`**:
 
 | Befehl | Wofür |
 |---|---|
-| `/einstieg [jahr]` | die Vorfrage: **welche Papiere muss ich zusammensuchen?** Danach nur noch in einen Ordner legen |
+| `/einstieg [jahr]` | **hier anfangen** — die Vorfrage: welche Papiere muss ich zusammensuchen? Danach nur noch in einen Ordner legen |
 | `/steuererklaerung [jahr]` | der ganze Durchlauf — einsortieren, extrahieren, rechnen, exportieren, durch ELSTER führen |
 | `/krypto-check [frage]` | eine einzelne Frage zu Haltefrist, Freigrenze, Tausch, Staking |
 | `/broker-profil [id]` | einen neuen Broker anbinden |

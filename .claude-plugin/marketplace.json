@@ -5,14 +5,14 @@
     "url": "https://github.com/truongtud"
   },
   "metadata": {
-    "description": "Werkzeuge für die deutsche Einkommensteuererklärung: TaxReport über alle Anlagen, Krypto nach FIFO/§ 23 EStG, ELSTER-Feld-Mapping.",
+    "description": "Werkzeuge für die deutsche Einkommensteuererklärung: TaxReport über alle Anlagen, Krypto nach FIFO/§ 23 EStG, ELSTER-Feld-Mapping. Startpunkt ist /einstieg.",
     "version": "2.4.0"
   },
   "plugins": [
     {
       "name": "steuer-de",
       "source": "./plugins/steuer-de",
-      "description": "Deutsche Einkommensteuererklärung: TaxReport über alle Anlagen, Krypto-FIFO nach § 23 EStG mit taggenauer Haltefrist, Kapitalerträge mit Verlusttöpfen, Broker- und Börsen-Import über Profildateien (Koinly, eToro, Kraken, Coinbase, Bitpanda, Binance), Export als HTML, PDF und ELSTER-Feld-Mapping. Orientierung, keine Steuerberatung."
+      "description": "Deutsche Einkommensteuererklärung: TaxReport über alle Anlagen, Krypto-FIFO nach § 23 EStG mit taggenauer Haltefrist, Kapitalerträge mit Verlusttöpfen, Broker- und Börsen-Import über Profildateien (Koinly, eToro, Kraken, Coinbase, Bitpanda, Binance), Export als HTML, PDF und ELSTER-Feld-Mapping. Beginnt mit /einstieg: welche Unterlagen brauche ich? Orientierung, keine Steuerberatung."
     }
   ]
 }
