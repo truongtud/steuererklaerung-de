@@ -2,6 +2,8 @@
 
 Ein Claude-Plugin für die **deutsche Einkommensteuererklärung**.
 
+> 🇻🇳 Hướng dẫn tiếng Việt (cài đặt cho cả Claude Code lẫn Claude Desktop): [README.vi.md](README.vi.md)
+
 > Das Repository heißt `steuererklaerung-de`, das Plugin darin `steuer-de` — der kürzere
 > Name lässt später Platz für weitere Steuer-Plugins daneben. Zum Hinzufügen zählt der
 > Repository-Name, zum Installieren der Plugin-Name; beide Kommandos stehen unten.

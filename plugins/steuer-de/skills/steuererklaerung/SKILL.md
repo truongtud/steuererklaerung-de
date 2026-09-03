@@ -119,6 +119,16 @@ einmal auf `/einstieg` verweisen, kurz sagen was dort passiert (ein paar Fragen,
 eine Unterlagenliste), und ihn zurückkommen lassen. Wer seine Papiere schon beisammen hat,
 fängt direkt hier an.
 
+Gibt es den Befehl nicht — etwa weil dieser Skill einzeln in die Claude-App geladen wurde
+und nicht als Plugin —, die Vorbereitung hier erledigen: nach Tätigkeit, Familienstand,
+Kindern, Kirchensteuer, Depot, Krypto, Lohnersatzleistungen, Handwerkerrechnungen und
+Krankheitskosten fragen und daraus die Unterlagenliste erzeugen:
+
+```bash
+python3 scripts/neue_steuerdaten.py --jahr 2024 --taetigkeit angestellt \
+    --kirchensteuer 9 --kapital -o steuerdaten.json
+```
+
 **Der Nutzer soll seine Papiere hinlegen und sonst nichts tun.** Ein Aufruf sortiert sie
 selbst ein:
 
