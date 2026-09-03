@@ -77,17 +77,11 @@ zusammenfassen. Die Unterlagenliste ist der halbe Nutzen dieses Befehls.
 Klar sagen, was als Nächstes passiert:
 
 1. Die genannten Unterlagen zusammensuchen.
-2. **Die PDFs einlesen lassen, nicht abtippen:**
-
-   ```bash
-   S=plugins/steuer-de/skills/steuererklaerung/scripts
-   python3 $S/parse_bescheinigung.py lohnsteuerbescheinigung.pdf \
-       steuerbescheinigung.pdf beitragsbescheinigung.pdf --steuerdaten steuerdaten.json
-   ```
-
-   Das Skript trägt ein, was es sicher erkennt, und sagt am Ende, was noch offen ist.
-   **Erst dann fragen** — und nur nach dem, was übrig geblieben ist.
-3. Dann `/steuererklaerung` für den ganzen Durchlauf.
+2. **Alle Papiere in einen Ordner legen** — Bescheinigungen, Broker-Reports, alles. Mehr
+   ist nicht zu tun: `/steuererklaerung` liest sie ein, ordnet sie selbst zu und fragt
+   danach nur noch nach dem, was in keinem Dokument stand.
+3. `/steuererklaerung` aufrufen. Der Befehl rechnet und führt am Ende Zeile für Zeile
+   durch das ELSTER-Formular.
 4. Kommt später der Bescheid: `/bescheid-pruefen`.
 
 ## Zwei Fallen — die erste nimmt das Skript ab

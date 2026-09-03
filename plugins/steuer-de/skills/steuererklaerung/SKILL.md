@@ -30,6 +30,7 @@ scripts/steuerlib.py      ── ein Zahlenparser, eine Fristenlogik, alle Steue
 scripts/fetch_steuerwerte.py ─ holt § 32a EStG / § 3 SolZG (Pflege, nicht Pipeline)
 scripts/pruefe_bescheid.py  ── Steuerbescheid gegen den Report halten, Fristen
 scripts/neue_steuerdaten.py ── Startdatei und Unterlagen-Checkliste (/einstieg)
+scripts/importiere_unterlagen.py ─ alle Unterlagen einsortieren (Schritt 0)
 scripts/parse_bescheinigung.py ─ Bescheinigungen lesen und die Vorlage füllen
 scripts/brokerprofile.py  ── Profil-Engine: Erkennung, Anwendung, Summenabgleich
 scripts/profiles/*.json   ── ein Broker = eine Profildatei
@@ -61,6 +62,7 @@ Wird einer davon aufgerufen, gilt zusätzlich dessen eigene Schrittfolge.
 | CSV mit beliebigen Spalten | `parse_inputs.py --format map --map mapping.json` |
 | `transactions.json` (kanonisch) | direkt in `krypto_fifo.py` / `build_taxreport.py --transactions` |
 | `steuerdaten.json` | Hand-Eingabe, Vorlage in `assets/` |
+| **ein Ordner mit allen Papieren** | `importiere_unterlagen.py` — sortiert selbst ein |
 | Lohnsteuerbescheinigung (PDF) | `parse_bescheinigung.py` — füllt Anlage N und die Vorsorgeanteile |
 | Steuerbescheinigung der Bank (PDF) | `parse_bescheinigung.py` — füllt Anlage KAP samt Verlusttöpfen |
 | Beitragsbescheinigung KV/PV (PDF) | `parse_bescheinigung.py` — füllt die Basisabsicherung |
@@ -85,7 +87,32 @@ pip install fpdf2 pdfplumber pymupdf pytesseract pdf2image --break-system-packag
 pip install docling --break-system-packages   # optional, beste Tabellenqualität
 ```
 
-### Schritt 0 — Broker-Reports einlesen
+### Schritt 0 — Alle Unterlagen hineinwerfen
+
+**Der Nutzer soll seine Papiere hinlegen und sonst nichts tun.** Ein Aufruf sortiert sie
+selbst ein:
+
+```bash
+python3 scripts/importiere_unterlagen.py unterlagen/ --steuerdaten steuerdaten.json
+```
+
+Das Skript entscheidet je Datei, was sie ist, und handelt entsprechend:
+
+| erkannt als | passiert |
+|---|---|
+| Lohnsteuer-, Steuer- oder Beitragsbescheinigung | füllt `steuerdaten.json` |
+| Broker- oder Börsenreport | wird gemeldet, danach Schritt 0b |
+| Steuerbescheid | gehört nicht hierher, sondern zu `/bescheid-pruefen` |
+| nichts davon | wird gemeldet und **liegen gelassen** |
+
+`steuerdaten.json` wird aus der Vorlage angelegt, falls sie fehlt. Am Ende steht, **was
+noch offen ist** — das und nur das wird danach erfragt. Die Meldungen (`!`) gehören in
+die Antwort: ein Feld, dessen Beschriftung nicht passte, wurde bewusst nicht übernommen.
+
+**Nichts wird geraten.** Ein falsch einsortiertes Dokument wäre teurer als ein nicht
+erkanntes — das nicht erkannte fällt auf, das falsch einsortierte nicht.
+
+### Schritt 0b — Broker-Reports einlesen
 
 **Ein Einstiegspunkt für alle Broker und Börsen.** `parse_broker.py` erkennt anhand der
 Profile in `scripts/profiles/`, welcher Report vorliegt:
@@ -137,22 +164,18 @@ EUR-Marktwerte für `reward` und `swap` ergänzen; auf **vollständige Anschaffu
 achten; die vom Skript gemeldeten übersprungenen Tabellen ansehen. Details:
 `references/pdf-ingestion.md`.
 
-### Schritt 1 — Übrige Eingaben sammeln
+### Schritt 1 — Nur noch das Offene erfragen
 
-- **Einkommensdaten: erst extrahieren, dann fragen.** Liegen Bescheinigungen vor, werden
-  sie eingelesen, nicht abgetippt:
+Schritt 0 hat eingelesen, was in den Unterlagen stand, und am Ende die **offenen Felder**
+genannt. Nur nach diesen fragen — eine Frage nach etwas, das der Nutzer gerade abgegeben
+hat, wirkt wie ein Werkzeug, das seine Papiere nicht gelesen hat.
 
-  ```bash
-  python3 scripts/parse_bescheinigung.py lohnsteuerbescheinigung.pdf \
-      steuerbescheinigung.pdf beitragsbescheinigung.pdf --steuerdaten steuerdaten.json
-  ```
+Typischerweise offen bleiben: Stammdaten (Name, Steuer-Identifikationsnummer),
+Werbungskosten, Aufwendungen nach § 35a und Spenden — dafür gibt es keine Bescheinigung
+zum Einlesen. Fehlt eine Bescheinigung ganz, die Werte nach
+`references/anlagen-referenz.md` von Hand ergänzen; Vorlage:
+`assets/steuerdaten_vorlage.json`.
 
-  Das Skript legt `steuerdaten.json` aus der Vorlage an, falls sie fehlt, trägt ein was
-  es sicher erkennt und nennt am Ende, **was noch offen ist**. Nur danach nachfragen —
-  und nur nach dem, was übrig bleibt. Die Meldungen (`!`) durchgehen: ein Feld, dessen
-  Beschriftung nicht passte, wurde bewusst nicht übernommen.
-- Fehlt eine Bescheinigung, werden die Werte nach `references/anlagen-referenz.md` von
-  Hand ergänzt; Vorlage: `assets/steuerdaten_vorlage.json`.
 - Unbekannte Feldnamen werden gemeldet („meintest du …?“) und **ignoriert** — die Warnung
   ernst nehmen, ein Tippfehler ist sonst stillschweigend 0 € wert. `--strict` schreibt den
   Report weiterhin, endet aber mit Rückgabecode 3, damit der Fehler nicht untergeht.
@@ -226,6 +249,32 @@ python3 scripts/export_report.py taxreport.json --outdir out --formats html pdf 
 
 Nur die gewünschten Formate wählen, die Dateien anschließend an den Nutzer ausliefern
 (SendUserFile) und die Kernzahlen nennen.
+
+### Schritt 5 — Durch das ELSTER-Formular führen
+
+Die CSV auszuliefern reicht nicht. Der Nutzer sitzt vor „Mein ELSTER“ und braucht zu
+wissen, **welche Zahl in welche Zeile** gehört. Also durchführen, nicht abgeben:
+
+1. **Anlage für Anlage vorgehen**, in der Reihenfolge des Mappings — sie ist bereits die
+   Eingabereihenfolge: Hauptvordruck, Anlage N, KAP, SO, V, S, G, Vorsorgeaufwand,
+   Sonderausgaben, Kind. Nicht alles auf einmal ausgeben: eine Anlage nennen, den Nutzer
+   eintragen lassen, dann die nächste.
+2. **Je Zeile**: Formularzeile, Bezeichnung, Betrag in deutscher Schreibweise. Zum
+   Beispiel: *„Anlage N, Zeile 6: Bruttoarbeitslohn — 78.500,00 €.“*
+3. **An der Trennzeile aufhören.** Das Mapping enthält eine Zeile „— ab hier nur Belege
+   je Quelle: NICHT in ELSTER eintragen“. Alles darunter dient dem Nachvollziehen, wo ein
+   Betrag herkommt; wer es abtippt, erklärt denselben Betrag doppelt.
+4. **Zeilennummern sind Orientierung, keine Zusage.** ELSTER ändert die Layouts jährlich.
+   Das gehört einmal ausdrücklich gesagt: die Bezeichnung im Formular ist maßgeblich, die
+   Nummer hilft beim Finden.
+5. **Zusätzliche Angaben nennen, die kein Betrag sind** — sie stehen sonst nirgends:
+   - die **Günstigerprüfung** nach § 32d Abs. 6 muss in der Anlage KAP *angekreuzt*
+     werden, sonst bleibt es bei 25 % (der Report nennt den Betrag, um den es geht);
+   - ein **§ 23-Verlustvortrag** muss in der Anlage SO beantragt werden;
+   - der **verbleibende Verlustvortrag** für das Folgejahr wird gesondert festgestellt.
+6. **Am Ende**: den Nutzer die von ELSTER berechnete Steuer mit der Schätzung des Reports
+   vergleichen lassen. Weichen sie ab, ist das kein Fehler, sondern erwartbar — die
+   Unsicherheitsbilanz des Reports sagt, in welche Richtung. Maßgeblich ist ELSTER.
 
 ## Plausibilitätsschritt — vor dem Kommunizieren von Zahlen
 

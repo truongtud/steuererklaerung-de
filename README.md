@@ -109,7 +109,7 @@ sich der Skill von selbst.
 | Befehl | Wofür |
 |---|---|
 | `/einstieg [jahr]` | Vorbereitung: welche Anlagen betreffen mich, welche Unterlagen brauche ich, Startdatei anlegen |
-| `/steuererklaerung [jahr]` | der ganze Durchlauf: Reports einlesen, fehlende Angaben erfragen, rechnen, HTML + PDF + ELSTER-CSV |
+| `/steuererklaerung [jahr]` | der ganze Durchlauf: **alle Unterlagen hineinwerfen**, einsortieren, extrahieren, rechnen, exportieren — und Zeile für Zeile durch das ELSTER-Formular führen |
 | `/krypto-check [frage]` | eine einzelne Frage — Haltefrist, Freigrenze, Tausch, Staking — ohne kompletten Report |
 | `/broker-profil [id]` | einen neuen Broker anbinden: Entwurf aus einem echten Report, TODOs auflösen, Fixture anlegen |
 | `/steuer-pruefen [datei]` | einen fertigen TaxReport gegenprüfen, bevor die Zahlen nach ELSTER wandern |
@@ -296,6 +296,7 @@ skills/steuererklaerung/
 │   ├── fetch_steuerwerte.py    holt § 32a EStG / § 3 SolZG (Pflege, nicht Pipeline)
 │   ├── pruefe_bescheid.py      Steuerbescheid gegen den Report, Einspruchsfrist
 │   ├── neue_steuerdaten.py     Startdatei + Unterlagen-Checkliste (/einstieg)
+│   ├── importiere_unterlagen.py alle Unterlagen einsortieren (ein Befehl)
 │   ├── parse_bescheinigung.py  Bescheinigungen lesen, Vorlage füllen
 │   ├── profiles/bescheinigungen/*.json   ein Belegtyp = eine Profildatei
 │   ├── brokerprofile.py        Profil-Engine: Erkennung, Anwendung, Summenabgleich
