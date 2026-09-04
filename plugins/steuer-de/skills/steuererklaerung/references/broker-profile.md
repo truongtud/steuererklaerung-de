@@ -5,6 +5,15 @@ deklarativ, wie ein Report gelesen wird. `scripts/parse_broker.py` erkennt anhan
 Profile selbst, welcher Report vorliegt, wendet das passende an und prüft das Ergebnis
 gegen die Summen, die der Report selbst ausweist.
 
+**„Broker“ ist hier der Sammelbegriff für jede Quelle mit einem Profil** — Wertpapier-/
+CFD-Broker (eToro), Krypto-Börsen (Kraken, Binance, Bitpanda, Coinbase) und
+Steuer-Aggregatoren, die selbst kein Handelsplatz sind (Koinly), gleichermaßen. Die
+Unterscheidung, die hier tatsächlich etwas bedeutet, ist nicht die Art der Institution,
+sondern das `ergebnis`-Schema des Profils — es sagt, welche Anlage(n) der Output befüllt
+und wie `build_taxreport.py` ihn behandelt: `kap` (Anlage KAP, bisher nur eToro),
+`krypto_transaktionen` (rohe Trades → `krypto_fifo.py` rechnet FIFO/§ 23 selbst) oder
+`krypto_vorberechnet` (fertige Veräußerungen, FIFO bereits gerechnet, z. B. Koinly).
+
 ```
 report.pdf ─▶ parse_broker.py ─▶ Profil erkennen ─▶ anwenden ─▶ Summenabgleich ─▶ *.json
    .csv                                 │
