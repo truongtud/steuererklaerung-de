@@ -163,7 +163,7 @@ Die genauen Installationskommandos stehen in `skills/steuererklaerung/SKILL.md`.
 cd skills/steuererklaerung && python3 tests/run_tests.py
 ```
 
-516 Fälle in 21 Dateien; CI auf Python 3.10 bis 3.14, plus Vorschau auf die 3.15-Beta.
+533 Fälle in 22 Dateien; CI auf Python 3.10 bis 3.14, plus Vorschau auf die 3.15-Beta.
 
 ## Lizenz
 

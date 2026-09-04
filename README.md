@@ -374,7 +374,7 @@ skills/steuererklaerung/
 │   ├── krypto_fifo.py          FIFO-Engine § 23 / § 22 Nr. 3
 │   ├── build_taxreport.py      Anlagen, Tarif, Verlusttöpfe, ELSTER-Mapping
 │   └── export_report.py        HTML / PDF / ELSTER
-└── tests/                      21 Dateien
+└── tests/                      22 Dateien
 ```
 
 Zwei Konstruktionsprinzipien, die den Unterschied machen:
@@ -398,7 +398,7 @@ cd plugins/steuer-de/skills/steuererklaerung
 python3 tests/run_tests.py
 ```
 
-[516 Fälle in 21 Dateien](plugins/steuer-de/skills/steuererklaerung/tests) — jede Datei ist
+[533 Fälle in 22 Dateien](plugins/steuer-de/skills/steuererklaerung/tests) — jede Datei ist
 einzeln lauffähig, wenn nur ein Bereich interessiert:
 
 | Datei | prüft |
@@ -407,6 +407,7 @@ einzeln lauffähig, wenn nur ein Bereich interessiert:
 | [`test_krypto_fifo.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_krypto_fifo.py) | FIFO mit Teillosen und Gebühren, Jahresfilter, Haltefrist, Freigrenzen |
 | [`test_build_taxreport.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_build_taxreport.py) | Tarif, Soli, Abgeltungsteuer, Nachzahlung/Erstattung |
 | [`test_kap.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_kap.py) | KAP-Quellen, davon-Zeilen, Verlusttöpfe über mehrere Depots |
+| [`test_elster_zeilen.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_elster_zeilen.py) | Zeilennummern-Referenz je Jahr deckungsgleich mit `build_taxreport.py`; Zeilenerkennung aus PDF-Text |
 | [`test_eingabepruefung.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_eingabepruefung.py) | unbekannte Felder, `--strict`, Verlustvorträge |
 | [`test_brokerprofile.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_brokerprofile.py) | Profil-Validierung, Erkennung, Summenabgleich |
 | [`test_parser.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_parser.py) | Koinly, eToro, CSV-Import, Layout-Varianten |
