@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "hinweis": "Zeilennummern der ELSTER-Vordrucke je Steuerjahr — Referenz für references/elster-zeilen.md und das Feld 'zeile' in build_taxreport.py. ELSTER aendert die Formularlayouts jaehrlich; 'geprueft':null heisst, die Zeile wurde noch nicht gegen den amtlichen Vordruck des Jahres gegengelesen (siehe 'status' je Jahr). Erzeugt/gepflegt mit scripts/fetch_elster_zeilen.py und von Hand; niemals automatisch ueberschrieben.",
+  "jahre": {
+    "2025": {
+      "geprueft": null,
+      "status": "Aus scripts/build_taxreport.py und references/anlagen-referenz.md uebernommen (Stand der Formularkenntnis beim Schreiben des Skills). Noch NICHT gegen den amtlichen Vordruck 2025 gegengelesen, weil das Formular-Management-System (formulare-bfinv.de) PDFs nur innerhalb einer per JavaScript aufgebauten Browsersitzung ausliefert und sich nicht scriptgesteuert herunterladen laesst (siehe elster-zeilen.md). Vor jeder Steuererklaerung gegen den echten Vordruck pruefen.",
+      "quelle": "Formular-Management-System der Bundesfinanzverwaltung, https://www.formulare-bfinv.de (Hauptvordruck ESt 1 A, Anlage N, Anlage KAP, Anlage SO, Anlage V, Anlage S, Anlage G, Anlage Sonderausgaben, Anlage Aussergewoehnliche Belastungen, Steuerjahr 2025)",
+      "anlagen": {
+        "Hauptvordruck": [
+          { "zeile": "7", "bezeichnung": "Identifikationsnummer (Steuer-ID)" },
+          { "zeile": "8", "bezeichnung": "Name" }
+        ],
+        "Anlage N": [
+          { "zeile": "6", "bezeichnung": "Bruttoarbeitslohn (lt. Lohnsteuerbescheinigung Nr. 3)" },
+          { "zeile": "7", "bezeichnung": "Einbehaltene Lohnsteuer" },
+          { "zeile": "8", "bezeichnung": "Solidaritaetszuschlag" },
+          { "zeile": "9", "bezeichnung": "Einbehaltene Kirchensteuer" },
+          { "zeile": "31 ff.", "bezeichnung": "Werbungskosten" }
+        ],
+        "Anlage KAP": [
+          { "zeile": "7", "bezeichnung": "Kapitalertraege (ohne Steuerabzug bzw. lt. Steuerbescheinigung)" },
+          { "zeile": "16/17", "bezeichnung": "Sparer-Pauschbetrag (Antrag)" },
+          { "zeile": "19", "bezeichnung": "Auslaendische Kapitalertraege ohne inlaendischen Steuerabzug" },
+          { "zeile": "20", "bezeichnung": "Gewinne aus Aktienveraeusserungen (§ 20 Abs. 2 Satz 1 Nr. 1 EStG)" },
+          { "zeile": "21", "bezeichnung": "Gewinne aus Termingeschaeften und Stillhalterpraemien" },
+          { "zeile": "22", "bezeichnung": "Verluste aus Kapitalvermoegen ohne Verluste aus Aktienveraeusserungen" },
+          { "zeile": "23", "bezeichnung": "Verluste aus Aktienveraeusserungen (§ 20 Abs. 6 Satz 4 EStG)" },
+          { "zeile": "24", "bezeichnung": "Verluste aus Termingeschaeften" },
+          { "zeile": "25", "bezeichnung": "Verluste aus wertlosem Ausfall / Ausbuchung von Kapitalanlagen" },
+          { "zeile": "37", "bezeichnung": "Anrechenbare Kapitalertragsteuer" },
+          { "zeile": "38", "bezeichnung": "Einbehaltener Solidaritaetszuschlag (Kapitalertraege)" },
+          { "zeile": "39", "bezeichnung": "Einbehaltene Kirchensteuer (Kapitalertraege)" },
+          { "zeile": "41", "bezeichnung": "Anrechenbare auslaendische Quellensteuer (§ 32d Abs. 5 EStG)" },
+          { "zeile": "42", "bezeichnung": "Fiktive auslaendische Quellensteuer (Anrechnung nach DBA)" }
+        ],
+        "Anlage SO": [
+          { "zeile": "10-13", "bezeichnung": "Leistungen § 22 Nr. 3 EStG (Staking/Lending u. a.)" },
+          { "zeile": "41-47", "bezeichnung": "Private Veraeusserungsgeschaefte § 23 EStG (Krypto <= 1 Jahr)" },
+          { "zeile": "54-59", "bezeichnung": "Verlustvortrag/-feststellung § 23 EStG" }
+        ],
+        "Anlage V": [
+          { "zeile": "21", "bezeichnung": "Einkuenfte aus Vermietung und Verpachtung" }
+        ],
+        "Anlage S": [
+          { "zeile": "4", "bezeichnung": "Gewinn aus selbstaendiger Arbeit (§ 18 EStG)" }
+        ],
+        "Anlage G": [
+          { "zeile": "4", "bezeichnung": "Gewinn aus Gewerbebetrieb (§ 15 EStG)" }
+        ],
+        "Anlage Sonderausgaben": [
+          { "zeile": "5-12", "bezeichnung": "Spenden" }
+        ],
+        "Anlage Aussergewoehnliche Belastungen": [
+          { "zeile": "13 ff.", "bezeichnung": "Aussergewoehnliche Belastungen allgemeiner Art" }
+        ]
+      }
+    }
+  }
+}

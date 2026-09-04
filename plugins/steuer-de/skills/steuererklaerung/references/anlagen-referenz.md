@@ -4,6 +4,10 @@ Beschreibt das Eingabeschema von `build_taxreport.py` und die Zuordnung zu den
 ELSTER-Anlagen. **Zeilennummern sind Orientierung** — ELSTER ändert die Layouts jährlich;
 vor der Eingabe in „Mein ELSTER“ prüfen. **Keine Steuerberatung.**
 
+Woher die hier genannten Zeilennummern stammen, mit welchem Prüfstand je Jahr und wie ein
+neues Steuerjahr ergänzt wird: `references/elster-zeilen.md` /
+`references/elster_zeilen.json`.
+
 ## Woher die Werte kommen
 
 Die meisten Felder müssen **nicht** von Hand eingetragen werden.

@@ -115,6 +115,8 @@ KAP_STEUER_KENNZAHLEN = ("anrechenbare_kest", "einbehaltener_soli",
 # Nur für diese kann sich eine Rohzeile mit einer abgeleiteten Zeile doppeln;
 # alle anderen Rohzeilen werden unkommentiert durchgereicht (ihre Bedeutung
 # steht in der Bescheinigung, nicht hier — ELSTER ändert die Layouts jährlich).
+# Bei einer Aenderung hier auch references/elster_zeilen.json (Jahr, "Anlage KAP")
+# nachziehen — tests/test_elster_zeilen.py haelt beide gegeneinander.
 KAP_ZEILEN_LABEL = {
     "7": "Kapitalerträge (ohne Steuerabzug bzw. lt. Steuerbescheinigung)",
     "19": "Ausländische Kapitalerträge ohne inländischen Steuerabzug",

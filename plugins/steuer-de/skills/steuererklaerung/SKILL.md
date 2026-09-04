@@ -49,6 +49,8 @@ Die Skripte dahinter:
 ```
 scripts/steuerlib.py      ── ein Zahlenparser, eine Fristenlogik, alle Steuerwerte
 scripts/fetch_steuerwerte.py ─ holt § 32a EStG / § 3 SolZG (Pflege, nicht Pipeline)
+scripts/fetch_elster_zeilen.py ─ liest Zeilennummern aus einem lokalen Vordruck-PDF
+                              (Pflege, kein Netzzugriff — siehe references/elster-zeilen.md)
 scripts/pruefe_bescheid.py  ── Steuerbescheid gegen den Report halten, Fristen
 scripts/neue_steuerdaten.py ── Startdatei und Unterlagen-Checkliste (/einstieg)
 scripts/importiere_unterlagen.py ─ alle Unterlagen einsortieren (Schritt 0)
@@ -356,6 +358,9 @@ wissen, **welche Zahl in welche Zeile** gehört. Also durchführen, nicht abgebe
   Freigrenze über alle Broker, Verlustvortrag, kanonisches Schema, Edge-Cases.
 - `references/anlagen-referenz.md` — `steuerdaten.json`-Schema, ELSTER-Zuordnung je Anlage,
   Rechtsstand § 20 Abs. 6 nach dem JStG 2024.
+- `references/elster-zeilen.md` — woher die Zeilennummern der Anlagen kommen, warum es
+  dafür keinen Live-Abruf gibt, und wie ein neues Steuerjahr ergänzt wird
+  (`fetch_elster_zeilen.py`). Die Zeilen selbst stehen in `references/elster_zeilen.json`.
 - `references/broker-profile.md` — Profil-Schema, Ausgabeschemata (inkl. `kap`),
   Vorzeichenregeln, wie ein neuer Broker angebunden wird. **Bei jedem neuen Broker hierher.**
 - `references/pdf-ingestion.md` — Backends, Spalten-Erkennung, Summenabgleich,
