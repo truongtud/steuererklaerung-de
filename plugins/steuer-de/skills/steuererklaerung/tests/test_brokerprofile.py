@@ -544,6 +544,42 @@ def test_nicht_ausgewiesene_kap_zeile_fehlt_statt_null():
 
 
 @case
+def test_umnummerierte_broker_zeile_bricht_ab_statt_lautlos_zu_verschwinden():
+    """Simuliert genau den Fall, für den werte_regeln.marker da ist: eToro (oder
+    ELSTER dahinter) nummeriert eine Zeile um, das Profil kennt aber nur die alte
+    Nummer. Der generische Marker ('Anlage KAP … Zeile 26') findet die Stelle
+    weiterhin — nur das Profil-Muster für 'Zeile 20' trifft nicht mehr, und
+    'mindestens: 1' bleibt erfüllt, weil andere Zeilen noch passen. Ohne den
+    Marker-Abgleich würde Zeile 20 (Aktiengewinne) lautlos aus kap_zeilen
+    verschwinden, statt den Lauf abzubrechen."""
+    umnummeriert = fixture("etoro-de").replace(
+        "Anlage KAP Zeile 20", "Anlage KAP Zeile 26")
+    wirft(sl.PlausibilityError, bp.wende_an, bp.profil_nach_id("etoro-de"),
+          umnummeriert, label="umnummerierte Anlage-KAP-Zeile")
+    r = bp.wende_an(bp.profil_nach_id("etoro-de"), umnummeriert, strikt=False)
+    assert "20" not in r["kap_zeilen"], \
+        "die umbenannte Zeile darf nicht unter der alten Nummer auftauchen"
+    assert any("Zeilen-Marker" in w for w in r["warnungen"]), r["warnungen"]
+
+
+@case
+def test_marker_abgleich_zaehlt_nur_formularzeilen_nicht_alle_werte():
+    """Ohne diese Eingrenzung würde der Marker-Abgleich gegen ALLE gefundenen
+    Werte zählen (auch Depotnummer, Name, eToros eigenes Netto-Feld) — bei
+    einem Profil mit mehreren Nicht-Zeilen-Feldern könnte eine einzelne
+    umnummerierte Formularzeile darin untergehen, weil die Gesamtzahl trotzdem
+    hoch genug bliebe."""
+    text = fixture("etoro-de")
+    p = bp.profil_nach_id("etoro-de")
+    bereiche = bp.Bereiche(p, text, [])
+    _, _, zahlen_gefunden, zeilen_gefunden = bp._extrahiere_werte(
+        p, text, p.notation, bereiche, [])
+    assert zeilen_gefunden < zahlen_gefunden, (
+        "die Fixture hat auch Nicht-Zeilen-Felder (Name, Depot, eToro-Netto) — "
+        "sonst waere dieser Test nichtssagend")
+
+
+@case
 def test_kennzahlen_vorzeichen_wird_normiert_und_gemeldet():
     """kennzahlen ist die normierte Fassung; kap_zeilen bleibt wörtlich."""
     text = ETORO_ALT + "Verluste (ohne Aktien) (Anlage KAP Zeile 22) 250,00\n"

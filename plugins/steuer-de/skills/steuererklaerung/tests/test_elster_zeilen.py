@@ -95,6 +95,74 @@ def test_kap_zeilen_stimmen_mit_build_taxreport():
     eq(fehlend, [], f"Zeilen aus KAP_ZEILEN_LABEL fehlen in elster_zeilen.json ({jahr})")
 
 
+# Direkt in einem add(...)-Aufruf verdrahtete (Anlage, Zeile)-Literale — der
+# Normalfall. add_kap(...) wird ausgeschlossen: seine Zeilen sind bereits über
+# KAP_ZEILEN_LABEL oben abgedeckt, und sein erster Parameter ist eine blosse
+# Kennzahl ("22"), keine Anlage.
+_ADD_LITERAL = re.compile(r'\badd\(\s*"((?:Anlage[^"]*|Hauptvordruck))"\s*,\s*"(Z\.[^"{}]*)"')
+
+# (Anlage, Zeile)-Paare, bei denen die Zeile ueber eine Variable statt eines
+# Literals in add(...) landet — die statische Regex sieht sie nicht. Bisher
+# genau ein Fall: die Spenden-Zeile in build_elster_mapping()
+# (`zeile = "Z. 5–12" if key.lower().startswith("spende") else "—"`).
+# Kommt ein weiterer hinzu, hier ergaenzen statt die Regex zu verkomplizieren.
+_VARIABLENZEILEN = {("Anlage Sonderausgaben", "Z. 5–12")}
+
+
+def _normiere_zeile(z: str) -> str:
+    """'Z. 41–47' -> '41-47' — Praefix ab, Gedankenstrich/Halbgeviertstrich
+    vereinheitlicht, Leerraum weg. So passt der Vergleich unabhaengig davon,
+    ob JSON oder Code den Bindestrich anders schreiben."""
+    z = re.sub(r"^Z\.\s*", "", z.strip())
+    return re.sub(r"[‒–—−-]", "-", z).strip()
+
+
+def _zeilen_literale_je_anlage_aus_build_taxreport() -> dict[str, set[str]]:
+    pfad = os.path.join(ROOT, "scripts", "build_taxreport.py")
+    with open(pfad, encoding="utf-8") as f:
+        text = f.read()
+    treffer: dict[str, set[str]] = {}
+    for anlage, zeile in _ADD_LITERAL.findall(text) + sorted(_VARIABLENZEILEN):
+        treffer.setdefault(anlage, set()).add(_normiere_zeile(zeile))
+    return treffer
+
+
+@case
+def test_alle_anlage_zeilen_literale_sind_in_referenz_dokumentiert():
+    """Jede fest verdrahtete (Anlage, Zeile) aus build_taxreport.py muss in
+    references/elster_zeilen.json auftauchen — sonst kann jemand eine neue
+    Formularzeile im Code verdrahten, ohne dass die Referenz (und damit
+    references/elster-zeilen.md) je davon erfaehrt. Die umgekehrte Richtung
+    wird nicht verlangt: die JSON darf mehr Zeilen dokumentieren, als der
+    Report gerade ausgibt (z. B. Zeilen, die nur bei bestimmter Eingabe
+    erscheinen, oder Hauptvordruck-Zeilen, die (noch) nicht abgebildet sind)."""
+    jahre = lade()["jahre"]
+    jahr = max(jahre)
+    hinterlegt = jahre[jahr]["anlagen"]
+    im_code = _zeilen_literale_je_anlage_aus_build_taxreport()
+    fehlend = []
+    for anlage, zeilen in sorted(im_code.items()):
+        bekannt = {_normiere_zeile(f["zeile"]) for f in hinterlegt.get(anlage, [])}
+        for zeile in sorted(zeilen - bekannt):
+            fehlend.append(f"{anlage} Z. {zeile}")
+    eq(fehlend, [], f"in build_taxreport.py verdrahtet, aber nicht in elster_zeilen.json "
+                    f"({jahr}) dokumentiert")
+
+
+@case
+def test_zeilen_literal_extraktion_findet_bekannte_faelle():
+    """Selbsttest der Regex oben: faengt sie die Faelle, die es tatsaechlich
+    gibt? Ohne diesen Test koennte die Extraktion durch eine Refaktorierung von
+    build_taxreport.py leer laufen und der Test darueber wuerde das nicht
+    bemerken — eine leere Fundliste sieht wie 'alles dokumentiert' aus."""
+    treffer = _zeilen_literale_je_anlage_aus_build_taxreport()
+    assert "6" in treffer.get("Anlage N", set()), "Anlage N Z. 6 nicht gefunden"
+    assert "4" in treffer.get("Anlage S", set()), "Anlage S Z. 4 nicht gefunden"
+    assert "5-12" in treffer.get("Anlage Sonderausgaben", set()), \
+        "die variablenbasierte Spenden-Zeile wurde nicht erkannt"
+    assert "16/17" in treffer.get("Anlage KAP", set()), "Anlage KAP Z. 16/17 nicht gefunden"
+
+
 # ── fetch_elster_zeilen.py: Text-Extraktion ───────────────────────────────────
 @case
 def test_anlage_und_jahr_aus_kopfcode():

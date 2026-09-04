@@ -191,6 +191,20 @@ In `kennzahlen` ist 0 dagegen in Ordnung: dort ist es ein Rechenergebnis, keine 
 bricht ab, wenn gar kein Wert gefunden wurde — ein Ergebnis aus lauter Nullen ist von einem
 echten Null-Report sonst nicht zu unterscheiden.
 
+`marker` ist das zweite Sicherheitsnetz, gegen einen anderen Fehler als `mindestens`:
+`mindestens` sieht nur die Gesamtzahl gefundener Werte und bliebe erfüllt, selbst wenn
+einzelne Zeilen ausfallen, solange andere noch treffen. `marker` zählt zusätzlich, wie oft
+die generische Form „Anlage KAP/SO … Zeile N“ im Report überhaupt vorkommt, und vergleicht
+das mit der Zahl der über die **festen** Zeilennummern in `werte[].muster` gelesenen Werte.
+Findet der Marker mehr Stellen, als das Profil lesen konnte, hat der Broker seine eigene
+Zeilenzuordnung geändert — typischerweise, weil ELSTER die Anlage für dieses Steuerjahr
+umnummeriert hat und der Broker-Report das nachvollzieht, das Profil mit seinen alten
+Zeilennummern aber nicht. Das **bricht den Lauf ab** (`PlausibilityError`), genau wie eine
+abweichende Summe unten — sonst verschwindet der Betrag der nicht mehr passenden Zeile
+lautlos aus dem Ergebnis (kein 0,00 €, einfach kein Eintrag), ohne dass `mindestens` das
+bemerkt. `strikt=False` (nur Tests/Diagnose) macht daraus wie beim Summenabgleich eine
+Meldung statt eines Abbruchs.
+
 ### `kennzahlen` — Pflicht für jedes `kap`-Profil
 
 `werte` schreibt die **Abschrift** des Reports (`kap_zeilen.19`, `so_zeilen.47`, …).

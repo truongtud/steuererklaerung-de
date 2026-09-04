@@ -5,7 +5,7 @@
     "2025": {
       "geprueft": null,
       "status": "Aus scripts/build_taxreport.py und references/anlagen-referenz.md uebernommen (Stand der Formularkenntnis beim Schreiben des Skills). Noch NICHT gegen den amtlichen Vordruck 2025 gegengelesen, weil das Formular-Management-System (formulare-bfinv.de) PDFs nur innerhalb einer per JavaScript aufgebauten Browsersitzung ausliefert und sich nicht scriptgesteuert herunterladen laesst (siehe elster-zeilen.md). Vor jeder Steuererklaerung gegen den echten Vordruck pruefen.",
-      "quelle": "Formular-Management-System der Bundesfinanzverwaltung, https://www.formulare-bfinv.de (Hauptvordruck ESt 1 A, Anlage N, Anlage KAP, Anlage SO, Anlage V, Anlage S, Anlage G, Anlage Sonderausgaben, Anlage Aussergewoehnliche Belastungen, Steuerjahr 2025)",
+      "quelle": "Formular-Management-System der Bundesfinanzverwaltung, https://www.formulare-bfinv.de (Hauptvordruck ESt 1 A, Anlage N, Anlage KAP, Anlage SO, Anlage V, Anlage S, Anlage G, Anlage Sonderausgaben, Anlage Außergewöhnliche Belastungen, Steuerjahr 2025)",
       "anlagen": {
         "Hauptvordruck": [
           { "zeile": "7", "bezeichnung": "Identifikationsnummer (Steuer-ID)" },
@@ -32,7 +32,8 @@
           { "zeile": "38", "bezeichnung": "Einbehaltener Solidaritaetszuschlag (Kapitalertraege)" },
           { "zeile": "39", "bezeichnung": "Einbehaltene Kirchensteuer (Kapitalertraege)" },
           { "zeile": "41", "bezeichnung": "Anrechenbare auslaendische Quellensteuer (§ 32d Abs. 5 EStG)" },
-          { "zeile": "42", "bezeichnung": "Fiktive auslaendische Quellensteuer (Anrechnung nach DBA)" }
+          { "zeile": "42", "bezeichnung": "Fiktive auslaendische Quellensteuer (Anrechnung nach DBA)" },
+          { "zeile": "21 ff.", "bezeichnung": "nachrichtlich: Termingeschaefte/Futures aus einer Krypto-Quelle (nicht eintragen, bereits in Z. 21/24 enthalten)" }
         ],
         "Anlage SO": [
           { "zeile": "10-13", "bezeichnung": "Leistungen § 22 Nr. 3 EStG (Staking/Lending u. a.)" },
@@ -51,8 +52,8 @@
         "Anlage Sonderausgaben": [
           { "zeile": "5-12", "bezeichnung": "Spenden" }
         ],
-        "Anlage Aussergewoehnliche Belastungen": [
-          { "zeile": "13 ff.", "bezeichnung": "Aussergewoehnliche Belastungen allgemeiner Art" }
+        "Anlage Außergewöhnliche Belastungen": [
+          { "zeile": "13 ff.", "bezeichnung": "Außergewöhnliche Belastungen allgemeiner Art" }
         ]
       }
     }

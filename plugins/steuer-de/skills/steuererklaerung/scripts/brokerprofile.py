@@ -994,14 +994,28 @@ def _suche_wert(w: dict, text: str, hint, bereiche: Optional[Bereiche] = None):
     return None, False
 
 
+def _ist_formularzeile(pfade: list[str]) -> bool:
+    """True, wenn dieser Wert unter der 'kap_zeilen.N'/'so_zeilen.N'-Konvention
+    steht (siehe references/broker-profile.md) — also tatsächlich eine
+    ELSTER-Formularzeile abschreibt, statt z. B. einen Namen oder eine
+    Depotnummer. Nur diese Untermenge ist mit werte_regeln.marker
+    ('Anlage KAP/SO … Zeile N') vergleichbar; alles andere würde den Vergleich
+    verwässern und eine einzelne umnummerierte Zeile unter vielen unauffällig
+    machen."""
+    return any(p.startswith("kap_zeilen.") or p.startswith("so_zeilen.") for p in pfade)
+
+
 def _extrahiere_werte(profil: Profil, text: str, hint, bereiche: "Bereiche",
                       warnungen: list[str]):
-    """(werte nach pfad, summen nach pfad, anzahl gefundener Zahlen)."""
+    """(werte nach pfad, summen nach pfad, anzahl gefundener Zahlen, anzahl
+    gefundener Formularzeilen — s. _ist_formularzeile)."""
     werte: dict[str, object] = {}
     summen: dict[str, Decimal] = {}
     zahlen_gefunden = 0
+    zeilen_gefunden = 0
     for w in profil.werte:
         typ = w.get("typ", "betrag")
+        pfade = _liste(w["pfad"])
         wert, gefunden = _suche_wert(w, text, hint, bereiche)
         if not gefunden:
             if w.get("default") is not None:
@@ -1016,12 +1030,14 @@ def _extrahiere_werte(profil: Profil, text: str, hint, bereiche: "Bereiche",
                 wert = None
         elif typ != "text":
             zahlen_gefunden += 1
-        for pfad in _liste(w["pfad"]):
+            if _ist_formularzeile(pfade):
+                zeilen_gefunden += 1
+        for pfad in pfade:
             werte[pfad] = wert
         if wert is not None and typ != "text":
             for ziel in _liste(w.get("summiere_in")):
                 summen[ziel] = summen.get(ziel, D("0")) + D(wert)
-    return werte, summen, zahlen_gefunden
+    return werte, summen, zahlen_gefunden, zeilen_gefunden
 
 
 def _als_ausgabe(wert, typ: str):
@@ -1236,7 +1252,11 @@ def wende_an(profil, text, *, jahr=None, quelle="", datum=None, strikt=True) -> 
     """Profil auf einen Reporttext anwenden. Ergebnis-JSON inkl. Summenabgleich.
 
     `datum` überschreibt profil.datum ('de'/'en'/'iso'), `strikt=False` macht aus
-    dem Abbruch bei Summenabweichung eine Meldung (nur für Tests/Diagnose).
+    dem Abbruch bei Summenabweichung UND bei einem Marker/Werte-Mismatch
+    (werte_regeln.marker findet mehr "Zeile N"-Stellen, als das Profil mit seinen
+    festen Zeilennummern gelesen hat — typisches Zeichen einer geänderten
+    Zeilennummerierung beim Broker) jeweils nur eine Meldung (nur für
+    Tests/Diagnose).
     """
     if isinstance(profil, dict):
         profil = Profil(profil)
@@ -1270,7 +1290,7 @@ def wende_an(profil, text, *, jahr=None, quelle="", datum=None, strikt=True) -> 
 
     # ── Einzelwerte ─────────────────────────────────────────────────────────
     bereiche = Bereiche(profil, text, warnungen)
-    werte, teilsummen, zahlen_gefunden = _extrahiere_werte(
+    werte, teilsummen, zahlen_gefunden, zeilen_gefunden = _extrahiere_werte(
         profil, text, hint, bereiche, warnungen)
 
     mindestens = profil.werte_regeln.get("mindestens", 0)
@@ -1284,10 +1304,31 @@ def wende_an(profil, text, *, jahr=None, quelle="", datum=None, strikt=True) -> 
     marker = profil.werte_regeln.get("marker")
     if marker:
         anzahl = len(re.findall(entfalte(marker), text))
-        if anzahl > zahlen_gefunden:
-            warnungen.append(
-                f"{anzahl} Marker im Report, aber nur {zahlen_gefunden} Werte "
-                f"gelesen — Report-Layout prüfen.")
+        # Gegen zeilen_gefunden vergleichen, NICHT gegen das umfassendere
+        # zahlen_gefunden: Felder wie ein Depotname oder eine Kundennummer
+        # zählen dort mit und würden eine einzelne umnummerierte Formularzeile
+        # unter vielen unauffälligen Werten verstecken.
+        if anzahl > zeilen_gefunden:
+            # Der Klassiker: der Broker hat sein eigenes "Anlage KAP Zeile N"-Layout
+            # umgestellt (z. B. weil ELSTER die Anlage für dieses Steuerjahr
+            # umnummeriert hat) — die feste "Zeile 22"-Regex im Profil trifft dann
+            # nicht mehr, aber `mindestens` (oft 1) ist trotzdem erfüllt, solange
+            # irgendeine andere Zeile noch passt. Ohne diesen Abbruch verschwindet
+            # der Betrag der nicht mehr gefundenen Zeile lautlos aus dem Ergebnis
+            # (kein 0, kein Fehler — schlicht nicht vorhanden), und niemand hätte das
+            # bemerkt, solange 'mindestens' erfüllt bleibt. Wie beim Summenabgleich
+            # (sl.pruefe_summen) macht `strikt=False` daraus nur eine Meldung, für
+            # Tests/Diagnose an einem Report, der ohnehin schon als abweichend gilt.
+            meldung = (
+                f"{anzahl} Zeilen-Marker im Report ('Anlage … Zeile N'), aber nur "
+                f"{zeilen_gefunden} Formularzeile(n) über die festen Zeilennummern des "
+                f"Profils gelesen — der Broker hat vermutlich seine eigene Zeilenzuordnung "
+                f"geändert (z. B. weil ELSTER die Anlage für dieses Steuerjahr "
+                f"umnummeriert hat). Profil '{profil.id}' gegen den aktuellen Report "
+                f"prüfen und die betroffenen 'werte.*.muster' nachziehen.")
+            if strikt:
+                raise sl.PlausibilityError(meldung)
+            warnungen.append(meldung)
 
     # ── Grundgerüst je Ausgabeschema ────────────────────────────────────────
     ergebnis: dict = {
