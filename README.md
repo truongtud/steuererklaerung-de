@@ -374,7 +374,7 @@ skills/steuererklaerung/
 │   ├── krypto_fifo.py          FIFO-Engine § 23 / § 22 Nr. 3
 │   ├── build_taxreport.py      Anlagen, Tarif, Verlusttöpfe, ELSTER-Mapping
 │   └── export_report.py        HTML / PDF / ELSTER
-└── tests/                      20 Dateien
+└── tests/                      21 Dateien
 ```
 
 Zwei Konstruktionsprinzipien, die den Unterschied machen:
@@ -398,7 +398,7 @@ cd plugins/steuer-de/skills/steuererklaerung
 python3 tests/run_tests.py
 ```
 
-[504 Fälle in 20 Dateien](plugins/steuer-de/skills/steuererklaerung/tests) — jede Datei ist
+[516 Fälle in 21 Dateien](plugins/steuer-de/skills/steuererklaerung/tests) — jede Datei ist
 einzeln lauffähig, wenn nur ein Bereich interessiert:
 
 | Datei | prüft |

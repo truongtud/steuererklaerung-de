@@ -1,6 +1,6 @@
 ---
 name: einstieg
-description: Der Startpunkt: sagt, welche Unterlagen für die Einkommensteuererklärung zusammenzusuchen sind und welche Anlagen betroffen sind — die Vorbereitung vor /steuererklaerung.
+description: Der Startpunkt vor /steuererklaerung — sagt, welche Unterlagen für die Einkommensteuererklärung zusammenzusuchen sind und welche Anlagen den Nutzer betreffen.
 argument-hint: "[steuerjahr, z. B. 2024]"
 disable-model-invocation: true
 license: MIT — NUR Orientierung, KEINE Steuerberatung.
