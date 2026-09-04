@@ -44,6 +44,15 @@ Exit-Code 1 bei: unerkanntem Report, nicht passendem `--profil`, unfertigem Prof
 abweichendem **oder fehlendem** Summenabgleich, leerer Tabelle. In all diesen Fällen wird
 **keine** Ausgabedatei geschrieben.
 
+**Gescannte PDFs:** Liefert die reine Textebene fast nichts (< 200 Zeichen — typisch ein
+Scan ohne Textebene), greift `brokerprofile.text_aus_datei` selbst auf die Backends samt
+OCR aus `parse_pdf.py` zurück und nimmt, was mehr Text liefert. Ohne diesen Rückfall gäbe
+es bei einem Scan nur "kein Profil erkannt", ohne jeden Hinweis, dass OCR das eigentliche
+Problem wäre. OCR ist dabei eine Zugabe: fehlen ihre Abhängigkeiten (`pip install
+pytesseract pdf2image`, `tesseract-ocr-deu`) oder liefert sie nichts Besseres, gilt der
+Text der reinen Textebene — der Lauf bricht dann wie gewohnt über die Erkennung bzw. den
+Summenabgleich ab, statt mit einer geratenen Zuordnung durchzulaufen.
+
 ## Warum deklarativ
 
 Die teuersten Fehler dieses Skills stammten aus handgeschriebenen Parsern, die bei einem

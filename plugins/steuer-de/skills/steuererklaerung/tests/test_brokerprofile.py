@@ -116,6 +116,76 @@ def test_jedes_profil_laeuft_gegen_sein_fixture_durch():
             f"{p.id}: Summenmuster findet im eigenen Fixture nichts: {r['warnungen']}"
 
 
+def _fitz_da() -> bool:
+    try:
+        import fitz  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+@case
+def test_text_aus_datei_greift_bei_kurzer_textebene_auf_ocr_zurueck():
+    """Ein gescanntes PDF liefert über die reine Textebene fast nichts (hier:
+    eine leere Seite). Ohne den OCR-Rückfall bekäme parse_broker.py bei einem
+    echten Scan nur diesen fast leeren String und meldete 'kein Profil
+    erkannt' — ohne jeden Hinweis, dass OCR das Problem wäre.
+
+    Kein echtes OCR nötig: parse_pdf.extract wird gepatcht, geprüft wird nur
+    die Entscheidung 'längerer Text gewinnt'."""
+    if not _fitz_da():
+        print("       (übersprungen: PyMuPDF nicht installiert)")
+        return
+    import fitz
+    import parse_pdf as pp
+
+    with tempfile.TemporaryDirectory() as tmp:
+        pdf_pfad = os.path.join(tmp, "scan.pdf")
+        doc = fitz.open()
+        doc.new_page()          # keine Textebene -> weit unter MINDESTZEICHEN_TEXT
+        doc.save(pdf_pfad)
+        doc.close()
+
+        ocr_text = "Anlage KAP Zeile 19 " * 20   # deutlich über MINDESTZEICHEN_TEXT
+        orig_extract = pp.extract
+        pp.extract = lambda pfad, backend="auto", ocr_lang="deu+eng": {
+            "backend": "ocr", "ocr": True, "pages": [{"page": 1, "text": ocr_text}]}
+        try:
+            text = bp.text_aus_datei(pdf_pfad)
+        finally:
+            pp.extract = orig_extract
+
+    eq(text, ocr_text, "der (gepatchte) OCR-Text muss die leere Textebene ersetzen")
+
+
+@case
+def test_text_aus_datei_behaelt_kurzen_text_wenn_ocr_nichts_besseres_bringt():
+    """OCR ist eine Zugabe: bringt sie nichts Längeres (oder scheitert sie),
+    bleibt der Text der reinen Textebene stehen — kein Datenverlust."""
+    if not _fitz_da():
+        print("       (übersprungen: PyMuPDF nicht installiert)")
+        return
+    import fitz
+    import parse_pdf as pp
+
+    with tempfile.TemporaryDirectory() as tmp:
+        pdf_pfad = os.path.join(tmp, "scan.pdf")
+        doc = fitz.open()
+        doc.new_page()
+        doc.save(pdf_pfad)
+        doc.close()
+
+        orig_extract = pp.extract
+        pp.extract = lambda pfad, backend="auto", ocr_lang="deu+eng": (_ for _ in ()).throw(
+            RuntimeError("OCR-Abhängigkeiten fehlen"))
+        try:
+            text = bp.text_aus_datei(pdf_pfad)   # darf NICHT werfen
+        finally:
+            pp.extract = orig_extract
+
+    eq(text.strip(), "", "leere Textebene bleibt leer, statt abzubrechen")
+
+
 @case
 def test_erkennung_ohne_treffer_und_bei_gleichstand():
     eq(bp.erkenne("völlig fremder Text"), None, "kein Treffer -> None")

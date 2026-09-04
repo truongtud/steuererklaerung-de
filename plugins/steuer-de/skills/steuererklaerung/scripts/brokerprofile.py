@@ -585,11 +585,26 @@ def erkenne(text: str, profile=None) -> Optional[Profil]:
 
 
 # ───────────────────────────────────────────────────────────── Textgewinnung ──
+# Ein Scan liefert über die reine Textebene fast nichts. Unterhalb dieser Grenze
+# lohnt der Umweg über die Backends samt OCR aus parse_pdf.py — dieselbe Schwelle
+# wie in parse_bescheinigung.py.text_aus_datei (MINDESTZEICHEN).
+MINDESTZEICHEN_TEXT = 200
+
+
 def text_aus_datei(pfad) -> str:
     """Volltext einer PDF (pdfplumber, Fallback PyMuPDF) oder einer Text/CSV-Datei.
 
-    Fallback nur bei *fehlendem* pdfplumber — echte PDF-Fehler sollen sichtbar
-    bleiben und nicht im nächsten Backend verschwinden.
+    Fallback auf PyMuPDF nur bei *fehlendem* pdfplumber — echte PDF-Fehler sollen
+    sichtbar bleiben und nicht im nächsten Backend verschwinden.
+
+    Liefert die reine Textebene fast nichts (< MINDESTZEICHEN_TEXT Zeichen —
+    typisch ein gescanntes PDF ohne Textebene), wird zusätzlich über
+    `parse_pdf.py` inkl. OCR versucht; verwendet wird, was mehr Text liefert.
+    Ohne diesen Rückfall bekäme jeder Aufrufer hier (`parse_broker.py` allen
+    voran) bei einem Scan nur einen fast leeren String und meldete "kein Profil
+    erkannt" bzw. "kein Wert gefunden" — ohne jeden Hinweis, dass OCR das
+    eigentliche Problem wäre. OCR ist dabei eine Zugabe: schlägt sie fehl oder
+    fehlen ihre Abhängigkeiten, gilt der Text, den die reine Textebene liefert.
     """
     pfad = str(pfad)
     if pfad.lower().endswith(".pdf"):
@@ -598,9 +613,21 @@ def text_aus_datei(pfad) -> str:
         except ImportError:
             import fitz
             doc = fitz.open(pfad)
-            return "\n".join((p.get_text() or "") for p in doc)
-        with pdfplumber.open(pfad) as pdf:
-            return "\n".join((p.extract_text() or "") for p in pdf.pages)
+            text = "\n".join((p.get_text() or "") for p in doc)
+        else:
+            with pdfplumber.open(pfad) as pdf:
+                text = "\n".join((p.extract_text() or "") for p in pdf.pages)
+        if len(text.strip()) >= MINDESTZEICHEN_TEXT:
+            return text
+        try:
+            import parse_pdf
+            auszug = parse_pdf.extract(pfad, backend="auto")
+            ocr_text = "\n".join(s.get("text", "") for s in auszug.get("pages") or [])
+            if len(ocr_text.strip()) > len(text.strip()):
+                return ocr_text
+        except Exception:
+            pass
+        return text
     try:
         with open(pfad, encoding="utf-8-sig", newline="") as f:
             return f.read()
