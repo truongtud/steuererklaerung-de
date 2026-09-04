@@ -2515,8 +2515,14 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
             "anlage_so.sonstige_einkuenfte")
 
     # --- Anlage V / S / G ---
+    # Z. 85 laut amtlichem Vordruck 2025 (Finanzverwaltung NRW,
+    # "Überschuss (Einnahmen laut Zeile 32 abzüglich Werbungskosten laut
+    # Zeile 83)") — siehe references/elster_zeilen.json. Frühere Formularjahre
+    # führten diese Summenzeile unter einer anderen Nummer; vor jeder
+    # Steuererklärung gegen den aktuellen Vordruck prüfen (ELSTER_CAVEAT).
     if v and _betrag(v.get("einkuenfte"), "anlage_v.einkuenfte") != 0:
-        add("Anlage V", "Z. 21", "Einkünfte aus Vermietung und Verpachtung",
+        add("Anlage V", "Z. 85", "Einkünfte aus Vermietung und Verpachtung "
+            "(Überschuss)",
             q2(_betrag(v.get("einkuenfte"), "anlage_v.einkuenfte")), "anlage_v.einkuenfte")
     if s and eink_s != 0:
         add("Anlage S", "Z. 4", "Gewinn aus selbständiger Arbeit (§ 18 EStG)", q2(eink_s),

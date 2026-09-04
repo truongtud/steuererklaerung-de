@@ -41,6 +41,18 @@ Einkommensteuererklärung <Jahr>" bzw. „Einkommensteuererklärung <Jahr> mit a
 Anlagen") und `scripts/fetch_elster_zeilen.py` nur noch zum **Lesen** dieses
 lokalen PDFs benutzen.
 
+**Ausnahme, gefunden bei der Suche nach 2025er-Belegen:** einzelne
+Landesfinanzverwaltungen spiegeln vereinzelt eigene Vordrucke als gewöhnliche,
+per `curl` abrufbare PDF-Dateien — z. B. lieferte
+`https://www.finanzamt.nrw.de/dokumente/anlage-v-einkuenfte-aus-vermietungverpachtung-bebauter-grundstuecke-2025`
+den echten Anlage-V-Vordruck 2025 ohne jede Session/JS. Das ist aber kein
+verlässliches Muster: dieselbe Such-Systematik fand für Anlage KAP, Anlage N
+oder Anlage SO auf `finanzamt.nrw.de` **nichts** — die NRW-eigene Info-Seite zur
+Anlage KAP verweist selbst auf `formulare-bfinv.de`. Solche Funde sind also
+Einzelfälle, die man bei jedem neuen Steuerjahr neu suchen müsste, keine
+verlässliche Automatisierungsgrundlage; sie ersetzen den manuellen
+Download-Schritt nicht, sparen ihn aber, wenn man Glück hat.
+
 ## `scripts/fetch_elster_zeilen.py` — Entwurf aus einem lokalen PDF
 
 ```bash
@@ -98,6 +110,15 @@ neues Jahr, für das noch niemand den echten Vordruck gegengelesen hat, bekommt
 ausdrücklich, dass die Zeilen aus dem Code übernommen und noch nicht gegen das
 amtliche PDF verifiziert wurden. Das ist genau der Zustand von `2025` in dieser
 Datei, solange niemand Schritt 1–4 oben durchlaufen hat.
+
+**Ein einzelnes Feld kann sein eigenes `geprueft`/`quelle` tragen**, wenn nur
+dieses eine Feld — nicht die ganze Jahresfassung — bereits gegen einen echten
+Vordruck gelesen wurde. Genau das ist `"Anlage V"` → Zeile 85 in `2025`: gegen
+den amtlichen NRW-Vordruck verifiziert (und dabei korrigiert — vorher stand hier
+fälschlich Z. 21), während der Rest des Jahres `2025` weiterhin nur aus dem Code
+übernommen und `geprueft: null` auf Jahresebene ist. So muss eine Teilprüfung
+nicht auf alle Anlagen warten, um sichtbar zu werden, und verwässert auch nicht
+den ehrlichen "ungeprüft"-Status der übrigen Felder.
 
 Unabhängig vom Prüfstatus gilt der Disclaimer aus `references/anlagen-referenz.md`
 weiter: **Zeilennummern sind Orientierung — vor jeder Eingabe in Mein ELSTER

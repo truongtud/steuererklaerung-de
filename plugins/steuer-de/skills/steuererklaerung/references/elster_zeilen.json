@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "hinweis": "Zeilennummern der ELSTER-Vordrucke je Steuerjahr — Referenz für references/elster-zeilen.md und das Feld 'zeile' in build_taxreport.py. ELSTER aendert die Formularlayouts jaehrlich; 'geprueft':null heisst, die Zeile wurde noch nicht gegen den amtlichen Vordruck des Jahres gegengelesen (siehe 'status' je Jahr). Erzeugt/gepflegt mit scripts/fetch_elster_zeilen.py und von Hand; niemals automatisch ueberschrieben.",
+  "hinweis": "Zeilennummern der ELSTER-Vordrucke je Steuerjahr — Referenz für references/elster-zeilen.md und das Feld 'zeile' in build_taxreport.py. ELSTER aendert die Formularlayouts jaehrlich; 'geprueft':null heisst, die Zeile wurde noch nicht gegen den amtlichen Vordruck des Jahres gegengelesen (siehe 'status' je Jahr). Ein einzelnes Feld kann zusaetzlich sein EIGENES 'geprueft'/'quelle' tragen, wenn es — anders als die uebrigen Felder desselben Jahres — bereits einzeln gegen einen echten amtlichen Vordruck verifiziert wurde; das ueberschreibt den Jahres-Status nur fuer dieses eine Feld. Erzeugt/gepflegt mit scripts/fetch_elster_zeilen.py und von Hand; niemals automatisch ueberschrieben.",
   "jahre": {
     "2025": {
       "geprueft": null,
-      "status": "Aus scripts/build_taxreport.py und references/anlagen-referenz.md uebernommen (Stand der Formularkenntnis beim Schreiben des Skills). Noch NICHT gegen den amtlichen Vordruck 2025 gegengelesen, weil das Formular-Management-System (formulare-bfinv.de) PDFs nur innerhalb einer per JavaScript aufgebauten Browsersitzung ausliefert und sich nicht scriptgesteuert herunterladen laesst (siehe elster-zeilen.md). Vor jeder Steuererklaerung gegen den echten Vordruck pruefen.",
+      "status": "Aus scripts/build_taxreport.py und references/anlagen-referenz.md uebernommen (Stand der Formularkenntnis beim Schreiben des Skills). Noch NICHT gegen den amtlichen Vordruck 2025 gegengelesen, weil das Formular-Management-System (formulare-bfinv.de) PDFs nur innerhalb einer per JavaScript aufgebauten Browsersitzung ausliefert und sich nicht scriptgesteuert herunterladen laesst (siehe elster-zeilen.md) — MIT EINER AUSNAHME: Anlage V wurde einzeln gegen einen echten amtlichen 2025er-Vordruck der Finanzverwaltung NRW gelesen (eigenes 'geprueft'/'quelle' bei diesem Feld) und dabei als falsch korrigiert (Z. 21 -> Z. 85). Alle uebrigen Anlagen bleiben ungeprueft; vor jeder Steuererklaerung gegen den echten Vordruck pruefen.",
       "quelle": "Formular-Management-System der Bundesfinanzverwaltung, https://www.formulare-bfinv.de (Hauptvordruck ESt 1 A, Anlage N, Anlage KAP, Anlage SO, Anlage V, Anlage S, Anlage G, Anlage Sonderausgaben, Anlage Außergewöhnliche Belastungen, Steuerjahr 2025)",
       "anlagen": {
         "Hauptvordruck": [
@@ -41,7 +41,9 @@
           { "zeile": "54-59", "bezeichnung": "Verlustvortrag/-feststellung § 23 EStG" }
         ],
         "Anlage V": [
-          { "zeile": "21", "bezeichnung": "Einkuenfte aus Vermietung und Verpachtung" }
+          { "zeile": "85", "bezeichnung": "Ueberschuss (Einnahmen laut Zeile 32 abzueglich Werbungskosten laut Zeile 83) = Einkuenfte aus Vermietung und Verpachtung",
+            "geprueft": "2026-09-05",
+            "quelle": "Amtlicher Vordruck 'Anlage V zur Einkommensteuererklaerung 2025', Finanzverwaltung NRW, https://www.finanzamt.nrw.de/dokumente/anlage-v-einkuenfte-aus-vermietungverpachtung-bebauter-grundstuecke-2025 (Formularkopf-Code 2025AnlV104) — als einzige Anlage bisher gegen einen echten amtlichen 2025er-Vordruck gelesen, nicht nur uebernommen; siehe 'status' oben fuer alle uebrigen Anlagen. Frueher stand hier faelschlich Z. 21 aus dem Code uebernommen — das ist im aktuellen Vordruck die Kennziffer der Zurechnung an Ehefrau/Person B (Zeile 86), keine eigene Formularzeile." }
         ],
         "Anlage S": [
           { "zeile": "4", "bezeichnung": "Gewinn aus selbstaendiger Arbeit (§ 18 EStG)" }

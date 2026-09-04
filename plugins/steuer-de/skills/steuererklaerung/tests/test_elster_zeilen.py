@@ -63,12 +63,36 @@ def test_json_ist_vollstaendig():
 def test_geprueft_ist_datum_oder_null():
     """'geprueft': null heisst ausdruecklich 'noch nicht gegen den amtlichen
     Vordruck gegengelesen' (siehe 'status') — keine 0/leerer-String-Ersatzangabe,
-    die sich als geprueft lesen liesse."""
+    die sich als geprueft lesen liesse. Ein einzelnes Feld darf sein eigenes
+    'geprueft' tragen (siehe 'hinweis' oben) — dieselbe Regel gilt dann dort."""
     for jahr, eintrag in lade()["jahre"].items():
         g = eintrag.get("geprueft")
-        if g is None:
-            continue
-        eq(bool(re.fullmatch(r"\d{4}-\d\d-\d\d", g)), True, f"{jahr}: geprueft ist kein ISO-Datum")
+        if g is not None:
+            eq(bool(re.fullmatch(r"\d{4}-\d\d-\d\d", g)), True, f"{jahr}: geprueft ist kein ISO-Datum")
+        for anlage, felder in eintrag["anlagen"].items():
+            for f in felder:
+                fg = f.get("geprueft")
+                if fg is None:
+                    continue
+                eq(bool(re.fullmatch(r"\d{4}-\d\d-\d\d", fg)), True,
+                   f"{jahr}.{anlage} Z. {f['zeile']}: geprueft ist kein ISO-Datum")
+                assert f.get("quelle"), \
+                    f"{jahr}.{anlage} Z. {f['zeile']}: geprueft ohne eigene quelle"
+
+
+@case
+def test_anlage_v_2025_ist_gegen_den_echten_vordruck_verifiziert():
+    """Locking-in-Test fuer den einen Fund, der die 'Verify real data first'-Runde
+    tatsaechlich gebracht hat: Anlage V fuehrt ihr Ergebnis 2025 in Zeile 85, NICHT
+    in Zeile 21 (das steht seit einer Formularerweiterung inzwischen fuer eine
+    Kennziffer der Ehefrau/Person-B-Zurechnung in Zeile 86). Ohne diesen Test
+    koennte eine kuenftige Bearbeitung den Wert unbemerkt zurueckdrehen."""
+    felder = lade()["jahre"]["2025"]["anlagen"]["Anlage V"]
+    v85 = next((f for f in felder if f["zeile"] == "85"), None)
+    assert v85 is not None, "Anlage V Z. 85 fehlt in elster_zeilen.json"
+    assert v85.get("geprueft"), "Anlage V Z. 85 sollte als einzeln verifiziert markiert sein"
+    assert not any(f["zeile"] == "21" for f in felder), \
+        "die widerlegte alte Zeile 21 sollte nicht als aktuelle Zeile stehen bleiben"
 
 
 @case
