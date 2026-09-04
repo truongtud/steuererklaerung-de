@@ -33,15 +33,21 @@ Hỗ trợ các năm tính thuế **2022–2026**, chỉ luật thuế Đức.
 
 ## 2. Ba cách dùng — chọn cách hợp với bạn
 
-Đây là chỗ hay nhầm nhất: **các lệnh gạch chéo (`/einstieg`, `/steuererklaerung`) chỉ có
-trong Claude Code.** Nếu bạn chỉ dùng app Claude Desktop bình thường thì gõ `/einstieg` sẽ
-không ra gì cả — nhưng bạn vẫn dùng được, chỉ là theo cách khác.
+Chỗ hay nhầm nhất là **menu `/` ở hai nơi không giống nhau**. Claude Desktop cũng có menu
+`/` — nhưng nó liệt kê **những skill bạn đã tải lên**, chứ không phải các lệnh của plugin.
+Sau khi tải skill lên (cách B), bạn gõ `/steuererklaerung` ngay trong Desktop, hoặc chỉ cần
+nói bằng lời thường.
+
+Cái **chỉ** Claude Code mới có là **bộ lệnh của plugin**: `/plugin ...` để cài và cập nhật,
+cùng năm lệnh phụ đi kèm plugin — `/einstieg`, `/bescheid-pruefen`, `/krypto-check`,
+`/steuer-pruefen`, `/broker-profil`.
 
 | | **A. Claude Code + plugin** | **B. Claude Desktop + Skill** | **C. Chat trần, không cài gì** |
 |---|---|---|---|
 | Dùng cho ai | ai đã/sẵn sàng dùng Claude Code (terminal hoặc tab Claude Code trong app) | **đa số người dùng Claude Desktop / claude.ai** | dùng thử nhanh |
 | Cài đặt | 2 lệnh, xong | tải 1 file ZIP lên phần cài đặt | không cần gì |
-| Có lệnh `/` không | **Có** — cả 6 lệnh | Không — bạn nói bằng lời thường | Không |
+| Năm lệnh phụ (`/einstieg`, `/bescheid-pruefen`…) | **Có** | không — hỏi bằng lời là được | không |
+| Có lệnh `/` không | **Có** — cả 6 lệnh plugin | Có — `/steuererklaerung` (skill đã tải lên) | chỉ những skill khác bạn đã có |
 | Chạy được script tính toán | Có | Có (phải bật code execution) | **Không** |
 | Đọc PDF, OCR, FIFO, xuất CSV ELSTER | Có | Có | Không |
 | Độ chính xác | đầy đủ | đầy đủ | **chỉ ước lượng thô — đừng nộp** |
@@ -124,9 +130,10 @@ Trong chat thì gõ `/plugin ...`; ngoài terminal thì `claude plugin ...` — 
 
 ### Ở Claude Desktop thì sao?
 
-Các lệnh trên chỉ chạy trong **Claude Code** — kể cả khi Claude Code nằm trong app Desktop.
-**Cửa sổ chat thường của Claude Desktop không thêm được marketplace**, vì nó không có hệ
-thống plugin. Ở đó dùng [cách B](#5-cách-b--claude-desktop-không-có-lệnh-gạch-chéo).
+Các lệnh `/plugin ...` chỉ chạy trong **Claude Code** — kể cả khi Claude Code nằm trong app
+Desktop. **Cửa sổ chat thường của Claude Desktop không thêm được marketplace**, vì nó không
+có hệ thống plugin; menu `/` ở đó là danh sách **skill**, không phải plugin. Ở đó dùng
+[cách B](#5-cách-b--claude-desktop--skill).
 
 Nối repo vào một **Project** cũng không thay thế được: Claude sẽ **đọc** được mã nguồn dưới
 dạng văn bản, nhưng các script không nằm trong sandbox chạy code, nên không chạy được. Nối
@@ -134,7 +141,7 @@ Project hợp cho việc đọc và sửa mã nguồn, không phải để dùng
 
 ---
 
-## 5. Cách B — Claude Desktop, không có lệnh gạch chéo
+## 5. Cách B — Claude Desktop + Skill
 
 Claude Desktop và claude.ai không cài được *plugin*, nhưng cài được **Skill** — cùng một
 bộ não, chỉ khác cách gọi. Có trên mọi gói: Free, Pro, Max, Team, Enterprise.
@@ -171,10 +178,19 @@ zip -r steuererklaerung.zip steuererklaerung \
 `Settings` → `Customize` → `Skills` → nút `+` → `Create skill` → **`Upload a skill`** → chọn
 file ZIP vừa tạo → bật skill lên.
 
-### Bước 4 — Dùng bằng lời thường
+### Bước 4 — Gọi skill
 
-Không có `/steuererklaerung`. Bạn **đính kèm giấy tờ và nói bằng câu bình thường** — skill tự
-kích hoạt khi thấy nhắc tới thuế:
+Từ đây có hai cách gọi, cách nào cũng được:
+
+- **Gõ `/`** trong ô chat rồi chọn skill trong danh sách — tên hiện ra là tên của skill,
+  tức `steuererklaerung`.
+- **Chỉ cần nói bằng lời thường** — skill tự kích hoạt khi thấy nhắc tới thuế.
+
+Điều bạn **không** có ở đây là năm lệnh phụ của plugin (`/einstieg`, `/bescheid-pruefen` …):
+chúng là skill riêng trong plugin và cần các script của skill chính, nên không tải lên
+rời được. Nhưng không mất gì cả — cứ hỏi thẳng bằng lời, skill chính làm hết.
+
+Dù gọi bằng cách nào thì cũng **đính kèm giấy tờ** vào tin nhắn:
 
 > 📎 *lohnsteuerbescheinigung-2024.pdf, steuerbescheinigung-bank.pdf*
 >
@@ -187,7 +203,7 @@ Muốn phần chuẩn bị (tương đương `/einstieg`) thì hỏi thẳng:
 
 Skill có sẵn phương án dự phòng cho đúng tình huống này: nó sẽ hỏi bạn về công việc, tình
 trạng hôn nhân, con cái, thuế nhà thờ, tài khoản đầu tư, crypto, trợ cấp, hoá đơn thợ và chi
-phí bệnh tật — rồi in ra danh sách giấy tờ.
+phí bệnh tật — rồi in ra danh sách giấy tờ. Kết quả giống hệt `/einstieg`.
 
 ### Cập nhật bản mới
 
@@ -311,7 +327,8 @@ nghỉ), và soạn sẵn đơn *Einspruch* nếu cần.
 
 | Hiện tượng | Nguyên nhân & cách xử lý |
 |---|---|
-| Gõ `/einstieg` không ra gì | Bạn đang ở Claude Desktop chứ không phải Claude Code → dùng **cách B**, nói bằng lời thường |
+| Gõ `/einstieg` ở Desktop không ra gì | Menu `/` của Desktop chỉ liệt kê **skill đã tải lên**; `/einstieg` là lệnh phụ của plugin, chỉ có trong Claude Code. Ở Desktop gõ `/steuererklaerung` hoặc hỏi thẳng bằng lời |
+| Đã tải skill lên mà `/` không thấy | Skill chưa được bật, hoặc phải mở lại cuộc chat. Kiểm tra ở `Settings` → `Customize` → `Skills` |
 | Đã cài plugin mà vẫn không thấy lệnh | Plugin chỉ có hiệu lực ở **phiên mới** — mở chat mới |
 | Cài bản mới mà vẫn là bản cũ | Lệnh update so *số phiên bản*, không so nội dung → chạy `/plugin marketplace update steuer-de` trước |
 | „Không chạy được code" / không có file kết quả | Chưa bật **code execution** trong `Settings` → `Capabilities` |

@@ -28,7 +28,7 @@ einzulegen (§ 355 Abs. 1 AO). Deshalb steht die Frist ganz vorn, nicht am Ende.
 2. **Skript laufen lassen:**
 
    ```bash
-   S=plugins/steuer-de/skills/steuererklaerung/scripts
+   S="${CLAUDE_PLUGIN_ROOT:-plugins/steuer-de}"/skills/steuererklaerung/scripts
    python3 $S/pruefe_bescheid.py bescheid.pdf --report taxreport.json \
            -o bescheidpruefung.json
    ```

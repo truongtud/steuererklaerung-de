@@ -50,7 +50,7 @@ kostet nichts, ein fehlendes kostet eine ganze Runde.
 Zuerst das Jahr klären, dann sagen, ob es noch offen ist:
 
 ```bash
-S=plugins/steuer-de/skills/steuererklaerung/scripts
+S="${CLAUDE_PLUGIN_ROOT:-plugins/steuer-de}"/skills/steuererklaerung/scripts
 python3 -c "import sys; sys.path.insert(0,'$S'); import steuerlib as sl
 print(sl.offene_veranlagungszeitraeume())"
 ```
@@ -87,7 +87,7 @@ Diese Fragen reichen. Einzeln stellen, nicht als Liste abfragen:
 ## Schritt 3 — Die Unterlagenliste ausgeben
 
 ```bash
-S=plugins/steuer-de/skills/steuererklaerung/scripts
+S="${CLAUDE_PLUGIN_ROOT:-plugins/steuer-de}"/skills/steuererklaerung/scripts
 python3 $S/neue_steuerdaten.py --jahr 2024 \
     --taetigkeit angestellt --kinder 1 --kirchensteuer 9 \
     --kapital --handwerker -o steuerdaten.json
