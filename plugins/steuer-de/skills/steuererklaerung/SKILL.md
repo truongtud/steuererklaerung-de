@@ -51,6 +51,8 @@ scripts/steuerlib.py      ── ein Zahlenparser, eine Fristenlogik, alle Steue
 scripts/fetch_steuerwerte.py ─ holt § 32a EStG / § 3 SolZG (Pflege, nicht Pipeline)
 scripts/fetch_elster_zeilen.py ─ liest Zeilennummern aus einem lokalen Vordruck-PDF
                               (Pflege, kein Netzzugriff — siehe references/elster-zeilen.md)
+scripts/uebertrage_verlustvortrag.py ─ Verlustvortrag aus dem alten taxreport.json
+                              in die neue steuerdaten.json übernehmen (nie still überschreiben)
 scripts/pruefe_bescheid.py  ── Steuerbescheid gegen den Report halten, Fristen
 scripts/neue_steuerdaten.py ── Startdatei und Unterlagen-Checkliste (/einstieg)
 scripts/importiere_unterlagen.py ─ alle Unterlagen einsortieren (Schritt 0)
@@ -98,6 +100,7 @@ Wird einer davon aufgerufen, gilt zusätzlich dessen eigene Schrittfolge.
 | `elster_mapping_<jahr>.json` | dasselbe maschinenlesbar, mit `quelle` und `art` je Zeile |
 | `taxreport_<jahr>.html` | Dashboard, self-contained, mit Druck-Stylesheet |
 | `taxreport_<jahr>.pdf` | druckfertige Fassung |
+| `elster_checkliste_<jahr>.html` | dieselben Zeilen interaktiv zum Abhaken, Fortschrittsbalken, Häkchen nur lokal per `localStorage` |
 | `taxreport.json` | vollständiger Report als Struktur, Grundlage der Exporte |
 
 Zwischenstände zum Prüfen und Korrigieren: `<name>.krypto_result.json`,
@@ -287,7 +290,7 @@ unter „Neues Steuerjahr ergänzen“ beschrieben.
 ### Schritt 4 — Exportieren
 
 ```bash
-python3 scripts/export_report.py taxreport.json --outdir out --formats html pdf elster
+python3 scripts/export_report.py taxreport.json --outdir out --formats html pdf elster checkliste
 ```
 
 - `taxreport_<jahr>.html` — Dashboard, self-contained, mit Druck-Stylesheet
@@ -295,6 +298,10 @@ python3 scripts/export_report.py taxreport.json --outdir out --formats html pdf 
 - `elster_mapping_<jahr>.csv` / `.json` — Feld für Feld zur manuellen Eingabe; die CSV nutzt
   Semikolon und Dezimalkomma (deutsches Excel) und trägt Disclaimer und Hinweise als
   Kommentarzeilen
+- `elster_checkliste_<jahr>.html` — dieselben Zeilen interaktiv zum Abhaken statt nur
+  Abtippen; Häkchen bleiben per `localStorage` im Browser erhalten (nicht im Report) und
+  werden automatisch zurückgesetzt, sobald sich der Wert einer Zeile durch einen neuen
+  Export ändert
 
 Nur die gewünschten Formate wählen, die Dateien anschließend an den Nutzer ausliefern
 (SendUserFile) und die Kernzahlen nennen.

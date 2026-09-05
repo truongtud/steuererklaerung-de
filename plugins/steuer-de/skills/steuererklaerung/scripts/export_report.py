@@ -4,6 +4,9 @@ export_report.py — Rendert einen TaxReport (taxreport.json) in:
   * HTML-Dashboard (self-contained, keine externen Abhängigkeiten, mit Druck-Stylesheet)
   * PDF-Report (fpdf2; benötigt: pip install fpdf2 --break-system-packages)
   * ELSTER-Feld-Mapping als CSV und JSON (manuelle Eingabe in Mein ELSTER)
+  * ELSTER-Checkliste als interaktives HTML (dieselben Zeilen zum Abhaken statt nur
+    Abtippen — Häkchen bleiben per localStorage im Browser erhalten, self-contained
+    wie das Dashboard)
 
 Grundregeln dieses Exporters:
   * Der Disclaimer steht in **jedem** Format — auch in den ELSTER-Dateien, aus denen
@@ -14,7 +17,7 @@ Grundregeln dieses Exporters:
     Zahl und nicht als Text importiert.
 
 Aufruf:
-  python export_report.py taxreport.json --outdir ./out --formats html pdf elster
+  python export_report.py taxreport.json --outdir ./out --formats html pdf elster checkliste
 """
 
 from __future__ import annotations
@@ -340,6 +343,210 @@ footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
 {hinweis_block}
 <footer>Erstellt mit dem Skill „Steuererklärung Deutschland“ · keine Steuerberatung · Endkontrolle durch Steuerberater</footer>
 </div></body></html>"""
+
+
+# ----------------------------------------------------- Interaktive Checkliste --
+def render_checkliste(report: dict) -> str:
+    """Dieselben Zeilen wie das ELSTER-Mapping, aber zum Abhaken statt Abtippen.
+
+    Nur 'eintragen'-Zeilen bekommen eine Checkbox — das sind laut
+    build_taxreport.py._ordne_mapping genau die, die tatsächlich in ein
+    ELSTER-Formularfeld gehören. 'nachrichtlich'-Zeilen (Belege je Quelle) und
+    die Trennzeile selbst sind reine Nachweise; sie stehen nur noch als
+    aufklappbare Liste darunter, ohne Checkbox — dort gibt es nichts abzuhaken.
+
+    Der Haken-Status lebt ausschließlich im Browser (localStorage), geschlüsselt
+    über Anlage+Zeile+Bezeichnung+WERT: ändert sich der Wert einer Zeile bei
+    einem erneuten Export (z. B. weil eine Eingabe korrigiert wurde), ist die
+    Zeile automatisch wieder offen — ein alter Haken auf einem inzwischen
+    anderen Betrag wäre die gefährlichste Art dieser Datei, falsch zu liegen.
+    """
+    report = _dict(report)
+    meta = _dict(report.get("meta"))
+    year = html.escape(_s(meta.get("steuerjahr")))
+    tp = _dict(meta.get("steuerpflichtiger"))
+    name = html.escape(_s(tp.get("name")) or "—")
+    storage_suffix = html.escape(
+        re.sub(r"[^A-Za-z0-9_-]+", "_", f"{_s(meta.get('steuerjahr'))}_{_s(tp.get('name'))}")
+        or "report")
+
+    alle = elster_rows(report)
+    eintragen = [r for r in alle if r.get("art") == "eintragen"]
+    belege = [r for r in alle if r.get("art") not in ("eintragen", "trenner")]
+
+    def esc(x):
+        return html.escape(_s(x))
+
+    def row(cells, header=False):
+        tag = "th" if header else "td"
+        return "<tr>" + "".join(f"<{tag}>{c}</{tag}>" for c in cells) + "</tr>"
+
+    beleg_rows = "".join(
+        row([esc(b.get("anlage")), esc(b.get("zeile")), esc(b.get("bezeichnung")),
+             esc(b.get("wert"))])
+        for b in belege) or row(["—", "", "keine Belegzeilen", ""])
+
+    # '<' escapen: eine Bezeichnung oder ein Wert mit dem Teilstring '</script>'
+    # (Fremddaten aus einer Bescheinigung oder einem Broker-Report — nichts
+    # davon ist vertrauenswürdiges HTML) dürfte das eingebettete <script>-Tag
+    # sonst vorzeitig schließen. < bleibt für JSON.parse ein normales "<".
+    zeilen_json = json.dumps(
+        [{"anlage": _s(r.get("anlage")), "zeile": _s(r.get("zeile")),
+          "bezeichnung": _s(r.get("bezeichnung")), "wert": _s(r.get("wert"))}
+         for r in eintragen],
+        ensure_ascii=False).replace("<", "\\u003c")
+
+    disclaimer, hinweise = report_texte(report)
+    disc_html = "".join(f"<li>{esc(x)}</li>" for x in disclaimer) or "<li>—</li>"
+
+    return f"""<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ELSTER-Checkliste {year} — {name}</title>
+<style>
+:root{{color-scheme:dark light;
+--bg:#0b0f17;--panel:#131a26;--panel2:#1a2436;--line:#243044;
+--txt:#e6edf6;--mut:#8aa0bd;--acc:#4da3ff;--good:#3fd17a;--bad:#ff6b6b;--warn:#ffb454;}}
+*{{box-sizing:border-box}}body{{margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;
+background:var(--bg);color:var(--txt);line-height:1.5}}
+.wrap{{max-width:900px;margin:0 auto;padding:28px 20px 60px}}
+header{{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:20px}}
+h1{{font-size:22px;margin:0 0 4px}}
+.muted{{color:var(--mut);font-size:13px}}
+.fortschritt{{position:sticky;top:0;background:var(--bg);padding:12px 0 16px;
+z-index:5;border-bottom:1px solid var(--line);margin-bottom:16px}}
+.balken{{height:10px;border-radius:6px;background:var(--panel2);overflow:hidden;margin-bottom:8px}}
+.balken-fuellung{{height:100%;background:var(--good);width:0%;transition:width .2s}}
+.fortschritt-zeile{{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}}
+button{{font:inherit;cursor:pointer;background:var(--panel2);color:var(--txt);
+border:1px solid var(--line);border-radius:8px;padding:6px 12px}}
+button:hover{{border-color:var(--acc)}}
+table{{width:100%;border-collapse:collapse;background:var(--panel);border-radius:12px;
+overflow:hidden;font-size:14px;margin-bottom:8px}}
+th,td{{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}}
+th{{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase}}
+td.wert{{white-space:nowrap;font-variant-numeric:tabular-nums}}
+tr.erledigt td{{opacity:.45;text-decoration:line-through}}
+tr.erledigt td.wert{{text-decoration:none}}
+input[type=checkbox]{{width:18px;height:18px}}
+.kopieren{{margin-left:8px;padding:2px 8px;font-size:12px}}
+details{{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+padding:4px 16px;margin:20px 0}}
+summary{{cursor:pointer;padding:10px 0;color:var(--mut);font-size:13px}}
+details table{{margin:0 0 12px}}
+.note{{background:var(--panel);border-left:3px solid var(--warn);padding:12px 16px;
+border-radius:8px;margin:16px 0;font-size:13px;color:var(--mut)}}
+.note ul{{margin:6px 0 0;padding-left:18px}}
+footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
+</style></head><body><div class="wrap">
+<header><h1>ELSTER-Checkliste {year}</h1>
+<div class="muted">{name} · zum Abhaken beim Abtippen in Mein ELSTER — Status bleibt nur in
+diesem Browser gespeichert (localStorage), nirgends sonst.</div></header>
+
+<div class="fortschritt">
+  <div class="balken"><div class="balken-fuellung" id="balken-fuellung"></div></div>
+  <div class="fortschritt-zeile">
+    <span id="fortschritt-text" class="muted">wird geladen …</span>
+    <button type="button" id="zuruecksetzen-btn">Alle Haken zurücksetzen</button>
+  </div>
+</div>
+
+<table>
+<thead>{row(["", "Anlage", "Zeile", "Bezeichnung", "Wert"], header=True)}</thead>
+<tbody id="zeilen-tbody"></tbody>
+</table>
+
+<details>
+<summary>Belege je Quelle ({len(belege)}) — NICHT eintragen, nur zur Prüfung</summary>
+<table>{row(["Anlage", "Zeile", "Bezeichnung", "Wert"], header=True)}{beleg_rows}</table>
+</details>
+
+<div class="note"><strong>Wichtige Hinweise</strong><ul>{disc_html}</ul></div>
+<footer>Erstellt mit dem Skill „Steuererklärung Deutschland“ · keine Steuerberatung · Endkontrolle durch Steuerberater</footer>
+</div>
+<script id="zeilen-daten" type="application/json">{zeilen_json}</script>
+<script>
+(function() {{
+  var zeilen = JSON.parse(document.getElementById('zeilen-daten').textContent);
+  var praefix = 'elster-checkliste:{storage_suffix}:';
+
+  function lsGet(k) {{ try {{ return localStorage.getItem(k); }} catch (e) {{ return null; }} }}
+  function lsSet(k, v) {{ try {{ localStorage.setItem(k, v); }} catch (e) {{}} }}
+  function lsRemove(k) {{ try {{ localStorage.removeItem(k); }} catch (e) {{}} }}
+
+  // Einfacher, nicht-kryptographischer Hash — reicht, um Zeilen zu unterscheiden,
+  // nicht um sie geheim zu halten.
+  function hash(s) {{
+    var h = 0;
+    for (var i = 0; i < s.length; i++) {{ h = (h * 31 + s.charCodeAt(i)) | 0; }}
+    return (h >>> 0).toString(36);
+  }}
+
+  function zelle(tag, text) {{
+    var el = document.createElement(tag);
+    el.textContent = text;
+    return el;
+  }}
+
+  var tbody = document.getElementById('zeilen-tbody');
+  zeilen.forEach(function(z) {{
+    // Der Schlüssel enthält den WERT: ändert er sich bei einem neuen Export
+    // (korrigierte Eingabe), ist die Zeile automatisch wieder unerledigt —
+    // ein Haken auf einem inzwischen falschen Betrag wäre die gefährlichste
+    // Art, wie diese Datei lügen könnte.
+    z._key = praefix + hash(z.anlage + '|' + z.zeile + '|' + z.bezeichnung + '|' + z.wert);
+
+    var tr = document.createElement('tr');
+    var tdBox = document.createElement('td');
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = lsGet(z._key) === '1';
+    if (cb.checked) tr.className = 'erledigt';
+    tdBox.appendChild(cb);
+    tr.appendChild(tdBox);
+    tr.appendChild(zelle('td', z.anlage));
+    tr.appendChild(zelle('td', z.zeile));
+    tr.appendChild(zelle('td', z.bezeichnung));
+
+    var tdWert = document.createElement('td');
+    tdWert.className = 'wert';
+    tdWert.appendChild(document.createTextNode(z.wert));
+    var kopierBtn = document.createElement('button');
+    kopierBtn.type = 'button';
+    kopierBtn.className = 'kopieren';
+    kopierBtn.textContent = 'Kopieren';
+    kopierBtn.addEventListener('click', function() {{
+      if (navigator.clipboard && navigator.clipboard.writeText) {{
+        navigator.clipboard.writeText(z.wert).catch(function() {{}});
+      }}
+    }});
+    tdWert.appendChild(kopierBtn);
+    tr.appendChild(tdWert);
+
+    cb.addEventListener('change', function() {{
+      if (cb.checked) {{ lsSet(z._key, '1'); tr.classList.add('erledigt'); }}
+      else {{ lsRemove(z._key); tr.classList.remove('erledigt'); }}
+      fortschrittAktualisieren();
+    }});
+    tbody.appendChild(tr);
+  }});
+
+  function fortschrittAktualisieren() {{
+    var gesamt = zeilen.length;
+    var erledigt = zeilen.filter(function(z) {{ return lsGet(z._key) === '1'; }}).length;
+    var pct = gesamt ? Math.round(100 * erledigt / gesamt) : 100;
+    document.getElementById('balken-fuellung').style.width = pct + '%';
+    document.getElementById('fortschritt-text').textContent =
+      erledigt + ' von ' + gesamt + ' erledigt (' + pct + ' %)';
+  }}
+  fortschrittAktualisieren();
+
+  document.getElementById('zuruecksetzen-btn').addEventListener('click', function() {{
+    zeilen.forEach(function(z) {{ lsRemove(z._key); }});
+    location.reload();
+  }});
+}})();
+</script>
+</body></html>"""
 
 
 # ---------------------------------------------------------------- PDF ---------
@@ -707,7 +914,7 @@ def main(argv=None) -> int:
     ap.add_argument("taxreport", help="taxreport.json")
     ap.add_argument("--outdir", default="out")
     ap.add_argument("--formats", nargs="+", default=["html", "pdf", "elster"],
-                    choices=["html", "pdf", "elster"])
+                    choices=["html", "pdf", "elster", "checkliste"])
     args = ap.parse_args(argv)
 
     report = lade_report(args.taxreport)
@@ -754,6 +961,15 @@ def main(argv=None) -> int:
         except Exception as e:
             fehler.append(f"ELSTER: {e.__class__.__name__}: {e}")
             print(f"FEHLER ELSTER: {e}", file=sys.stderr)
+
+    if "checkliste" in args.formats:
+        try:
+            p = outdir / f"elster_checkliste_{year}.html"
+            p.write_text(render_checkliste(report), encoding="utf-8")
+            melde(p)
+        except Exception as e:
+            fehler.append(f"CHECKLISTE: {e.__class__.__name__}: {e}")
+            print(f"FEHLER CHECKLISTE: {e}", file=sys.stderr)
 
     if fehler:
         print("\nNicht erstellt:", file=sys.stderr)

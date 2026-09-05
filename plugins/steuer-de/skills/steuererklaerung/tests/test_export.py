@@ -142,6 +142,12 @@ def _html_text(outdir: Path) -> str:
     return files[0].read_text(encoding="utf-8")
 
 
+def _checkliste_text(outdir: Path) -> str:
+    files = list(outdir.glob("elster_checkliste_*.html"))
+    assert files, f"keine Checkliste in {outdir}"
+    return files[0].read_text(encoding="utf-8")
+
+
 # ── Disclaimer in den ELSTER-Exporten ────────────────────────────────────────
 @case
 def test_disclaimer_in_elster_csv_und_json():
@@ -396,6 +402,99 @@ def test_erstellte_dateien_werden_sofort_gemeldet():
     rc, outdir, out, _e = _export(fixture(), formats=("html", "elster"))
     eq(rc, 0)
     eq(out.count("Erstellt: "), 3, "HTML + CSV + JSON gemeldet")
+
+
+# ── Interaktive Checkliste ───────────────────────────────────────────────────
+def _mapping_mit_arten():
+    """eintragen / nachrichtlich / trenner — genau wie build_taxreport.py sie
+    liefert (siehe _ordne_mapping)."""
+    return [
+        {"anlage": "Anlage N", "zeile": "Z. 6", "bezeichnung": "Bruttoarbeitslohn",
+         "wert": "63230.00", "art": "eintragen"},
+        {"anlage": "Anlage KAP", "zeile": "Z. 7", "bezeichnung": "Kapitalerträge",
+         "wert": "1500.00", "art": "eintragen"},
+        {"anlage": "—", "zeile": "—", "bezeichnung": "— ab hier nur Belege —",
+         "wert": "", "art": "trenner"},
+        {"anlage": "Anlage KAP", "zeile": "Z. 7",
+         "bezeichnung": "nachrichtlich: Rohzeile Musterbank", "wert": "1500.00",
+         "art": "nachrichtlich"},
+    ]
+
+
+@case
+def test_checkliste_nur_eintragen_zeilen_bekommen_eine_checkbox():
+    r = fixture(elster_mapping=_mapping_mit_arten())
+    rc, outdir, _o, _e = _export(r, formats=("checkliste",))
+    eq(rc, 0)
+    h = _checkliste_text(outdir)
+    daten = json.loads(re.search(
+        r'<script id="zeilen-daten"[^>]*>(.*?)</script>', h, re.S).group(1))
+    eq(len(daten), 2, "nur die zwei 'eintragen'-Zeilen landen in der Checkliste")
+    eq({d["bezeichnung"] for d in daten}, {"Bruttoarbeitslohn", "Kapitalerträge"})
+    contains(h, "nachrichtlich: Rohzeile Musterbank", "Beleg steht im aufklappbaren Teil")
+    missing(h, "ab hier nur Belege", "die Trennzeile selbst wird nicht mehr gebraucht")
+
+
+@case
+def test_checkliste_ist_self_contained():
+    r = fixture(elster_mapping=_mapping_mit_arten())
+    rc, outdir, _o, _e = _export(r, formats=("checkliste",))
+    eq(rc, 0)
+    h = _checkliste_text(outdir)
+    for muster in ("http://", "https://", "//cdn", "<script src", "@import"):
+        missing(h, muster, "Checkliste muss ohne externe Ressourcen auskommen")
+    contains(h, "localStorage", "Häkchen-Speicherung ist Teil der Datei")
+
+
+@case
+def test_checkliste_json_bricht_nicht_aus_dem_script_tag_aus():
+    """Eine Bezeichnung/ein Wert mit '</script>' (Fremddaten aus einem Broker-
+    Report) darf das eingebettete <script>-Tag nicht vorzeitig schließen."""
+    mapping = _mapping_mit_arten()
+    mapping[0]["bezeichnung"] = "Bruttolohn</script><script>alert(1)</script>"
+    r = fixture(elster_mapping=mapping)
+    rc, outdir, _o, _e = _export(r, formats=("checkliste",))
+    eq(rc, 0)
+    h = _checkliste_text(outdir)
+    missing(h, "</script><script>alert(1)", "roher Tag-Ausbruch im Markup")
+    m = re.search(r'<script id="zeilen-daten"[^>]*>(.*?)</script>', h, re.S)
+    assert m, "das Datenscript muss weiterhin sauber schließen"
+    daten = json.loads(m.group(1))
+    assert any("alert(1)" in d["bezeichnung"] for d in daten), \
+        "der Wert selbst muss inhaltlich erhalten bleiben, nur sicher eingebettet"
+
+
+@case
+def test_checkliste_html_escaping_der_belegzeilen():
+    mapping = _mapping_mit_arten()
+    mapping[-1]["bezeichnung"] = "<b>Rohzeile</b>"
+    r = fixture(elster_mapping=mapping)
+    rc, outdir, _o, _e = _export(r, formats=("checkliste",))
+    eq(rc, 0)
+    h = _checkliste_text(outdir)
+    missing(h, "<b>Rohzeile</b>", "Belegzeile roh im HTML")
+    contains(h, "&lt;b&gt;Rohzeile&lt;/b&gt;", "escapte Fassung vorhanden")
+
+
+@case
+def test_checkliste_disclaimer_vorhanden():
+    r = fixture(elster_mapping=_mapping_mit_arten())
+    rc, outdir, _o, _e = _export(r, formats=("checkliste",))
+    eq(rc, 0)
+    h = _checkliste_text(outdir)
+    for text in DISCLAIMER:
+        contains(h, text, "Disclaimer in der Checkliste")
+
+
+@case
+def test_checkliste_ohne_eintragen_zeilen_zeigt_leere_liste_statt_absturz():
+    r = fixture(elster_mapping=[
+        {"anlage": "—", "zeile": "—", "bezeichnung": "x", "wert": "", "art": "trenner"},
+    ])
+    rc, outdir, _o, _e = _export(r, formats=("checkliste",))
+    eq(rc, 0)
+    h = _checkliste_text(outdir)
+    contains(h, '"zeilen-daten"', "leeres Datenscript statt Absturz")
 
 
 # ── PDF (optional) ───────────────────────────────────────────────────────────

@@ -219,7 +219,18 @@ das Ergebnis des Jahres selbst**, dann der Vortrag; ein Jahr unterhalb der Freig
 ohnehin steuerfrei und verbraucht deshalb nichts. Der Report weist aus:
 `verlustvortrag_23_verbraucht`, `verlustvortrag_23_rest` und
 `verlustvortrag_23_neu_gesamt` — Letzterer ist der Wert, der im Folgejahr wieder unter
-`anlage_so.verlustvortrag_23_vorjahr` eingetragen wird.
+`anlage_so.verlustvortrag_23_vorjahr` eingetragen wird. Ebenso für den Aktien- und den
+allgemeinen KAP-Verlustvortrag (`anlagen.KAP.verlustvortraege.aktien` /
+`.allgemein`, siehe Anlage KAP oben). Von Hand abtippen ist dabei die riskanteste Stelle
+im ganzen Skill — ein Zahlendreher verliert einen echten Abzug lautlos, ohne dass
+irgendein Sicherheitsnetz das bemerkt. `scripts/uebertrage_verlustvortrag.py` übernimmt
+alle drei Werte automatisch aus dem alten `taxreport.json` in die neue `steuerdaten.json`
+und bricht ab, statt einen bereits gesetzten, abweichenden Wert stillschweigend zu
+überschreiben:
+
+```bash
+python3 scripts/uebertrage_verlustvortrag.py taxreport_2025.json steuerdaten_2026.json --schreiben
+```
 
 ### Anlage V — Vermietung und Verpachtung
 Einnahmen minus Werbungskosten (AfA, Zinsen, Instandhaltung). Hier nur die Netto-Einkünfte.
