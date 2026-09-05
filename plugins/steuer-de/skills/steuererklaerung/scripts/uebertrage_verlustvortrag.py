@@ -42,10 +42,9 @@ import json
 import os
 import sys
 from decimal import Decimal as D
-from decimal import InvalidOperation
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from steuerlib import q2  # noqa: E402
+from steuerlib import ParseError, q2, to_decimal  # noqa: E402
 
 
 class UebertragungFehler(RuntimeError):
@@ -53,9 +52,13 @@ class UebertragungFehler(RuntimeError):
 
 
 def _decimal_oder(wert, feld: str) -> D:
+    """Wie überall sonst in diesem Skill: steuerlib.to_decimal liest deutsche
+    UND englische Notation (1.234,56 wie 1234.56) — eine von Hand in
+    steuerdaten.json korrigierte Zahl darf nicht an einem bloßen Dezimalpunkt
+    scheitern, den build_taxreport.py an derselben Stelle klaglos liest."""
     try:
-        return D(str(wert))
-    except (InvalidOperation, TypeError):
+        return to_decimal(wert)
+    except ParseError:
         raise UebertragungFehler(f"{feld}: {wert!r} ist kein gültiger Betrag.") from None
 
 
@@ -68,6 +71,8 @@ def lade_json(pfad: str, was: str) -> dict:
     except json.JSONDecodeError as e:
         raise UebertragungFehler(
             f"{was} ({pfad}) ist kein gültiges JSON (Zeile {e.lineno}): {e.msg}") from None
+    except OSError as e:
+        raise UebertragungFehler(f"{was} ({pfad}) nicht lesbar: {e}") from None
     if not isinstance(daten, dict):
         raise UebertragungFehler(f"{was} ({pfad}) enthält kein Objekt.")
     return daten
@@ -107,10 +112,16 @@ def vortraege_aus_report(report: dict) -> dict[str, D]:
     }
 
 
-# Zusätzlich zu den drei Übertragungen: dieses Feld wird ausdrücklich auf "0"
-# gesetzt, sobald 'anlage_kap.verlustvortrag_allgemein_vorjahr' geschrieben wird
-# — sonst würde ein dort stehen gebliebener Altwert ein zweites Mal verrechnet
-# (siehe Modul-Docstring, JStG 2024).
+# Dieses Feld ist seit dem JStG 2024 IMMER "0" (siehe Modul-Docstring): sein
+# Rest steckt bereits in 'anlage_kap.verlustvortrag_allgemein_vorjahr', sobald
+# überhaupt ein allgemeiner Vortrag aus einem Report stammt — das gilt
+# unabhängig davon, ob dessen Wert sich gerade ändert oder schon stimmt. Wird
+# deshalb wie die drei echten Übertragungen über 'pruefe()' behandelt, mit "0"
+# als Zielwert, statt als Sonderfall am Ende dranzuhängen — sonst behandelt ein
+# künftiger Wartungsschritt dieses Feld leicht anders als die übrigen drei
+# (genau das ist hier passiert: der alte Sonderfall griff nur, wenn der
+# allgemeine Vortrag in DERSELBEN Übertragung neu geschrieben wurde, und
+# übersah ihn, sobald der allgemeine Vortrag schon vorher korrekt war).
 _TERMINGESCHAEFTE_FELD = "anlage_kap.verlustvortrag_termingeschaefte_vorjahr"
 
 
@@ -131,35 +142,29 @@ def plane_uebertragung(steuerdaten: dict, vortraege: dict[str, D], *, force: boo
     def pruefe(pfad: str, neu: D):
         block, feld = pfad.split(".", 1)
         alt_roh = _pfad_wert(steuerdaten, block, feld)
-        alt = None if alt_roh in (None, "") else _decimal_oder(alt_roh, pfad)
+        # Sofort quantisieren: ein Wert wie "0.001" ist steuerlich dasselbe wie
+        # 0 (Beträge sind immer volle Cent) und soll deshalb genauso behandelt
+        # werden wie eine glatte "0" — nicht als blockierender Konflikt.
+        alt = None if alt_roh in (None, "") else q2(_decimal_oder(alt_roh, pfad))
         neu_str = str(q2(neu))
-        if alt is not None and alt != 0 and q2(alt) != D(neu_str):
-            konflikte.append((pfad, str(q2(alt)), neu_str))
-        elif alt is not None and q2(alt) == D(neu_str):
+        if alt is not None and alt != 0 and alt != D(neu_str):
+            konflikte.append((pfad, str(alt), neu_str))
+        elif alt is not None and alt == D(neu_str):
             pass  # bereits übernommen — nichts zu tun, kein Konflikt
         else:
-            aktionen.append((pfad, "—" if alt is None else str(q2(alt)), neu_str))
+            aktionen.append((pfad, "—" if alt is None else str(alt), neu_str))
 
     for pfad, betrag in vortraege.items():
         pruefe(pfad, betrag)
-
-    # Termingeschäfte-Feld: nur anfassen, wenn der allgemeine Vortrag geschrieben
-    # UND das Feld dort noch einen von 0 verschiedenen Altwert traegt.
-    termin_alt_roh = _pfad_wert(steuerdaten, "anlage_kap", "verlustvortrag_termingeschaefte_vorjahr")
-    if termin_alt_roh not in (None, ""):
-        termin_alt = _decimal_oder(termin_alt_roh, _TERMINGESCHAEFTE_FELD)
-        wird_allgemein_geschrieben = any(
-            p == "anlage_kap.verlustvortrag_allgemein_vorjahr" for p, _, _ in aktionen)
-        if termin_alt != 0 and wird_allgemein_geschrieben:
-            if force:
-                aktionen.append((_TERMINGESCHAEFTE_FELD, str(q2(termin_alt)), "0.00"))
-            else:
-                konflikte.append((_TERMINGESCHAEFTE_FELD, str(q2(termin_alt)),
-                                  "0.00 (bereits im allgemeinen Vortrag enthalten)"))
+    # Nur anfassen, wenn dort überhaupt etwas steht — ein Feld, das in der
+    # Zieldatei gar nicht existiert, soll nicht erst durch diesen Lauf mit
+    # einer expliziten "0.00" angelegt werden.
+    if _pfad_wert(steuerdaten, "anlage_kap", "verlustvortrag_termingeschaefte_vorjahr") \
+            not in (None, ""):
+        pruefe(_TERMINGESCHAEFTE_FELD, D("0"))
 
     if force:
-        for pfad, alt, neu in list(konflikte):
-            aktionen.append((pfad, alt, neu.split(" ", 1)[0]))
+        aktionen.extend(konflikte)
         konflikte = []
     return aktionen, konflikte
 
@@ -187,12 +192,21 @@ def main(argv=None) -> int:
 
     alt_jahr = _pfad_wert(report, "meta", "steuerjahr")
     neu_jahr = steuerdaten.get("steuerjahr")
-    if alt_jahr is not None and neu_jahr is not None and int(neu_jahr) != int(alt_jahr) + 1:
+    try:
+        jahre_passen = (alt_jahr is None or neu_jahr is None
+                        or int(neu_jahr) == int(alt_jahr) + 1)
+    except (TypeError, ValueError):
+        jahre_passen = True  # kein sauberes Jahr — kein Rückschluss, keine Warnung
+    if not jahre_passen:
         print(f"WARNUNG: {args.alter_taxreport} ist für Steuerjahr {alt_jahr}, "
               f"{args.neue_steuerdaten} für {neu_jahr} — erwartet wurde "
               f"{int(alt_jahr) + 1}. Trotzdem fortgesetzt.", file=sys.stderr)
 
-    aktionen, konflikte = plane_uebertragung(steuerdaten, vortraege, force=args.force)
+    try:
+        aktionen, konflikte = plane_uebertragung(steuerdaten, vortraege, force=args.force)
+    except UebertragungFehler as e:
+        print(f"FEHLER: {e}", file=sys.stderr)
+        return 1
 
     print(f"Verlustvortrag aus {args.alter_taxreport} (Steuerjahr {alt_jahr}) "
           f"-> {args.neue_steuerdaten} (Steuerjahr {neu_jahr}):\n")
@@ -222,9 +236,13 @@ def main(argv=None) -> int:
         print("\nNichts geschrieben (keine Änderung nötig).")
         return 0
 
-    for pfad, _alt, neu in aktionen:
-        block, feld = pfad.split(".", 1)
-        _setze(steuerdaten, block, feld, neu)
+    try:
+        for pfad, _alt, neu in aktionen:
+            block, feld = pfad.split(".", 1)
+            _setze(steuerdaten, block, feld, neu)
+    except UebertragungFehler as e:
+        print(f"FEHLER: {e}", file=sys.stderr)
+        return 1
 
     with open(args.neue_steuerdaten, "w", encoding="utf-8") as f:
         json.dump(steuerdaten, f, ensure_ascii=False, indent=2)

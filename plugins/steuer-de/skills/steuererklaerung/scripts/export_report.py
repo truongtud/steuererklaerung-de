@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import html
 import json
 import os
@@ -70,6 +71,20 @@ def _g(d, *path, default=""):
             return default
         cur = cur[k]
     return default if cur is None else cur
+
+
+def esc(x) -> str:
+    """HTML-Escaping für Fremddaten — von render_html und render_checkliste geteilt,
+    damit eine künftige Korrektur nicht in nur einer der beiden Kopien landet."""
+    return html.escape(_s(x))
+
+
+def row(cells, header=False, cls="") -> str:
+    """Eine <tr> aus Zellen, die bereits fertig formatiert (escaped) sind."""
+    tag = "th" if header else "td"
+    tds = "".join(f"<{tag}>{c}</{tag}>" for c in cells)
+    attr = f' class="{cls}"' if cls else ""
+    return f"<tr{attr}>{tds}</tr>"
 
 
 def _num(x, default=D("0")):
@@ -176,15 +191,6 @@ def render_html(report: dict) -> str:
         sub_html = f'<div class="sub">{html.escape(_s(sub))}</div>' if sub else ""
         return (f'<div class="card"><div class="lbl">{html.escape(_s(label))}</div>'
                 f'<div class="val">{html.escape(_s(value))}</div>{sub_html}</div>')
-
-    def row(cells, header=False, cls=""):
-        tag = "th" if header else "td"
-        tds = "".join(f"<{tag}>{c}</{tag}>" for c in cells)
-        attr = f' class="{cls}"' if cls else ""
-        return f"<tr{attr}>{tds}</tr>"
-
-    def esc(x):
-        return html.escape(_s(x))
 
     # Disposals-Tabelle — Felder stammen aus fremden PDFs/CSVs: alles escapen.
     disp_rows = ""
@@ -366,20 +372,19 @@ def render_checkliste(report: dict) -> str:
     year = html.escape(_s(meta.get("steuerjahr")))
     tp = _dict(meta.get("steuerpflichtiger"))
     name = html.escape(_s(tp.get("name")) or "—")
+    # Der Klartext-Teil ist nur zur Lesbarkeit beim Debuggen; der Hash-Teil
+    # hält zwei Steuerpflichtige mit gleich lautendem Jahr auseinander, deren
+    # Namen nach dem Entfernen von Sonderzeichen zufällig gleich aussehen
+    # (z. B. durch unterschiedliche Akzente/Satzzeichen) — sonst könnten sich
+    # ihre Häkchen im selben Browserprofil überschreiben.
+    roh = f"{_s(meta.get('steuerjahr'))}_{_s(tp.get('name'))}"
+    kurzhash = hashlib.sha1(roh.encode("utf-8")).hexdigest()[:8]
     storage_suffix = html.escape(
-        re.sub(r"[^A-Za-z0-9_-]+", "_", f"{_s(meta.get('steuerjahr'))}_{_s(tp.get('name'))}")
-        or "report")
+        re.sub(r"[^A-Za-z0-9_-]+", "_", roh) + "_" + kurzhash)
 
     alle = elster_rows(report)
     eintragen = [r for r in alle if r.get("art") == "eintragen"]
     belege = [r for r in alle if r.get("art") not in ("eintragen", "trenner")]
-
-    def esc(x):
-        return html.escape(_s(x))
-
-    def row(cells, header=False):
-        tag = "th" if header else "td"
-        return "<tr>" + "".join(f"<{tag}>{c}</{tag}>" for c in cells) + "</tr>"
 
     beleg_rows = "".join(
         row([esc(b.get("anlage")), esc(b.get("zeile")), esc(b.get("bezeichnung")),
@@ -473,14 +478,6 @@ diesem Browser gespeichert (localStorage), nirgends sonst.</div></header>
   function lsSet(k, v) {{ try {{ localStorage.setItem(k, v); }} catch (e) {{}} }}
   function lsRemove(k) {{ try {{ localStorage.removeItem(k); }} catch (e) {{}} }}
 
-  // Einfacher, nicht-kryptographischer Hash — reicht, um Zeilen zu unterscheiden,
-  // nicht um sie geheim zu halten.
-  function hash(s) {{
-    var h = 0;
-    for (var i = 0; i < s.length; i++) {{ h = (h * 31 + s.charCodeAt(i)) | 0; }}
-    return (h >>> 0).toString(36);
-  }}
-
   function zelle(tag, text) {{
     var el = document.createElement(tag);
     el.textContent = text;
@@ -492,8 +489,11 @@ diesem Browser gespeichert (localStorage), nirgends sonst.</div></header>
     // Der Schlüssel enthält den WERT: ändert er sich bei einem neuen Export
     // (korrigierte Eingabe), ist die Zeile automatisch wieder unerledigt —
     // ein Haken auf einem inzwischen falschen Betrag wäre die gefährlichste
-    // Art, wie diese Datei lügen könnte.
-    z._key = praefix + hash(z.anlage + '|' + z.zeile + '|' + z.bezeichnung + '|' + z.wert);
+    // Art, wie diese Datei lügen könnte. JSON.stringify statt eines Hashs über
+    // mit '|' verklebten Feldern: ein '|' oder ein Zeilenumbruch in einer aus
+    // einem Broker-Report übernommenen Bezeichnung könnte sonst zwei
+    // eigentlich verschiedene Zeilen auf denselben Schlüssel abbilden.
+    z._key = praefix + JSON.stringify([z.anlage, z.zeile, z.bezeichnung, z.wert]);
 
     var tr = document.createElement('tr');
     var tdBox = document.createElement('td');

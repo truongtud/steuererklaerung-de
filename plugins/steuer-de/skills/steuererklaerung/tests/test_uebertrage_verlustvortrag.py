@@ -164,6 +164,83 @@ def test_termingeschaefte_feld_bleibt_unberuehrt_wenn_schon_null():
         "ein bereits genulltes Feld muss nicht erneut geschrieben werden"
 
 
+@case
+def test_termingeschaefte_feld_fehlt_komplett_bleibt_unangetastet():
+    """Ein Feld, das in der Zieldatei gar nicht existiert, darf nicht erst
+    durch diesen Lauf mit einer expliziten '0.00' angelegt werden."""
+    v = uv.vortraege_aus_report(report_mit(allgemein="300.00"))
+    aktionen, konflikte = uv.plane_uebertragung({}, v, force=False)
+    eq(konflikte, [])
+    assert not any(p == uv._TERMINGESCHAEFTE_FELD for p, _, _ in aktionen)
+
+
+@case
+def test_termingeschaefte_wird_auch_genullt_wenn_allgemein_schon_uebernommen_war():
+    """Regressionstest für den Fund aus /code-review: die alte Logik prüfte das
+    Termingeschäfte-Feld nur, wenn 'anlage_kap.verlustvortrag_allgemein_vorjahr'
+    in DERSELBEN Übertragung neu geschrieben wurde. War der allgemeine Vortrag
+    bereits korrekt übernommen (also KEINE 'aktionen'-Zeile dafür), wurde ein
+    stehen gebliebener Termingeschäfte-Altwert nie bemerkt — genau der Zustand,
+    den ein zweiter Lauf dieses Skripts (z. B. zur Kontrolle) typischerweise
+    vorfindet."""
+    v = uv.vortraege_aus_report(report_mit(allgemein="300.00"))
+    ziel = {"anlage_kap": {"verlustvortrag_allgemein_vorjahr": "300.00",  # bereits korrekt
+                          "verlustvortrag_termingeschaefte_vorjahr": "150.00"}}  # Altlast
+    aktionen, konflikte = uv.plane_uebertragung(ziel, v, force=False)
+    assert not any(p == "anlage_kap.verlustvortrag_allgemein_vorjahr" for p, _, _ in aktionen), \
+        "allgemein war schon korrekt — keine Aktion dafür nötig"
+    pfade_konflikt = {p for p, _, _ in konflikte}
+    assert uv._TERMINGESCHAEFTE_FELD in pfade_konflikt, (
+        "der Termingeschäfte-Altwert muss trotzdem auffallen", konflikte)
+
+
+@case
+def test_deutsche_zahlennotation_im_ziel_wird_gelesen():
+    """steuerlib.to_decimal statt Decimal(str(x)) — dieselbe Notation, die
+    build_taxreport.py an dieser Stelle klaglos liest, darf hier nicht an
+    einem Tippfehler-artigen Abbruch scheitern."""
+    v = uv.vortraege_aus_report(report_mit(aktien="500.00"))
+    ziel = {"anlage_kap": {"verlustvortrag_aktien_vorjahr": "1.234,56"}}
+    aktionen, konflikte = uv.plane_uebertragung(ziel, v, force=False)
+    pfade_konflikt = {p for p, _, _ in konflikte}
+    assert "anlage_kap.verlustvortrag_aktien_vorjahr" in pfade_konflikt
+    alt = next(a for p, a, _ in konflikte if p == "anlage_kap.verlustvortrag_aktien_vorjahr")
+    eq(alt, "1234.56", "deutsche Notation korrekt gelesen, nicht als Fehler geworfen")
+
+
+@case
+def test_fast_null_im_ziel_ist_kein_konflikt():
+    """0,001 € ist steuerlich dasselbe wie 0 (volle Cent) — darf nicht anders
+    behandelt werden als eine glatte '0'."""
+    v = uv.vortraege_aus_report(report_mit(aktien="500.00"))
+    ziel = {"anlage_kap": {"verlustvortrag_aktien_vorjahr": "0.001"}}
+    aktionen, konflikte = uv.plane_uebertragung(ziel, v, force=False)
+    eq(konflikte, [], "0,001 darf keinen Konflikt auslösen")
+    aktion = next(a for a in aktionen if a[0] == "anlage_kap.verlustvortrag_aktien_vorjahr")
+    eq(aktion[2], "500.00")
+
+
+@case
+def test_cli_bricht_bei_unlesbarem_jahr_nicht_mit_traceback_ab():
+    with tempfile.TemporaryDirectory() as tmp:
+        alt = schreibe(tmp, "alt.json", report_mit(aktien="500.00", jahr=2024))
+        neu_pfad = schreibe(tmp, "neu.json", {"steuerjahr": "2026 (Entwurf)"})
+        p = _lauf(alt, neu_pfad, "--schreiben")
+        eq(p.returncode, 0, p.stderr)
+        eq(p.stderr.strip(), "", "kein Traceback, nur ein sauberer Lauf ohne Jahresvergleich")
+
+
+@case
+def test_cli_bricht_bei_kaputtem_anlage_kap_block_sauber_ab():
+    with tempfile.TemporaryDirectory() as tmp:
+        alt = schreibe(tmp, "alt.json", report_mit(aktien="500.00", jahr=2024))
+        neu_pfad = schreibe(tmp, "neu.json", {"steuerjahr": 2025, "anlage_kap": "kaputt"})
+        p = _lauf(alt, neu_pfad, "--schreiben")
+        eq(p.returncode, 1, p.stdout)
+        contains = "FEHLER" in p.stderr and "Traceback" not in p.stderr
+        assert contains, f"stderr={p.stderr!r}"
+
+
 # ── CLI (subprocess) ─────────────────────────────────────────────────────────
 SKRIPT = os.path.join(SCRIPTS, "uebertrage_verlustvortrag.py")
 
