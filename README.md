@@ -398,7 +398,7 @@ cd plugins/steuer-de/skills/steuererklaerung
 python3 tests/run_tests.py
 ```
 
-[553 Fälle in 23 Dateien](plugins/steuer-de/skills/steuererklaerung/tests) — jede Datei ist
+[559 Fälle in 23 Dateien](plugins/steuer-de/skills/steuererklaerung/tests) — jede Datei ist
 einzeln lauffähig, wenn nur ein Bereich interessiert:
 
 | Datei | prüft |
