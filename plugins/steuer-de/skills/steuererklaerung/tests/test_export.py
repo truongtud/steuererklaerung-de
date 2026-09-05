@@ -274,15 +274,36 @@ def test_html_card_wert_escaped():
 
 @case
 def test_html_ist_self_contained():
+    """Kein Byte darf von außerhalb der Datei nachgeladen werden.
+
+    Geprüft wird die Eigenschaft selbst — keine externe Quelle —, nicht mehr
+    das frühere Hilfsmerkmal „gar kein <script“: seit den
+    „Für Claude kopieren“-Schaltflächen enthält die Datei ein INLINE-Skript.
+    Das lädt nichts nach und verschickt nichts; die Zusage, dass die Datei
+    ohne Netz vollständig ist, bleibt damit unberührt.
+    """
     r = fixture()
     # URL aus den Nutzdaten entfernen, damit „kein http“ hier die *Datei* meint
     r["elster_mapping"][4]["bezeichnung"] = "Kind 1"
     rc, outdir, _o, _e = _export(r, formats=("html",))
     eq(rc, 0)
     h = _html_text(outdir)
-    for muster in ("http://", "https://", "//cdn", "<script", "<link", " src=",
-                   " href=", "@import", "url("):
+    for muster in ("http://", "https://", "//cdn", "<script src", "<link",
+                   " src=", " href=", "@import", "url("):
         missing(h, muster, "HTML muss ohne externe Ressourcen auskommen")
+
+
+@case
+def test_html_skript_verschickt_nichts():
+    """Das Inline-Skript darf ausschließlich in die Zwischenablage schreiben —
+    kein fetch, kein XHR, kein Navigieren, kein Formular-Post. Sonst verließen
+    Steuerbeträge das Gerät, und genau das sagt dieses Werkzeug zu."""
+    rc, outdir, _o, _e = _export(fixture(), formats=("html",))
+    eq(rc, 0)
+    h = _html_text(outdir)
+    for verboten in ("fetch(", "XMLHttpRequest", "navigator.sendBeacon",
+                     "location.href", "window.open", "<form", "new Image("):
+        missing(h, verboten, "das Dashboard darf nichts übertragen")
 
 
 @case
@@ -544,6 +565,50 @@ def test_checkliste_gruppiert_nach_anlage_und_bietet_filter():
     contains(h, "nur-offen-box", "Filter für offene Zeilen")
     contains(h, "prefers-color-scheme: light", "Hellmodus")
     contains(h, "@media print", "Druck-Stylesheet wie im Dashboard")
+
+
+@case
+def test_erklaeren_knopf_an_jedem_hinweis():
+    """Je Hinweis eine Schaltfläche, die den Hinweis samt fertiger Frage in die
+    Zwischenablage legt — in beiden HTML-Ausgaben."""
+    r = fixture(elster_mapping=_mapping_mit_arten())
+    r["hinweise"] = ["Anlage KAP: die Verlustzeilen 22–25 sind davon-Zeilen.",
+                     "Freigrenze § 23 knapp überschritten."]
+    rc, outdir, _o, _e = _export(r, formats=("html", "checkliste"))
+    eq(rc, 0)
+    for text, wo in ((_html_text(outdir), "Dashboard"),
+                     (_checkliste_text(outdir), "Checkliste")):
+        # je Disclaimer- UND Hinweis-Zeile ein Knopf
+        knoepfe = text.count('class="erklaeren"')
+        eq(knoepfe, len(DISCLAIMER) + len(r["hinweise"]), f"{wo}: Knöpfe je Hinweis")
+        contains(text, "Für Claude kopieren", wo)
+        contains(text, "Erkläre mir bitte diesen Hinweis", f"{wo}: fertige Frage")
+        contains(text, "davon-Zeilen", f"{wo}: Hinweistext selbst steht mit drin")
+
+
+@case
+def test_erklaeren_frage_ist_im_attribut_escaped():
+    """Der Hinweistext kommt aus dem Report und kann Anführungszeichen
+    enthalten — im data-Attribut darf er das Markup nicht aufbrechen."""
+    r = fixture(elster_mapping=_mapping_mit_arten())
+    r["hinweise"] = ['Achtung: "Termingeschäfte" & <b>Aktien</b> getrennt führen']
+    rc, outdir, _o, _e = _export(r, formats=("html",))
+    eq(rc, 0)
+    h = _html_text(outdir)
+    missing(h, '<b>Aktien</b>', "roher Hinweistext im Markup")
+    contains(h, "&quot;Termingesch", "Anführungszeichen escaped")
+    contains(h, "&lt;b&gt;Aktien", "Tags escaped")
+
+
+@case
+def test_checkliste_skript_verschickt_nichts():
+    r = fixture(elster_mapping=_mapping_mit_arten())
+    rc, outdir, _o, _e = _export(r, formats=("checkliste",))
+    eq(rc, 0)
+    h = _checkliste_text(outdir)
+    for verboten in ("fetch(", "XMLHttpRequest", "navigator.sendBeacon",
+                     "location.href", "window.open", "<form", "new Image("):
+        missing(h, verboten, "die Checkliste darf nichts übertragen")
 
 
 @case

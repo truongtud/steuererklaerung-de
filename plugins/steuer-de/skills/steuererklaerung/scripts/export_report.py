@@ -87,6 +87,97 @@ def row(cells, header=False, cls="") -> str:
     return f"<tr{attr}>{tds}</tr>"
 
 
+# ------------------------------------------------- „Für Claude kopieren" ------
+# Die Schaltfläche neben jedem Hinweis legt den Hinweis samt fertiger Frage in
+# die Zwischenablage — sie SCHICKT nichts. Das ist Absicht und keine
+# Einschränkung, die sich beheben ließe: diese Datei liegt lokal (meist
+# file://), enthält Steuerbeträge und macht laut Test keinen einzigen
+# Netzaufruf. Ein Knopf, der den Hinweis irgendwohin überträgt, würde genau die
+# Zusage brechen, dass nichts das Gerät verlässt. Eingefügt wird von Hand, in
+# der Sitzung, in der man ohnehin gerade sitzt.
+KOPIER_JS = """
+  function lsKopierFallback(text) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
+  }
+
+  function kopierRueckmeldung(btn, text, klasse) {
+    if (!btn._standard) btn._standard = btn.textContent;
+    btn.textContent = text;
+    btn.classList.remove('ok', 'fehler');
+    if (klasse) btn.classList.add(klasse);
+    clearTimeout(btn._timer);
+    btn._timer = setTimeout(function() {
+      btn.textContent = btn._standard;
+      btn.classList.remove('ok', 'fehler');
+    }, 1600);
+  }
+
+  function inZwischenablage(text, btn, markierEl) {
+    function gelungen() { kopierRueckmeldung(btn, 'Kopiert ✓', 'ok'); }
+    function gescheitert() {
+      if (markierEl) {
+        try {
+          var b = document.createRange();
+          b.selectNodeContents(markierEl);
+          var s = window.getSelection();
+          s.removeAllRanges();
+          s.addRange(b);
+        } catch (e) {}
+      }
+      kopierRueckmeldung(btn, 'Strg+C', 'fehler');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(gelungen, function() {
+        if (lsKopierFallback(text)) gelungen(); else gescheitert();
+      });
+      return;
+    }
+    if (lsKopierFallback(text)) gelungen(); else gescheitert();
+  }
+
+  Array.prototype.forEach.call(
+    document.querySelectorAll('button.erklaeren'), function(btn) {
+      btn.addEventListener('click', function() {
+        inZwischenablage(btn.getAttribute('data-frage'), btn, btn.parentNode);
+      });
+    });
+"""
+
+ERKLAER_PROMPT = (
+    "Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung {jahr} "
+    "(erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: "
+    "Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche "
+    "Vorschrift stützt er sich?\n\n{text}")
+
+
+def hinweis_liste(texte, jahr) -> str:
+    """<li>-Liste mit einer „Für Claude kopieren"-Schaltfläche je Hinweis."""
+    if not texte:
+        return "<li>—</li>"
+    teile = []
+    for t in texte:
+        frage = ERKLAER_PROMPT.format(jahr=_s(jahr), text=_s(t))
+        teile.append(
+            f"<li>{esc(t)} "
+            f'<button type="button" class="erklaeren" '
+            f'data-frage="{html.escape(frage, quote=True)}" '
+            f'title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in '
+            f'deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren'
+            f"</button></li>")
+    return "".join(teile)
+
+
 def _num(x, default=D("0")):
     """Zahl aus beliebiger Eingabe; nie ein Absturz, nie ein stiller Fantasiewert."""
     return to_decimal_or(x, default)
@@ -230,7 +321,7 @@ def render_html(report: dict) -> str:
                          esc(fmt_eur(summe_einkuenfte(report)))], cls="sum")
 
     disclaimer, hinweise = report_texte(report)
-    disc_html = "".join(f"<li>{esc(x)}</li>" for x in disclaimer) or "<li>—</li>"
+    disc_html = hinweis_liste(disclaimer, meta.get("steuerjahr"))
     # Was die Schätzung NICHT enthält, mit Richtung — sonst kann der Leser die
     # Zahl darüber nicht einordnen.
     unsicher = report.get("unsicherheit") or {}
@@ -254,7 +345,7 @@ def render_html(report: dict) -> str:
     hinweis_block = ""
     if hinweise:
         hinweis_block = ('<div class="note"><strong>Weitere Hinweise</strong><ul>'
-                         + "".join(f"<li>{esc(x)}</li>" for x in hinweise) + "</ul></div>")
+                         + hinweis_liste(hinweise, meta.get("steuerjahr")) + "</ul></div>")
 
     est = b.get("einkommensteuer_schaetzung")
     est_disp = fmt_eur(est) if est not in (None, "") else "— (Tarif nicht hinterlegt)"
@@ -299,6 +390,13 @@ tr.sum td{{font-weight:700;border-top:2px solid var(--line);background:var(--pan
 .note{{background:var(--panel);border-left:3px solid var(--warn);padding:12px 16px;
 border-radius:8px;margin:16px 0;font-size:13px;color:var(--mut)}}
 .note ul{{margin:6px 0 0;padding-left:18px}}
+.note li{{margin-bottom:6px}}
+button.erklaeren{{font:inherit;font-size:11px;cursor:pointer;background:var(--panel2);
+color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:1px 8px;
+margin-left:6px;white-space:nowrap;vertical-align:baseline}}
+button.erklaeren:hover{{border-color:var(--acc);color:var(--txt)}}
+button.erklaeren.ok{{border-color:var(--good);color:var(--good)}}
+button.erklaeren.fehler{{border-color:var(--bad);color:var(--bad)}}
 footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
 @media print{{
   :root{{color-scheme:light;--bg:#fff;--panel:#fff;--panel2:#f2f4f8;--line:#9aa4b2;
@@ -315,6 +413,7 @@ footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
   thead{{display:table-header-group}}
   .badge{{border:1px solid #333;background:none !important}}
   .badge.tax{{color:#8a1414}}.badge.free{{color:#065f36}}
+  button.erklaeren{{display:none !important}}
   footer{{color:#333}}
 }}
 </style></head><body><div class="wrap">
@@ -348,7 +447,13 @@ footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
 <div class="note"><strong>Wichtige Hinweise</strong><ul>{disc_html}</ul></div>
 {hinweis_block}
 <footer>Erstellt mit dem Skill „Steuererklärung Deutschland“ · keine Steuerberatung · Endkontrolle durch Steuerberater</footer>
-</div></body></html>"""
+</div>
+<script>
+(function() {{
+{KOPIER_JS}
+}})();
+</script>
+</body></html>"""
 
 
 # ----------------------------------------------------- Interaktive Checkliste --
@@ -442,7 +547,13 @@ def render_checkliste(report: dict) -> str:
         ensure_ascii=False).replace("<", "\\u003c")
 
     disclaimer, hinweise = report_texte(report)
-    disc_html = "".join(f"<li>{esc(x)}</li>" for x in disclaimer) or "<li>—</li>"
+    disc_html = hinweis_liste(disclaimer, meta.get("steuerjahr"))
+    # Die inhaltlichen Hinweise (Saldo-Annahme der Anlage KAP, Verlustvorträge,
+    # knapp verfehlte Freigrenzen) gehören gerade hier hin: Sie entscheiden, ob
+    # eine Zeile überhaupt so eingetragen werden darf, wie sie dasteht.
+    weitere_html = ('<div class="note"><strong>Weitere Hinweise</strong><ul>'
+                    + hinweis_liste(hinweise, meta.get("steuerjahr")) + "</ul></div>"
+                    ) if hinweise else ""
 
     return f"""<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -501,6 +612,13 @@ details table{{margin:0 0 12px}}
 .note{{background:var(--panel);border-left:3px solid var(--warn);padding:12px 16px;
 border-radius:8px;margin:16px 0;font-size:13px;color:var(--mut)}}
 .note ul{{margin:6px 0 0;padding-left:18px}}
+.note li{{margin-bottom:6px}}
+button.erklaeren{{font:inherit;font-size:11px;cursor:pointer;background:var(--panel2);
+color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:1px 8px;
+margin-left:6px;white-space:nowrap;vertical-align:baseline}}
+button.erklaeren:hover{{border-color:var(--acc);color:var(--txt)}}
+button.erklaeren.ok{{border-color:var(--good);color:var(--good)}}
+button.erklaeren.fehler{{border-color:var(--bad);color:var(--bad)}}
 footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
 .nur-offen tr.erledigt,.nur-offen section.fertig{{display:none}}
 @media print{{
@@ -509,7 +627,7 @@ footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
   body{{background:#fff;color:#000;font-size:11pt}}
   .wrap{{max-width:none;padding:0}}
   .fortschritt{{position:static;border-bottom:1px solid #000}}
-  .werkzeuge,.kopieren{{display:none !important}}
+  .werkzeuge,.kopieren,button.erklaeren{{display:none !important}}
   .nur-offen tr.erledigt{{display:table-row}}
   .nur-offen section.fertig{{display:block}}
   table,.note,details{{border:1px solid #9aa4b2}}
@@ -541,6 +659,7 @@ in deutscher Schreibweise mit Dezimalkomma — genau so, wie ihn das ELSTER-Feld
 <table>{row(["Anlage", "Zeile", "Bezeichnung", "Wert"], header=True)}{beleg_rows}</table>
 </details>
 
+{weitere_html}
 <div class="note"><strong>Wichtige Hinweise</strong><ul>{disc_html}</ul></div>
 <footer>Erstellt mit dem Skill „Steuererklärung Deutschland“ · keine Steuerberatung · Endkontrolle durch Steuerberater</footer>
 </div>
@@ -562,59 +681,11 @@ in deutscher Schreibweise mit Dezimalkomma — genau so, wie ihn das ELSTER-Feld
     return el;
   }}
 
-  // ---- Kopieren: Clipboard-API, Fallback, und in jedem Fall eine Rückmeldung --
-  // Ohne Rückmeldung weiß niemand, ob der Klick etwas getan hat; und auf einer
-  // lokal geöffneten Datei (file://) ist navigator.clipboard je nach Browser
-  // gar nicht verfügbar. Scheitert beides, wird der Betrag wenigstens markiert,
-  // damit Strg+C greift.
-  function rueckmeldung(btn, text, klasse) {{
-    if (!btn._standard) btn._standard = btn.textContent;
-    btn.textContent = text;
-    btn.classList.remove('ok', 'fehler');
-    if (klasse) btn.classList.add(klasse);
-    clearTimeout(btn._timer);
-    btn._timer = setTimeout(function() {{
-      btn.textContent = btn._standard;
-      btn.classList.remove('ok', 'fehler');
-    }}, 1400);
-  }}
-
-  function fallbackKopie(text) {{
-    try {{
-      var ta = document.createElement('textarea');
-      ta.value = text;
-      ta.setAttribute('readonly', '');
-      ta.style.position = 'fixed';
-      ta.style.top = '-1000px';
-      document.body.appendChild(ta);
-      ta.select();
-      var ok = document.execCommand('copy');
-      document.body.removeChild(ta);
-      return ok;
-    }} catch (e) {{ return false; }}
-  }}
-
-  function markiere(el) {{
-    try {{
-      var bereich = document.createRange();
-      bereich.selectNodeContents(el);
-      var auswahl = window.getSelection();
-      auswahl.removeAllRanges();
-      auswahl.addRange(bereich);
-    }} catch (e) {{}}
-  }}
-
-  function kopiere(text, btn, betragEl) {{
-    function gelungen() {{ rueckmeldung(btn, 'Kopiert ✓', 'ok'); }}
-    function gescheitert() {{ markiere(betragEl); rueckmeldung(btn, 'Strg+C', 'fehler'); }}
-    if (navigator.clipboard && navigator.clipboard.writeText) {{
-      navigator.clipboard.writeText(text).then(gelungen, function() {{
-        if (fallbackKopie(text)) gelungen(); else gescheitert();
-      }});
-      return;
-    }}
-    if (fallbackKopie(text)) gelungen(); else gescheitert();
-  }}
+  // Kopieren (Clipboard-API, execCommand-Rückfall, Rückmeldung) kommt aus
+  // KOPIER_JS — dieselbe Fassung wie im Dashboard, damit eine Korrektur nicht
+  // in nur einer der beiden Seiten landet. Sie verdrahtet zugleich die
+  // „Für Claude kopieren"-Schaltflächen der Hinweise unten.
+{KOPIER_JS}
 
   // ---- Zeilen nach Anlage gruppieren -----------------------------------------
   // So wird die Liste in derselben Reihenfolge abgearbeitet, in der man die
@@ -682,7 +753,7 @@ in deutscher Schreibweise mit Dezimalkomma — genau so, wie ihn das ELSTER-Feld
       kopierBtn.title = 'Kopiert "' + z.kopie + '" — so, wie ELSTER es erwartet';
       kopierBtn.addEventListener('click', function(e) {{
         e.stopPropagation();
-        kopiere(z.kopie, kopierBtn, betrag);
+        inZwischenablage(z.kopie, kopierBtn, betrag);
       }});
       tdWert.appendChild(kopierBtn);
       tr.appendChild(tdWert);

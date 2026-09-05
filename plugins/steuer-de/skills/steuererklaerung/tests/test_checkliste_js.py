@@ -81,6 +81,10 @@ global.document = {
   body: mkEl('body'),
   createRange: () => ({ selectNodeContents() {} }),
   execCommand: () => EXEC_OK,
+  // Die "Für Claude kopieren"-Knöpfe der Hinweise stehen im statischen HTML,
+  // nicht im hier nachgebauten DOM — für diesen Test also leer. Dass sie
+  // funktionieren, prüft test_export.py am erzeugten Markup.
+  querySelectorAll: () => [],
 };
 global.window = { getSelection: () => ({ removeAllRanges() {}, addRange() {} }) };
 global.Event = class { constructor(t) { this.type = t; } stopPropagation() {} };

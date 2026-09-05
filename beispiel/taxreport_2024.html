@@ -28,6 +28,13 @@ tr.sum td{font-weight:700;border-top:2px solid var(--line);background:var(--pane
 .note{background:var(--panel);border-left:3px solid var(--warn);padding:12px 16px;
 border-radius:8px;margin:16px 0;font-size:13px;color:var(--mut)}
 .note ul{margin:6px 0 0;padding-left:18px}
+.note li{margin-bottom:6px}
+button.erklaeren{font:inherit;font-size:11px;cursor:pointer;background:var(--panel2);
+color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:1px 8px;
+margin-left:6px;white-space:nowrap;vertical-align:baseline}
+button.erklaeren:hover{border-color:var(--acc);color:var(--txt)}
+button.erklaeren.ok{border-color:var(--good);color:var(--good)}
+button.erklaeren.fehler{border-color:var(--bad);color:var(--bad)}
 footer{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}
 @media print{
   :root{color-scheme:light;--bg:#fff;--panel:#fff;--panel2:#f2f4f8;--line:#9aa4b2;
@@ -44,6 +51,7 @@ footer{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}
   thead{display:table-header-group}
   .badge{border:1px solid #333;background:none !important}
   .badge.tax{color:#8a1414}.badge.free{color:#065f36}
+  button.erklaeren{display:none !important}
   footer{color:#333}
 }
 </style></head><body><div class="wrap">
@@ -74,7 +82,100 @@ footer{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}
 <table><tr><th>Anlage</th><th>Zeile</th><th>Bezeichnung</th><th>Wert</th></tr><tr><td>Hauptvordruck</td><td>—</td><td>Steuerjahr</td><td>2024</td></tr><tr><td>Hauptvordruck</td><td>Z. 8</td><td>Name</td><td>Beispiel Muster</td></tr><tr><td>Anlage N</td><td>Z. 6</td><td>Bruttoarbeitslohn (lt. Lohnsteuerbescheinigung Nr. 3)</td><td>78500.00</td></tr><tr><td>Anlage N</td><td>Z. 7</td><td>Einbehaltene Lohnsteuer</td><td>18420.00</td></tr><tr><td>Anlage N</td><td>Z. 8</td><td>Solidaritätszuschlag</td><td>0.00</td></tr><tr><td>Anlage N</td><td>Z. 9</td><td>Einbehaltene Kirchensteuer</td><td>1658.00</td></tr><tr><td>Anlage N</td><td>Z. 31 ff.</td><td>Werbungskosten (Summe)</td><td>2300.00</td></tr><tr><td>Anlage KAP</td><td>Z. 7</td><td>Kapitalerträge (ohne Steuerabzug bzw. lt. Steuerbescheinigung)</td><td>850.00</td></tr><tr><td>Anlage KAP</td><td>Z. 16/17</td><td>Sparer-Pauschbetrag (Antrag)</td><td>1000</td></tr><tr><td>Anlage KAP</td><td>Z. 37</td><td>Anrechenbare Kapitalertragsteuer</td><td>212.50</td></tr><tr><td>Anlage KAP</td><td>Z. 38</td><td>Einbehaltener Solidaritätszuschlag (Kapitalerträge)</td><td>11.68</td></tr><tr><td>Anlage SO</td><td>Z. 41–47</td><td>Private Veräußerungsgeschäfte § 23 — Gewinn/Verlust</td><td>1482.00</td></tr><tr><td>Anlage SO</td><td>Z. 41–47</td><td>davon steuerpflichtig (Freigrenze einmalig geprüft)</td><td>1482.00</td></tr><tr><td>Anlage SO</td><td>Z. 54–59</td><td>Festgestellter Verlustvortrag § 23 aus Vorjahren (Antrag auf Verrechnung)</td><td>900.00</td></tr><tr><td>Anlage SO</td><td>Z. 54–59</td><td>davon mit § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG)</td><td>900.00</td></tr><tr><td>Anlage SO</td><td>Z. 54–59</td><td>verbleibender Verlustvortrag § 23 aus Vorjahren (Feststellung fortschreiben)</td><td>0.00</td></tr><tr><td>Anlage SO</td><td>Z. 10–13</td><td>Leistungen § 22 Nr. 3 (Staking/Lending u. a., Freigrenze 256 € auf die Gesamtsumme)</td><td>700.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Basisversorgung: Rentenversicherung</td><td>14600.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Kranken pflege basis: Krankenversicherung</td><td>3200.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Kranken pflege basis: Pflegeversicherung</td><td>550.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Sonstige: Arbeitslosenversicherung</td><td>1030.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Arbeitgeberanteil steuerfrei</td><td>7300.00</td></tr><tr><td>Anlage Sonderausgaben</td><td>Z. 5–12</td><td>Spenden</td><td>240.00</td></tr></table>
 
 <div class="note"><strong>Was diese Schätzung nicht enthält</strong><p>Gesamtbild: <strong>keine gerichtete Abweichung erkennbar</strong>. Die Richtung sagt, wie die ausgewiesene Steuer vom tatsächlichen Ergebnis abweichen dürfte.</p><table><thead><tr><th>Posten</th><th>Wirkung auf die Steuer</th><th>Größenordnung</th><th>Fundstelle</th></tr></thead><tbody><tr><td>Kürzung des Vorsorge-Höchstbetrags für Beamte und Versorgungsanwärter nicht gerechnet</td><td class="r">offen</td><td>nur bei diesem Personenkreis; sonst ohne Wirkung</td><td>§ 10 Abs. 3 Satz 3 EStG</td></tr><tr><td>Geleistete Vorauszahlungen nicht angerechnet</td><td class="r">offen</td><td>in Höhe der tatsächlich geleisteten Vorauszahlungen</td><td>§ 37 EStG</td></tr></tbody></table></div>
-<div class="note"><strong>Wichtige Hinweise</strong><ul><li>Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung.</li><li>Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Kinderfreibeträge im Tarif, keine zumutbare Belastung bei außergewöhnlichen Belastungen, keine Vorauszahlungen).</li><li>Zeilennummern sind Orientierung — ELSTER ändert die Layouts jährlich. Jede Zeile vor dem Absenden im Formular gegenprüfen.</li><li>Krypto-Endkontrolle durch Steuerberater und Abgleich mit der ELSTER-Berechnung vor Einreichung.</li><li>§ 23-Verlustvortrag aus Vorjahren: 900,00 € von 900,00 € wurden mit den § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG). Der verbrauchte Betrag muss in Anlage SO beantragt werden und steht künftig nicht mehr zur Verfügung.</li></ul></div>
-<div class="note"><strong>Weitere Hinweise</strong><ul><li>§ 20 Abs. 6 Sätze 5 und 6 EStG (eigener Verrechnungskreis und 20.000-€-Deckel für Termingeschäfte) wurden durch das Jahressteuergesetz 2024 aufgehoben — anwendbar in allen offenen Fällen. Verluste aus Termingeschäften sind daher mit sämtlichen Kapitalerträgen verrechenbar; beschränkt bleibt nur der Aktien-Verlusttopf (§ 20 Abs. 6 Satz 4 EStG).</li><li>Alle Kennzahlen betreffen ausschließlich das Steuerjahr; die Vorjahres-Historie geht nur in das FIFO ein (siehe alle_veraeusserungen).</li><li>Freigrenze (kein Freibetrag): bei Überschreiten ist der GESAMTE § 23-Gewinn steuerpflichtig.</li><li>Coins &gt; 1 Jahr gehalten sind steuerfrei (§ 23 Abs. 1 Nr. 2 EStG); die Jahresfrist endet taggenau nach § 108 AO / § 188 BGB.</li><li>Staking/Lending: Zufluss als sonstige Leistung § 22 Nr. 3, Freigrenze 256 €.</li><li>Krypto-zu-Krypto-Tausch = Veräußerung des abgegebenen Coins zum EUR-Marktwert; die Tauschgebühr wird als Anschaffungsnebenkosten des erhaltenen Coins aktiviert.</li><li>Endkontrolle durch Steuerberater — dies ist keine Steuerberatung.</li><li>§ 23-Verlustvortrag aus Vorjahren (900,00 €): 900,00 € wurden mit den steuerpflichtigen § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG), 0,00 € bleiben vortragsfähig.</li><li>§ 35a EStG: 456,00 € Steuerermäßigung angesetzt (20 % der Aufwendungen, je Topf gedeckelt). Begünstigt sind nur Arbeits-, Maschinen- und Fahrtkosten — Material zählt nicht, auch nicht anteilig. Die Rechnung muss unbar bezahlt sein; eine Barzahlung erkennt das Finanzamt selbst mit Quittung nicht an. Beides steht nicht in den Zahlen und wurde hier nicht geprüft.</li><li>Noch offene Veranlagungszeiträume: 2022 (bis 31.12.2026), 2023 (bis 31.12.2027), 2024 (bis 31.12.2028), 2025 (bis 31.12.2029), 2026 (bis 31.12.2030). Wer nicht zur Abgabe verpflichtet ist, kann freiwillig abgeben (Antragsveranlagung, § 46 Abs. 2 Nr. 8 EStG), solange die vierjährige Festsetzungsfrist läuft (§ 169 Abs. 2 Nr. 2 i.V.m. § 170 Abs. 1 AO). Für zurückliegende Jahre lohnt der Blick besonders dann, wenn Lohnsteuer einbehalten wurde.</li></ul></div>
+<div class="note"><strong>Wichtige Hinweise</strong><ul><li>Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Kinderfreibeträge im Tarif, keine zumutbare Belastung bei außergewöhnlichen Belastungen, keine Vorauszahlungen). <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+Die Schätzung nutzt den § 32a-Tarif und vereinfachte Annahmen (keine Kinderfreibeträge im Tarif, keine zumutbare Belastung bei außergewöhnlichen Belastungen, keine Vorauszahlungen)." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>Zeilennummern sind Orientierung — ELSTER ändert die Layouts jährlich. Jede Zeile vor dem Absenden im Formular gegenprüfen. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+Zeilennummern sind Orientierung — ELSTER ändert die Layouts jährlich. Jede Zeile vor dem Absenden im Formular gegenprüfen." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>Krypto-Endkontrolle durch Steuerberater und Abgleich mit der ELSTER-Berechnung vor Einreichung. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+Krypto-Endkontrolle durch Steuerberater und Abgleich mit der ELSTER-Berechnung vor Einreichung." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>§ 23-Verlustvortrag aus Vorjahren: 900,00 € von 900,00 € wurden mit den § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG). Der verbrauchte Betrag muss in Anlage SO beantragt werden und steht künftig nicht mehr zur Verfügung. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+§ 23-Verlustvortrag aus Vorjahren: 900,00 € von 900,00 € wurden mit den § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG). Der verbrauchte Betrag muss in Anlage SO beantragt werden und steht künftig nicht mehr zur Verfügung." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li></ul></div>
+<div class="note"><strong>Weitere Hinweise</strong><ul><li>§ 20 Abs. 6 Sätze 5 und 6 EStG (eigener Verrechnungskreis und 20.000-€-Deckel für Termingeschäfte) wurden durch das Jahressteuergesetz 2024 aufgehoben — anwendbar in allen offenen Fällen. Verluste aus Termingeschäften sind daher mit sämtlichen Kapitalerträgen verrechenbar; beschränkt bleibt nur der Aktien-Verlusttopf (§ 20 Abs. 6 Satz 4 EStG). <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+§ 20 Abs. 6 Sätze 5 und 6 EStG (eigener Verrechnungskreis und 20.000-€-Deckel für Termingeschäfte) wurden durch das Jahressteuergesetz 2024 aufgehoben — anwendbar in allen offenen Fällen. Verluste aus Termingeschäften sind daher mit sämtlichen Kapitalerträgen verrechenbar; beschränkt bleibt nur der Aktien-Verlusttopf (§ 20 Abs. 6 Satz 4 EStG)." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>Alle Kennzahlen betreffen ausschließlich das Steuerjahr; die Vorjahres-Historie geht nur in das FIFO ein (siehe alle_veraeusserungen). <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+Alle Kennzahlen betreffen ausschließlich das Steuerjahr; die Vorjahres-Historie geht nur in das FIFO ein (siehe alle_veraeusserungen)." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>Freigrenze (kein Freibetrag): bei Überschreiten ist der GESAMTE § 23-Gewinn steuerpflichtig. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+Freigrenze (kein Freibetrag): bei Überschreiten ist der GESAMTE § 23-Gewinn steuerpflichtig." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>Coins &gt; 1 Jahr gehalten sind steuerfrei (§ 23 Abs. 1 Nr. 2 EStG); die Jahresfrist endet taggenau nach § 108 AO / § 188 BGB. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+Coins &gt; 1 Jahr gehalten sind steuerfrei (§ 23 Abs. 1 Nr. 2 EStG); die Jahresfrist endet taggenau nach § 108 AO / § 188 BGB." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>Staking/Lending: Zufluss als sonstige Leistung § 22 Nr. 3, Freigrenze 256 €. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+Staking/Lending: Zufluss als sonstige Leistung § 22 Nr. 3, Freigrenze 256 €." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>Krypto-zu-Krypto-Tausch = Veräußerung des abgegebenen Coins zum EUR-Marktwert; die Tauschgebühr wird als Anschaffungsnebenkosten des erhaltenen Coins aktiviert. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+Krypto-zu-Krypto-Tausch = Veräußerung des abgegebenen Coins zum EUR-Marktwert; die Tauschgebühr wird als Anschaffungsnebenkosten des erhaltenen Coins aktiviert." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>Endkontrolle durch Steuerberater — dies ist keine Steuerberatung. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+Endkontrolle durch Steuerberater — dies ist keine Steuerberatung." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>§ 23-Verlustvortrag aus Vorjahren (900,00 €): 900,00 € wurden mit den steuerpflichtigen § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG), 0,00 € bleiben vortragsfähig. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+§ 23-Verlustvortrag aus Vorjahren (900,00 €): 900,00 € wurden mit den steuerpflichtigen § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG), 0,00 € bleiben vortragsfähig." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>§ 35a EStG: 456,00 € Steuerermäßigung angesetzt (20 % der Aufwendungen, je Topf gedeckelt). Begünstigt sind nur Arbeits-, Maschinen- und Fahrtkosten — Material zählt nicht, auch nicht anteilig. Die Rechnung muss unbar bezahlt sein; eine Barzahlung erkennt das Finanzamt selbst mit Quittung nicht an. Beides steht nicht in den Zahlen und wurde hier nicht geprüft. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+§ 35a EStG: 456,00 € Steuerermäßigung angesetzt (20 % der Aufwendungen, je Topf gedeckelt). Begünstigt sind nur Arbeits-, Maschinen- und Fahrtkosten — Material zählt nicht, auch nicht anteilig. Die Rechnung muss unbar bezahlt sein; eine Barzahlung erkennt das Finanzamt selbst mit Quittung nicht an. Beides steht nicht in den Zahlen und wurde hier nicht geprüft." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li><li>Noch offene Veranlagungszeiträume: 2022 (bis 31.12.2026), 2023 (bis 31.12.2027), 2024 (bis 31.12.2028), 2025 (bis 31.12.2029), 2026 (bis 31.12.2030). Wer nicht zur Abgabe verpflichtet ist, kann freiwillig abgeben (Antragsveranlagung, § 46 Abs. 2 Nr. 8 EStG), solange die vierjährige Festsetzungsfrist läuft (§ 169 Abs. 2 Nr. 2 i.V.m. § 170 Abs. 1 AO). Für zurückliegende Jahre lohnt der Blick besonders dann, wenn Lohnsteuer einbehalten wurde. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
+
+Noch offene Veranlagungszeiträume: 2022 (bis 31.12.2026), 2023 (bis 31.12.2027), 2024 (bis 31.12.2028), 2025 (bis 31.12.2029), 2026 (bis 31.12.2030). Wer nicht zur Abgabe verpflichtet ist, kann freiwillig abgeben (Antragsveranlagung, § 46 Abs. 2 Nr. 8 EStG), solange die vierjährige Festsetzungsfrist läuft (§ 169 Abs. 2 Nr. 2 i.V.m. § 170 Abs. 1 AO). Für zurückliegende Jahre lohnt der Blick besonders dann, wenn Lohnsteuer einbehalten wurde." title="Hinweis samt Frage in die Zwischenablage — zum Einfügen in deine Claude-Sitzung. Es wird nichts verschickt.">Für Claude kopieren</button></li></ul></div>
 <footer>Erstellt mit dem Skill „Steuererklärung Deutschland“ · keine Steuerberatung · Endkontrolle durch Steuerberater</footer>
-</div></body></html>
+</div>
+<script>
+(function() {
+
+  function lsKopierFallback(text) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
+  }
+
+  function kopierRueckmeldung(btn, text, klasse) {
+    if (!btn._standard) btn._standard = btn.textContent;
+    btn.textContent = text;
+    btn.classList.remove('ok', 'fehler');
+    if (klasse) btn.classList.add(klasse);
+    clearTimeout(btn._timer);
+    btn._timer = setTimeout(function() {
+      btn.textContent = btn._standard;
+      btn.classList.remove('ok', 'fehler');
+    }, 1600);
+  }
+
+  function inZwischenablage(text, btn, markierEl) {
+    function gelungen() { kopierRueckmeldung(btn, 'Kopiert ✓', 'ok'); }
+    function gescheitert() {
+      if (markierEl) {
+        try {
+          var b = document.createRange();
+          b.selectNodeContents(markierEl);
+          var s = window.getSelection();
+          s.removeAllRanges();
+          s.addRange(b);
+        } catch (e) {}
+      }
+      kopierRueckmeldung(btn, 'Strg+C', 'fehler');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(gelungen, function() {
+        if (lsKopierFallback(text)) gelungen(); else gescheitert();
+      });
+      return;
+    }
+    if (lsKopierFallback(text)) gelungen(); else gescheitert();
+  }
+
+  Array.prototype.forEach.call(
+    document.querySelectorAll('button.erklaeren'), function(btn) {
+      btn.addEventListener('click', function() {
+        inZwischenablage(btn.getAttribute('data-frage'), btn, btn.parentNode);
+      });
+    });
+
+})();
+</script>
+</body></html>
