@@ -43,6 +43,54 @@ def test_angestellter_bekommt_nur_die_passenden_bloecke():
 
 
 @case
+def test_keine_erfundenen_betraege_in_der_startdatei():
+    """Die Startdatei darf KEINE Zahl enthalten, die der Nutzer nie genannt hat.
+
+    Vorher stand hier die 16-€-Pauschale für Kontoführungsgebühren vorausgefüllt.
+    Die ist aber keine automatische Pauschale, sondern eine
+    Nichtbeanstandungsgrenze: absetzbar nur, wenn tatsächlich Gebühren angefallen
+    sind. Vorausgefüllt wäre sie eine Angabe gegenüber dem Finanzamt, die niemand
+    gemacht hat — und eine Zahl, die schon dasteht, prüft niemand mehr nach.
+    """
+    sd = ns.steuerdaten(jahr=2026, taetigkeiten=["angestellt", "vermietung"],
+                        kinder=1, kapital=True, krypto=True, handwerker=True,
+                        lohnersatz=True, agb=True)
+
+    def betraege(knoten, pfad=""):
+        if isinstance(knoten, dict):
+            for k, v in knoten.items():
+                yield from betraege(v, f"{pfad}.{k}" if pfad else k)
+        elif isinstance(knoten, list):
+            for i, v in enumerate(knoten):
+                yield from betraege(v, f"{pfad}[{i}]")
+        elif isinstance(knoten, str):
+            try:
+                yield pfad, float(knoten)
+            except ValueError:
+                pass  # Name, Datum, Platzhalter — kein Betrag
+
+    nicht_null = {p: w for p, w in betraege(sd) if w != 0
+                  and not p.startswith("steuerjahr")
+                  and not p.endswith("kirchensteuersatz")}
+    eq(nicht_null, {}, "vorausgefüllte Beträge in der Startdatei")
+    eq(sd["anlage_n"]["werbungskosten"]["kontofuehrung"], "0.00",
+       "Kontoführungsgebühren dürfen nicht vorausgefüllt sein")
+
+
+@case
+def test_hinweis_statt_vorausgefuelltem_betrag():
+    """Statt die 16 € einzutragen, muss der Einstieg sie ERKLÄREN — sonst weiß
+    niemand, dass es sie gibt."""
+    h = " ".join(ns.hinweise(taetigkeiten=["angestellt"]))
+    assert "Kontoführungsgebühren" in h, h
+    assert "16 €" in h, h
+    assert "anlage_n.werbungskosten.kontofuehrung" in h, \
+        "der Hinweis muss sagen, WO der Betrag hingehört"
+    # Wer nicht angestellt ist, braucht den Hinweis nicht.
+    eq(ns.hinweise(taetigkeiten=["vermietung"]), [], "Hinweis nur zur passenden Lage")
+
+
+@case
 def test_bloecke_folgen_den_angaben():
     sd = ns.steuerdaten(jahr=2026, taetigkeiten=["angestellt", "vermietung"],
                         kinder=2, kapital=True, krypto=True, handwerker=True,

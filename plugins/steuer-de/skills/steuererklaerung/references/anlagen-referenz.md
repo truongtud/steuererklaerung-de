@@ -22,6 +22,19 @@ Die meisten Felder müssen **nicht** von Hand eingetragen werden.
 Übernommen wird nur, was eindeutig ist; alles andere wird gemeldet und bleibt leer. Von
 Hand bleiben Werbungskosten, § 35a-Aufwendungen, Spenden und die Stammdaten.
 
+**Kein Feld wird mit einem Betrag vorbelegt, den der Nutzer nicht genannt hat.** Auch keine
+Pauschale, die man geltend machen *könnte*: die 16 € für Kontoführungsgebühren etwa sind
+keine automatische Pauschale, sondern eine Nichtbeanstandungsgrenze — absetzbar nur, wenn
+tatsächlich Gebühren angefallen sind. Eine vorausgefüllte Zahl wäre eine Angabe gegenüber
+dem Finanzamt, die niemand gemacht hat, und eine Zahl, die schon dasteht, prüft niemand
+mehr nach. `scripts/neue_steuerdaten.py` legt solche Felder deshalb mit `0.00` an und
+**erklärt** sie stattdessen in der Hinweisliste seines Laufs (`HINWEISE`).
+
+Davon zu unterscheiden sind die **gesetzlichen Pauschbeträge**, die das Finanzamt von Amts
+wegen ansetzt — Arbeitnehmer-Pauschbetrag (§ 9a), Sparer-Pauschbetrag (§ 20 Abs. 9),
+Sonderausgaben-Pauschbetrag. Die rechnet `build_taxreport.py` selbst; sie gehören nicht in
+die Eingabedatei und würden dort doppelt wirken.
+
 ## Eingabeschema `steuerdaten.json`
 
 ```json

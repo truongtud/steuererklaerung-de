@@ -42,8 +42,11 @@ BLOECKE = {
     "angestellt": ("anlage_n", {
         "bruttoarbeitslohn": _LEER, "lohnsteuer": _LEER, "soli": _LEER,
         "kirchensteuer": _LEER,
+        # Kontoführungsgebühren stehen hier bewusst auf 0,00 wie alles andere:
+        # siehe HINWEISE["angestellt"]. Ein vorausgefüllter Betrag wäre eine
+        # Angabe, die der Nutzer nie gemacht hat.
         "werbungskosten": {"entfernungspauschale": _LEER, "arbeitsmittel": _LEER,
-                           "fortbildung": _LEER, "kontofuehrung": "16.00"}}),
+                           "fortbildung": _LEER, "kontofuehrung": _LEER}}),
     "selbstaendig": ("anlage_s", {"gewinn": _LEER}),
     "gewerbe": ("anlage_g", {"gewinn": _LEER}),
     "vermietung": ("anlage_v", {"einkuenfte": _LEER}),
@@ -64,6 +67,34 @@ UNTERLAGEN = {
                    "Abschreibung des Gebäudes, Erhaltungsaufwand"],
     "rente": ["Rentenbezugsmitteilung oder Mitteilung des Rentenversicherungsträgers"],
 }
+
+# Pauschalen, die man geltend machen KANN, aber nur mit tatsächlichem Aufwand.
+# Sie werden bewusst nicht in die Startdatei geschrieben, sondern hier genannt:
+# eine vorausgefüllte Zahl wäre eine Angabe gegenüber dem Finanzamt, die der
+# Nutzer nie gemacht hat — und niemand prüft eine Zahl nach, die schon dasteht.
+# Statutarische Pauschbeträge (Arbeitnehmer-Pauschbetrag § 9a, Sparer-Pauschbetrag
+# § 20 Abs. 9) gehören NICHT hierher: die setzt das Finanzamt von Amts wegen an,
+# und build_taxreport.py rechnet sie deshalb selbst.
+HINWEISE = {
+    "angestellt": [
+        "Kontoführungsgebühren: bis zu 16 € im Jahr erkennen die Finanzämter ohne "
+        "Einzelnachweis als Werbungskosten an — aber nur, wenn tatsächlich Gebühren "
+        "angefallen sind. Der Betrag steht deshalb auf 0,00 und wird NICHT "
+        "vorausgefüllt. Wer welche gezahlt hat, trägt sie unter "
+        "anlage_n.werbungskosten.kontofuehrung selbst ein.",
+        "Arbeitnehmer-Pauschbetrag (1.230 €): den setzt das Finanzamt von selbst an, "
+        "er gehört nicht in die Werbungskosten. Einzutragen sind nur die "
+        "tatsächlichen Kosten — sie wirken erst, soweit sie darüber liegen.",
+    ],
+}
+
+
+def hinweise(taetigkeiten, **_ignoriert) -> list:
+    """Was man eintragen KANN, aber selbst entscheiden muss."""
+    h = []
+    for t in taetigkeiten:
+        h += HINWEISE.get(t, [])
+    return h
 
 
 def anlagen(taetigkeiten, kapital=False, krypto=False, kinder=0, agb=False) -> list:
@@ -202,6 +233,13 @@ def main(argv=None) -> int:
     for u in unterlagen(handwerker=args.handwerker, lohnersatz=args.lohnersatz,
                         **gemeinsam):
         print(f"  · {u}")
+
+    offene_hinweise = hinweise(**gemeinsam)
+    if offene_hinweise:
+        print("\nDas trägst du selbst ein, wenn es zutrifft (nichts davon wird "
+              "vorausgefüllt):")
+        for h in offene_hinweise:
+            print(f"  · {h}")
 
     offen = dict(sl.offene_veranlagungszeitraeume())
     if args.jahr in offen:
