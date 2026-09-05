@@ -88,7 +88,7 @@
       "anlage": "Anlage KAP",
       "zeile": "Z. 16/17",
       "bezeichnung": "Sparer-Pauschbetrag (Antrag)",
-      "wert": "1000",
+      "wert": "1000.00",
       "quelle": "steuerlib.sparer_pauschbetrag",
       "art": "eintragen"
     },

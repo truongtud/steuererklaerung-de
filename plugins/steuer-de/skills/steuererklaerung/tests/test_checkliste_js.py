@@ -58,8 +58,14 @@ function mkEl(tag) {
       toggle(c, on) { on ? el.classList.add(c) : el.classList.remove(c); },
       contains(c) { return el.className.split(' ').includes(c); },
     },
-    appendChild(c) { el.children.push(c); return c; },
-    removeChild(c) { el.children = el.children.filter(x => x !== c); return c; },
+    appendChild(c) { c.parentNode = el; el.children.push(c); return c; },
+    insertBefore(neu, ref) {
+      neu.parentNode = el;
+      const i = el.children.indexOf(ref);
+      el.children.splice(i < 0 ? el.children.length : i, 0, neu);
+      return neu;
+    },
+    removeChild(c) { el.children = el.children.filter(x => x !== c); c.parentNode = null; return c; },
     setAttribute(k, v) { el[k] = v; },
     addEventListener(ev, fn) { (el._listeners[ev] = el._listeners[ev] || []).push(fn); },
     dispatchEvent(e) { (el._listeners[e.type] || []).forEach(fn => fn(e)); },
@@ -75,6 +81,7 @@ const byId = {};
   .forEach(id => { byId[id] = mkEl('div'); });
 byId['zeilen-daten'] = mkEl('script');
 byId['zeilen-daten'].textContent = ZEILEN_JSON;
+byId['nur-offen-box'].checked = FILTER_AN;   // wie vom Browser wiederhergestellt
 global.document = {
   getElementById: id => byId[id] || null,
   createElement: mkEl,
@@ -107,7 +114,9 @@ const cb = tr.children[0].children[0];
 const btn = tr.children[3].children[1];
 
 const ergebnis = { sections: gruppen.children.length,
-                   fortschritt_vorher: document.getElementById('fortschritt-text').textContent };
+                   fortschritt_vorher: document.getElementById('fortschritt-text').textContent,
+                   // Fund 6: Filterzustand muss beim Laden uebernommen werden
+                   filter_beim_start: gruppen.className };
 cb.checked = true;
 cb.dispatchEvent(new Event('change'));
 ergebnis.fortschritt_nachher = document.getElementById('fortschritt-text').textContent;
@@ -120,12 +129,17 @@ btn.dispatchEvent(new Event('click'));
 setImmediate(() => setImmediate(() => {
   ergebnis.kopier_text = btn.textContent;
   ergebnis.kopier_klasse = btn.className;
+  // Fund 1: was auf dem Strg+C-Pfad zum Markieren eingeblendet wird
+  var marke = tr.children[3].children.filter(function(k) {
+    return k.className === 'kopiermarke';
+  })[0];
+  ergebnis.marke = marke ? marke.textContent : null;
   console.log(JSON.stringify(ergebnis));
 }));
 """
 
 
-def _lauf(*, clipboard: bool, exec_ok: bool) -> dict:
+def _lauf(*, clipboard: bool, exec_ok: bool, filter_an: bool = False) -> dict:
     """Checkliste erzeugen, JS herausschneiden und unter Node ausführen."""
     from test_export import fixture, _mapping_mit_arten   # dieselben Fixtures
 
@@ -139,6 +153,7 @@ def _lauf(*, clipboard: bool, exec_ok: bool) -> dict:
     stub = (DOM_STUB
             .replace("ZEILEN_JSON", json.dumps(zeilen_json))
             .replace("EXEC_OK", "true" if exec_ok else "false")
+            .replace("FILTER_AN", "true" if filter_an else "false")
             .replace("NAVIGATOR", navigator))
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -213,6 +228,121 @@ def test_kopieren_sagt_es_wenn_beide_wege_scheitern():
     r = _lauf(clipboard=False, exec_ok=False)
     eq(r["kopier_text"], "Strg+C", "kein stiller Fehlschlag")
     assert "fehler" in r["kopier_klasse"], r["kopier_klasse"]
+
+
+@case
+def test_strg_c_pfad_markiert_den_formularwert_nicht_die_anzeige():
+    """Scheitern beide Kopierwege, soll der Nutzer per Strg+C GENAU das nehmen,
+    was ins Feld gehört. Vorher wurde die Anzeige markiert — er hätte
+    '63.230,00 €' mit Tausenderpunkten und Währungszeichen kopiert, also das,
+    wovor checklisten_wert ausdrücklich warnt."""
+    if not _node_da():
+        print("       (übersprungen: node nicht installiert)")
+        return
+    r = _lauf(clipboard=False, exec_ok=False)
+    eq(r["kopier_text"], "Strg+C")
+    eq(r["marke"], "63230,00", "markiert wird der Formularwert")
+
+
+@case
+def test_filterzustand_wird_beim_laden_uebernommen():
+    """Browser stellen den Haken der Filter-Checkbox über location.reload()
+    hinweg wieder her — und genau das löst 'Alle Haken zurücksetzen' aus. Ohne
+    Übernahme beim Start stünde der Schalter auf 'nur offene', während die Liste
+    alles zeigt."""
+    if not _node_da():
+        print("       (übersprungen: node nicht installiert)")
+        return
+    aus = _lauf(clipboard=True, exec_ok=True, filter_an=False)
+    an = _lauf(clipboard=True, exec_ok=True, filter_an=True)
+    assert "nur-offen" not in aus["filter_beim_start"], aus["filter_beim_start"]
+    assert "nur-offen" in an["filter_beim_start"], an["filter_beim_start"]
+
+
+@case
+def test_anlage_namens_proto_sprengt_die_seite_nicht():
+    """Die Mapping-Felder kommen aus fremden Reports — dieselbe Annahme, wegen
+    der beim Einbetten '<' escaped wird. Eine Anlage namens '__proto__' oder
+    'toString' traf in einem normalen Objekt eine geerbte Eigenschaft: die
+    Gruppe entstand nie, der Aufbau brach ab, und die Seite blieb bei
+    'wird geladen …' stehen."""
+    if not _node_da():
+        print("       (übersprungen: node nicht installiert)")
+        return
+    from test_export import fixture
+
+    boese = [
+        {"anlage": "__proto__", "zeile": "Z. 1", "bezeichnung": "Angriff",
+         "wert": "1.00", "art": "eintragen"},
+        {"anlage": "toString", "zeile": "Z. 2", "bezeichnung": "Noch einer",
+         "wert": "2.00", "art": "eintragen"},
+        {"anlage": "Anlage N", "zeile": "Z. 6", "bezeichnung": "Normal",
+         "wert": "3.00", "art": "eintragen"},
+    ]
+    html = ex.render_checkliste(fixture(elster_mapping=boese))
+    zeilen_json = re.search(
+        r'<script id="zeilen-daten"[^>]*>(.*?)</script>', html, re.S).group(1)
+    js = re.search(r"<script>\n(\(function\(\).*?)\n</script>", html, re.S).group(1)
+    stub = (DOM_STUB.replace("ZEILEN_JSON", json.dumps(zeilen_json))
+            .replace("EXEC_OK", "true").replace("FILTER_AN", "false")
+            .replace("NAVIGATOR", "{}"))
+    runner = ("eval(SKRIPT);\n"
+              "console.log(JSON.stringify({"
+              "  sections: document.getElementById('gruppen').children.length,"
+              "  fortschritt: document.getElementById('fortschritt-text').textContent}));")
+    with tempfile.TemporaryDirectory() as tmp:
+        pfad = Path(tmp) / "lauf.js"
+        pfad.write_text(stub + "\nconst SKRIPT = " + json.dumps(js) + ";\n" + runner,
+                        encoding="utf-8")
+        p = subprocess.run(["node", str(pfad)], capture_output=True, text=True,
+                           encoding="utf-8")
+    assert p.returncode == 0, f"Seitenaufbau abgestürzt:\n{p.stderr}"
+    r = json.loads(p.stdout.strip().splitlines()[-1])
+    eq(r["sections"], 3, "alle drei Gruppen entstehen")
+    eq(r["fortschritt"], "0 von 3 erledigt (0 %)")
+
+
+@case
+def test_fortschritt_stimmt_auch_wenn_localstorage_nichts_speichert():
+    """localStorage kann blockiert sein (Kontingent, Website-Daten gesperrt,
+    manche file://-Konfigurationen). lsSet schluckt das absichtlich — dann darf
+    aber nicht der Haken sichtbar sein, während Balken und Zähler stehen
+    bleiben."""
+    if not _node_da():
+        print("       (übersprungen: node nicht installiert)")
+        return
+    from test_export import fixture, _mapping_mit_arten
+
+    html = ex.render_checkliste(fixture(elster_mapping=_mapping_mit_arten()))
+    zeilen_json = re.search(
+        r'<script id="zeilen-daten"[^>]*>(.*?)</script>', html, re.S).group(1)
+    js = re.search(r"<script>\n(\(function\(\).*?)\n</script>", html, re.S).group(1)
+    # localStorage, das jedes Schreiben verweigert
+    stub = (DOM_STUB.replace("ZEILEN_JSON", json.dumps(zeilen_json))
+            .replace("EXEC_OK", "true").replace("FILTER_AN", "false")
+            .replace("NAVIGATOR", "{}")
+            .replace("setItem: (k, v) => { store[k] = String(v); },",
+                     "setItem: () => { throw new Error('blockiert'); },"))
+    runner = ("eval(SKRIPT);\n"
+              "const s = document.getElementById('gruppen').children[0];\n"
+              "const tr = s.children[1].children[1].children[0];\n"
+              "const cb = tr.children[0].children[0];\n"
+              "cb.checked = true; cb.dispatchEvent(new Event('change'));\n"
+              "console.log(JSON.stringify({"
+              "  fortschritt: document.getElementById('fortschritt-text').textContent,"
+              "  zaehler: s.children[0].children[1].textContent,"
+              "  zeile: tr.className}));")
+    with tempfile.TemporaryDirectory() as tmp:
+        pfad = Path(tmp) / "lauf.js"
+        pfad.write_text(stub + "\nconst SKRIPT = " + json.dumps(js) + ";\n" + runner,
+                        encoding="utf-8")
+        p = subprocess.run(["node", str(pfad)], capture_output=True, text=True,
+                           encoding="utf-8")
+    assert p.returncode == 0, p.stderr
+    r = json.loads(p.stdout.strip().splitlines()[-1])
+    eq(r["zeile"], "erledigt", "die Zeile zeigt den Haken")
+    eq(r["fortschritt"], "1 von 2 erledigt (50 %)", "und der Fortschritt zieht mit")
+    eq(r["zaehler"], "1 / 1", "auch der Gruppenzähler")
 
 
 @case

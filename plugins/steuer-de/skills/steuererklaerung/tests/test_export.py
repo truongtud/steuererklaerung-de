@@ -513,7 +513,18 @@ def test_checklisten_wert_kopiert_deutsche_notation():
     Dezimalkomma. Ein kopiertes '60000.00' würde je nach Feld als
     Tausendertrennung gelesen oder abgelehnt."""
     eq(ex.checklisten_wert("60000.00"), ("60.000,00 €", "60000,00"))
-    eq(ex.checklisten_wert("-450.5"), ("-450,50 €", "-450,5"))
+    eq(ex.checklisten_wert("-450.5"), ("-450,50 €", "-450,50"))
+
+
+@case
+def test_checklisten_wert_zeigt_und_kopiert_dieselbe_zahl():
+    """Anzeige und Kopierwert müssen denselben Betrag meinen. Vorher rundete nur
+    die Anzeige auf volle Cent: '12.345' stand als '12,35 €' da und kopierte
+    '12,345' — zwei verschiedene Beträge in derselben Zeile."""
+    for roh in ("12.345", "0.005", "-450.5", "1000.00"):
+        anzeige, kopie = ex.checklisten_wert(roh)
+        eq(anzeige, f"{kopie.replace(',', '.') and ex.fmt_eur(kopie.replace(',', '.'))}",
+           f"{roh}: Anzeige und Kopie beschreiben dieselbe Zahl")
 
 
 @case
@@ -522,6 +533,24 @@ def test_checklisten_wert_laesst_nicht_betraege_unangetastet():
     darf nie '2.025,00 €' werden."""
     for roh in ("2025", "Max Mustermann", "2015-04-02", "00 000 000 000", ""):
         eq(ex.checklisten_wert(roh), (roh, roh), f"{roh!r} unverändert")
+
+
+@case
+def test_jeder_betrag_im_mapping_ist_als_betrag_erkennbar():
+    """Kein Mapping-Wert darf als Betrag gemeint, aber nicht als Betrag
+    geschrieben sein. Der Sparer-Pauschbetrag kam als '1000' statt '1000.00'
+    aus build_taxreport — in der CSV der einzige Wert ohne Dezimalkomma, und in
+    der Checkliste wurde er gar nicht erst als Betrag erkannt (also weder
+    formatiert angezeigt noch formulargerecht kopiert)."""
+    import build_taxreport as bt
+
+    r = bt.build({"steuerjahr": 2025,
+                  "steuerpflichtiger": {"verheiratet": False},
+                  "anlage_kap": {"kapitalertraege": "4000"}}, [], None)
+    pb = [z for z in r["elster_mapping"] if "Sparer-Pauschbetrag" in z["bezeichnung"]]
+    eq(len(pb), 1, "genau eine Sparer-Pauschbetrag-Zeile")
+    eq(pb[0]["wert"], "1000.00", "als Betrag geschrieben, nicht als blanke Ganzzahl")
+    eq(ex.checklisten_wert(pb[0]["wert"]), ("1.000,00 €", "1000,00"))
 
 
 @case

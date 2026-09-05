@@ -34,7 +34,8 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from steuerlib import csv_safe, de_dezimal, fmt_eur, to_decimal_or  # noqa: E402
+from steuerlib import (  # noqa: E402
+    csv_safe, de_dezimal, fmt_eur, q2, to_decimal, to_decimal_or)
 
 D = Decimal
 
@@ -111,6 +112,13 @@ KOPIER_JS = """
     } catch (e) { return false; }
   }
 
+  function kopierMarkeWeg(btn) {
+    if (btn._marke && btn._marke.parentNode) {
+      btn._marke.parentNode.removeChild(btn._marke);
+    }
+    btn._marke = null;
+  }
+
   function kopierRueckmeldung(btn, text, klasse) {
     if (!btn._standard) btn._standard = btn.textContent;
     btn.textContent = text;
@@ -120,21 +128,37 @@ KOPIER_JS = """
     btn._timer = setTimeout(function() {
       btn.textContent = btn._standard;
       btn.classList.remove('ok', 'fehler');
+      kopierMarkeWeg(btn);
     }, 1600);
   }
 
-  function inZwischenablage(text, btn, markierEl) {
-    function gelungen() { kopierRueckmeldung(btn, 'Kopiert ✓', 'ok'); }
+  // Scheitern beide Kopierwege, wird der Text zum Markieren eingeblendet — und
+  // zwar GENAU der Text, der kopiert werden soll. Das ist der Grund, warum hier
+  // ein eigener Knoten entsteht statt einfach das danebenstehende Element
+  // markiert zu werden: in der Checkliste zeigt die Zeile "78.500,00 €", ins
+  // ELSTER-Feld gehört aber "78500,00"; und neben einem Hinweis stünde sonst
+  // der Hinweistext ohne die vorbereitete Frage. Wer dann Strg+C drückt, hätte
+  // genau das Falsche in der Zwischenablage.
+  function kopierMarke(btn, text) {
+    try {
+      kopierMarkeWeg(btn);
+      var marke = document.createElement('span');
+      marke.className = 'kopiermarke';
+      marke.textContent = text;
+      btn.parentNode.insertBefore(marke, btn);
+      var bereich = document.createRange();
+      bereich.selectNodeContents(marke);
+      var auswahl = window.getSelection();
+      auswahl.removeAllRanges();
+      auswahl.addRange(bereich);
+      btn._marke = marke;
+    } catch (e) {}
+  }
+
+  function inZwischenablage(text, btn) {
+    function gelungen() { kopierMarkeWeg(btn); kopierRueckmeldung(btn, 'Kopiert ✓', 'ok'); }
     function gescheitert() {
-      if (markierEl) {
-        try {
-          var b = document.createRange();
-          b.selectNodeContents(markierEl);
-          var s = window.getSelection();
-          s.removeAllRanges();
-          s.addRange(b);
-        } catch (e) {}
-      }
+      kopierMarke(btn, text);
       kopierRueckmeldung(btn, 'Strg+C', 'fehler');
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -149,7 +173,7 @@ KOPIER_JS = """
   Array.prototype.forEach.call(
     document.querySelectorAll('button.erklaeren'), function(btn) {
       btn.addEventListener('click', function() {
-        inZwischenablage(btn.getAttribute('data-frage'), btn, btn.parentNode);
+        inZwischenablage(btn.getAttribute('data-frage'), btn);
       });
     });
 """
@@ -397,6 +421,7 @@ margin-left:6px;white-space:nowrap;vertical-align:baseline}}
 button.erklaeren:hover{{border-color:var(--acc);color:var(--txt)}}
 button.erklaeren.ok{{border-color:var(--good);color:var(--good)}}
 button.erklaeren.fehler{{border-color:var(--bad);color:var(--bad)}}
+.kopiermarke{{display:inline-block;margin-right:6px;padding:1px 6px;border:1px dashed var(--bad);border-radius:6px;background:var(--panel2);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;white-space:pre-wrap;user-select:all}}
 footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
 @media print{{
   :root{{color-scheme:light;--bg:#fff;--panel:#fff;--panel2:#f2f4f8;--line:#9aa4b2;
@@ -476,10 +501,15 @@ def checklisten_wert(wert) -> tuple[str, str]:
     landet mit Dezimal**punkt** im Formular — ELSTER liest deutsche Notation,
     und je nach Feld wird der Punkt als Tausendertrennzeichen gedeutet oder die
     Eingabe abgelehnt. Aus 60000.00 € würden dann 6.000.000 €.
+
+    Beide Fassungen laufen über dieselbe Rundung auf volle Cent (`q2`): sonst
+    zeigte eine Zeile mit mehr als zwei Nachkommastellen „12,35 €" an und
+    kopierte „12,345" — angezeigter und eingetragener Betrag wären verschieden.
     """
     s = _s(wert)
     if _BETRAG_MUSTER.fullmatch(s):
-        return fmt_eur(s), de_dezimal(s)
+        betrag = q2(to_decimal(s))
+        return fmt_eur(betrag), de_dezimal(str(betrag))
     return s, s
 
 
@@ -619,6 +649,7 @@ margin-left:6px;white-space:nowrap;vertical-align:baseline}}
 button.erklaeren:hover{{border-color:var(--acc);color:var(--txt)}}
 button.erklaeren.ok{{border-color:var(--good);color:var(--good)}}
 button.erklaeren.fehler{{border-color:var(--bad);color:var(--bad)}}
+.kopiermarke{{display:inline-block;margin-right:6px;padding:1px 6px;border:1px dashed var(--bad);border-radius:6px;background:var(--panel2);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;white-space:pre-wrap;user-select:all}}
 footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
 .nur-offen tr.erledigt,.nur-offen section.fertig{{display:none}}
 @media print{{
@@ -692,7 +723,12 @@ in deutscher Schreibweise mit Dezimalkomma — genau so, wie ihn das ELSTER-Feld
   // Formulare in ELSTER ausfüllt — und die Spalte "Anlage" muss nicht in jeder
   // Zeile wiederholt werden.
   var gruppen = [];
-  var nachName = {{}};
+  // Object.create(null): eine Anlage namens '__proto__', 'toString' oder
+  // 'constructor' traefe bei einem normalen Objekt eine geerbte Eigenschaft,
+  // die Gruppe entstuende nie und der Aufbau der Seite braeche ab. Die
+  // Mapping-Felder stammen aus fremden Reports — dieselbe Annahme, wegen der
+  // oben '<' escaped wird.
+  var nachName = Object.create(null);
   zeilen.forEach(function(z) {{
     z._key = praefix + JSON.stringify([z.anlage, z.zeile, z.bezeichnung, z.wert]);
     if (!nachName[z.anlage]) {{
@@ -753,11 +789,12 @@ in deutscher Schreibweise mit Dezimalkomma — genau so, wie ihn das ELSTER-Feld
       kopierBtn.title = 'Kopiert "' + z.kopie + '" — so, wie ELSTER es erwartet';
       kopierBtn.addEventListener('click', function(e) {{
         e.stopPropagation();
-        inZwischenablage(z.kopie, kopierBtn, betrag);
+        inZwischenablage(z.kopie, kopierBtn);
       }});
       tdWert.appendChild(kopierBtn);
       tr.appendChild(tdWert);
 
+      z._cb = cb;
       cb.addEventListener('change', function() {{
         if (cb.checked) {{ lsSet(z._key, '1'); tr.classList.add('erledigt'); }}
         else {{ lsRemove(z._key); tr.classList.remove('erledigt'); }}
@@ -783,7 +820,11 @@ in deutscher Schreibweise mit Dezimalkomma — genau so, wie ihn das ELSTER-Feld
     var gesamt = zeilen.length;
     var erledigt = 0;
     gruppen.forEach(function(g) {{
-      var fertig = g.zeilen.filter(function(z) {{ return lsGet(z._key) === '1'; }}).length;
+      // Aus der Checkbox, nicht aus dem localStorage: lsSet schluckt Fehler
+      // absichtlich (Kontingent voll, Website-Daten blockiert, manche
+      // file://-Konfigurationen). Sonst zeigte die Zeile den Haken, waehrend
+      // Balken, Zaehler und das Ausblenden fertiger Gruppen stehen blieben.
+      var fertig = g.zeilen.filter(function(z) {{ return z._cb && z._cb.checked; }}).length;
       erledigt += fertig;
       g._zaehler.textContent = fertig + ' / ' + g.zeilen.length;
       g._section.classList.toggle('fertig', fertig === g.zeilen.length);
@@ -796,7 +837,13 @@ in deutscher Schreibweise mit Dezimalkomma — genau so, wie ihn das ELSTER-Feld
   }}
   fortschrittAktualisieren();
 
-  document.getElementById('nur-offen-box').addEventListener('change', function(e) {{
+  // Beim Laden einmal uebernehmen: Browser stellen den Haken der Checkbox ueber
+  // location.reload() hinweg wieder her — und genau das loest
+  // "Alle Haken zuruecksetzen" aus. Ohne diese Zeile stuende der Schalter danach
+  // auf "nur offene", waehrend die Liste alles zeigt.
+  var nurOffenBox = document.getElementById('nur-offen-box');
+  gruppenBehaelter.classList.toggle('nur-offen', nurOffenBox.checked);
+  nurOffenBox.addEventListener('change', function(e) {{
     gruppenBehaelter.classList.toggle('nur-offen', e.target.checked);
   }});
 

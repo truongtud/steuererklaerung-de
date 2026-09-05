@@ -35,6 +35,7 @@ margin-left:6px;white-space:nowrap;vertical-align:baseline}
 button.erklaeren:hover{border-color:var(--acc);color:var(--txt)}
 button.erklaeren.ok{border-color:var(--good);color:var(--good)}
 button.erklaeren.fehler{border-color:var(--bad);color:var(--bad)}
+.kopiermarke{display:inline-block;margin-right:6px;padding:1px 6px;border:1px dashed var(--bad);border-radius:6px;background:var(--panel2);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;white-space:pre-wrap;user-select:all}
 footer{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}
 @media print{
   :root{color-scheme:light;--bg:#fff;--panel:#fff;--panel2:#f2f4f8;--line:#9aa4b2;
@@ -79,7 +80,7 @@ footer{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}
 <table><tr><th>Asset</th><th>Menge</th><th>Anschaffung</th><th>Veräußerung</th><th>Haltedauer</th><th>Gewinn/Verlust</th><th>Status</th></tr><tr><td>BTC</td><td>0.4</td><td>2022-05-10</td><td>2024-03-15</td><td>675 T</td><td>10.759,00 €</td><td><span class="badge free">steuerfrei</span></td></tr><tr><td>ETH</td><td>1.5</td><td>2024-01-10</td><td>2024-08-01</td><td>204 T</td><td>1.482,00 €</td><td><span class="badge tax">steuerpfl.</span></td></tr></table>
 
 <h2>ELSTER-Feld-Mapping (manuelle Eingabe)</h2>
-<table><tr><th>Anlage</th><th>Zeile</th><th>Bezeichnung</th><th>Wert</th></tr><tr><td>Hauptvordruck</td><td>—</td><td>Steuerjahr</td><td>2024</td></tr><tr><td>Hauptvordruck</td><td>Z. 8</td><td>Name</td><td>Beispiel Muster</td></tr><tr><td>Anlage N</td><td>Z. 6</td><td>Bruttoarbeitslohn (lt. Lohnsteuerbescheinigung Nr. 3)</td><td>78500.00</td></tr><tr><td>Anlage N</td><td>Z. 7</td><td>Einbehaltene Lohnsteuer</td><td>18420.00</td></tr><tr><td>Anlage N</td><td>Z. 8</td><td>Solidaritätszuschlag</td><td>0.00</td></tr><tr><td>Anlage N</td><td>Z. 9</td><td>Einbehaltene Kirchensteuer</td><td>1658.00</td></tr><tr><td>Anlage N</td><td>Z. 31 ff.</td><td>Werbungskosten (Summe)</td><td>2300.00</td></tr><tr><td>Anlage KAP</td><td>Z. 7</td><td>Kapitalerträge (ohne Steuerabzug bzw. lt. Steuerbescheinigung)</td><td>850.00</td></tr><tr><td>Anlage KAP</td><td>Z. 16/17</td><td>Sparer-Pauschbetrag (Antrag)</td><td>1000</td></tr><tr><td>Anlage KAP</td><td>Z. 37</td><td>Anrechenbare Kapitalertragsteuer</td><td>212.50</td></tr><tr><td>Anlage KAP</td><td>Z. 38</td><td>Einbehaltener Solidaritätszuschlag (Kapitalerträge)</td><td>11.68</td></tr><tr><td>Anlage SO</td><td>Z. 41–47</td><td>Private Veräußerungsgeschäfte § 23 — Gewinn/Verlust</td><td>1482.00</td></tr><tr><td>Anlage SO</td><td>Z. 41–47</td><td>davon steuerpflichtig (Freigrenze einmalig geprüft)</td><td>1482.00</td></tr><tr><td>Anlage SO</td><td>Z. 54–59</td><td>Festgestellter Verlustvortrag § 23 aus Vorjahren (Antrag auf Verrechnung)</td><td>900.00</td></tr><tr><td>Anlage SO</td><td>Z. 54–59</td><td>davon mit § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG)</td><td>900.00</td></tr><tr><td>Anlage SO</td><td>Z. 54–59</td><td>verbleibender Verlustvortrag § 23 aus Vorjahren (Feststellung fortschreiben)</td><td>0.00</td></tr><tr><td>Anlage SO</td><td>Z. 10–13</td><td>Leistungen § 22 Nr. 3 (Staking/Lending u. a., Freigrenze 256 € auf die Gesamtsumme)</td><td>700.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Basisversorgung: Rentenversicherung</td><td>14600.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Kranken pflege basis: Krankenversicherung</td><td>3200.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Kranken pflege basis: Pflegeversicherung</td><td>550.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Sonstige: Arbeitslosenversicherung</td><td>1030.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Arbeitgeberanteil steuerfrei</td><td>7300.00</td></tr><tr><td>Anlage Sonderausgaben</td><td>Z. 5–12</td><td>Spenden</td><td>240.00</td></tr></table>
+<table><tr><th>Anlage</th><th>Zeile</th><th>Bezeichnung</th><th>Wert</th></tr><tr><td>Hauptvordruck</td><td>—</td><td>Steuerjahr</td><td>2024</td></tr><tr><td>Hauptvordruck</td><td>Z. 8</td><td>Name</td><td>Beispiel Muster</td></tr><tr><td>Anlage N</td><td>Z. 6</td><td>Bruttoarbeitslohn (lt. Lohnsteuerbescheinigung Nr. 3)</td><td>78500.00</td></tr><tr><td>Anlage N</td><td>Z. 7</td><td>Einbehaltene Lohnsteuer</td><td>18420.00</td></tr><tr><td>Anlage N</td><td>Z. 8</td><td>Solidaritätszuschlag</td><td>0.00</td></tr><tr><td>Anlage N</td><td>Z. 9</td><td>Einbehaltene Kirchensteuer</td><td>1658.00</td></tr><tr><td>Anlage N</td><td>Z. 31 ff.</td><td>Werbungskosten (Summe)</td><td>2300.00</td></tr><tr><td>Anlage KAP</td><td>Z. 7</td><td>Kapitalerträge (ohne Steuerabzug bzw. lt. Steuerbescheinigung)</td><td>850.00</td></tr><tr><td>Anlage KAP</td><td>Z. 16/17</td><td>Sparer-Pauschbetrag (Antrag)</td><td>1000.00</td></tr><tr><td>Anlage KAP</td><td>Z. 37</td><td>Anrechenbare Kapitalertragsteuer</td><td>212.50</td></tr><tr><td>Anlage KAP</td><td>Z. 38</td><td>Einbehaltener Solidaritätszuschlag (Kapitalerträge)</td><td>11.68</td></tr><tr><td>Anlage SO</td><td>Z. 41–47</td><td>Private Veräußerungsgeschäfte § 23 — Gewinn/Verlust</td><td>1482.00</td></tr><tr><td>Anlage SO</td><td>Z. 41–47</td><td>davon steuerpflichtig (Freigrenze einmalig geprüft)</td><td>1482.00</td></tr><tr><td>Anlage SO</td><td>Z. 54–59</td><td>Festgestellter Verlustvortrag § 23 aus Vorjahren (Antrag auf Verrechnung)</td><td>900.00</td></tr><tr><td>Anlage SO</td><td>Z. 54–59</td><td>davon mit § 23-Gewinnen dieses Jahres verrechnet (§ 23 Abs. 3 Satz 8 EStG)</td><td>900.00</td></tr><tr><td>Anlage SO</td><td>Z. 54–59</td><td>verbleibender Verlustvortrag § 23 aus Vorjahren (Feststellung fortschreiben)</td><td>0.00</td></tr><tr><td>Anlage SO</td><td>Z. 10–13</td><td>Leistungen § 22 Nr. 3 (Staking/Lending u. a., Freigrenze 256 € auf die Gesamtsumme)</td><td>700.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Basisversorgung: Rentenversicherung</td><td>14600.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Kranken pflege basis: Krankenversicherung</td><td>3200.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Kranken pflege basis: Pflegeversicherung</td><td>550.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Sonstige: Arbeitslosenversicherung</td><td>1030.00</td></tr><tr><td>Anlage Vorsorgeaufwand</td><td>—</td><td>Arbeitgeberanteil steuerfrei</td><td>7300.00</td></tr><tr><td>Anlage Sonderausgaben</td><td>Z. 5–12</td><td>Spenden</td><td>240.00</td></tr></table>
 
 <div class="note"><strong>Was diese Schätzung nicht enthält</strong><p>Gesamtbild: <strong>keine gerichtete Abweichung erkennbar</strong>. Die Richtung sagt, wie die ausgewiesene Steuer vom tatsächlichen Ergebnis abweichen dürfte.</p><table><thead><tr><th>Posten</th><th>Wirkung auf die Steuer</th><th>Größenordnung</th><th>Fundstelle</th></tr></thead><tbody><tr><td>Kürzung des Vorsorge-Höchstbetrags für Beamte und Versorgungsanwärter nicht gerechnet</td><td class="r">offen</td><td>nur bei diesem Personenkreis; sonst ohne Wirkung</td><td>§ 10 Abs. 3 Satz 3 EStG</td></tr><tr><td>Geleistete Vorauszahlungen nicht angerechnet</td><td class="r">offen</td><td>in Höhe der tatsächlich geleisteten Vorauszahlungen</td><td>§ 37 EStG</td></tr></tbody></table></div>
 <div class="note"><strong>Wichtige Hinweise</strong><ul><li>Dies ist KEINE Steuerberatung und keine verbindliche Steuerberechnung. <button type="button" class="erklaeren" data-frage="Erkläre mir bitte diesen Hinweis aus meiner Steuererklärung 2024 (erstellt mit dem Skill „Steuererklärung Deutschland“) in einfachen Worten: Was bedeutet er für mich, was muss ich prüfen oder tun, und auf welche Vorschrift stützt er sich?
@@ -134,6 +135,13 @@ Noch offene Veranlagungszeiträume: 2022 (bis 31.12.2026), 2023 (bis 31.12.2027)
     } catch (e) { return false; }
   }
 
+  function kopierMarkeWeg(btn) {
+    if (btn._marke && btn._marke.parentNode) {
+      btn._marke.parentNode.removeChild(btn._marke);
+    }
+    btn._marke = null;
+  }
+
   function kopierRueckmeldung(btn, text, klasse) {
     if (!btn._standard) btn._standard = btn.textContent;
     btn.textContent = text;
@@ -143,21 +151,37 @@ Noch offene Veranlagungszeiträume: 2022 (bis 31.12.2026), 2023 (bis 31.12.2027)
     btn._timer = setTimeout(function() {
       btn.textContent = btn._standard;
       btn.classList.remove('ok', 'fehler');
+      kopierMarkeWeg(btn);
     }, 1600);
   }
 
-  function inZwischenablage(text, btn, markierEl) {
-    function gelungen() { kopierRueckmeldung(btn, 'Kopiert ✓', 'ok'); }
+  // Scheitern beide Kopierwege, wird der Text zum Markieren eingeblendet — und
+  // zwar GENAU der Text, der kopiert werden soll. Das ist der Grund, warum hier
+  // ein eigener Knoten entsteht statt einfach das danebenstehende Element
+  // markiert zu werden: in der Checkliste zeigt die Zeile "78.500,00 €", ins
+  // ELSTER-Feld gehört aber "78500,00"; und neben einem Hinweis stünde sonst
+  // der Hinweistext ohne die vorbereitete Frage. Wer dann Strg+C drückt, hätte
+  // genau das Falsche in der Zwischenablage.
+  function kopierMarke(btn, text) {
+    try {
+      kopierMarkeWeg(btn);
+      var marke = document.createElement('span');
+      marke.className = 'kopiermarke';
+      marke.textContent = text;
+      btn.parentNode.insertBefore(marke, btn);
+      var bereich = document.createRange();
+      bereich.selectNodeContents(marke);
+      var auswahl = window.getSelection();
+      auswahl.removeAllRanges();
+      auswahl.addRange(bereich);
+      btn._marke = marke;
+    } catch (e) {}
+  }
+
+  function inZwischenablage(text, btn) {
+    function gelungen() { kopierMarkeWeg(btn); kopierRueckmeldung(btn, 'Kopiert ✓', 'ok'); }
     function gescheitert() {
-      if (markierEl) {
-        try {
-          var b = document.createRange();
-          b.selectNodeContents(markierEl);
-          var s = window.getSelection();
-          s.removeAllRanges();
-          s.addRange(b);
-        } catch (e) {}
-      }
+      kopierMarke(btn, text);
       kopierRueckmeldung(btn, 'Strg+C', 'fehler');
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -172,7 +196,7 @@ Noch offene Veranlagungszeiträume: 2022 (bis 31.12.2026), 2023 (bis 31.12.2027)
   Array.prototype.forEach.call(
     document.querySelectorAll('button.erklaeren'), function(btn) {
       btn.addEventListener('click', function() {
-        inZwischenablage(btn.getAttribute('data-frage'), btn, btn.parentNode);
+        inZwischenablage(btn.getAttribute('data-frage'), btn);
       });
     });
 

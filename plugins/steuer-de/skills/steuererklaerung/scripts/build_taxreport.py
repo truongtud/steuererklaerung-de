@@ -2380,7 +2380,11 @@ def build_elster_mapping(*, jahr, tp, n, brutto, wk_summe, kap, kap_ertraege, sp
         add_kap("21", "Z. 21", "Gewinne aus Termingeschäften und Stillhalterprämien "
                 "(§ 20 Abs. 2 Satz 1 Nr. 3 / Abs. 1 Nr. 11 EStG)",
                 q2(gewinn_termin), f"{kap_herkunft}.gewinn_termingeschaefte")
-    add("Anlage KAP", "Z. 16/17", "Sparer-Pauschbetrag (Antrag)", sparer_pb,
+    # q2 wie bei jedem anderen Betrag im Mapping: ohne das steht hier "1000"
+    # zwischen lauter "850.00" — in der CSV als einziger Wert ohne Dezimalkomma,
+    # und in der Checkliste erkennt die Betragsformatierung ihn gar nicht erst
+    # als Betrag (siehe export_report.checklisten_wert).
+    add("Anlage KAP", "Z. 16/17", "Sparer-Pauschbetrag (Antrag)", q2(sparer_pb),
         "steuerlib.sparer_pauschbetrag")
     if verluste_ohne_aktien > 0:
         add_kap("22", "Z. 22", "Verluste aus Kapitalvermögen ohne Verluste aus "
