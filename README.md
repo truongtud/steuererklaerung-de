@@ -374,7 +374,7 @@ skills/steuererklaerung/
 │   ├── krypto_fifo.py          FIFO-Engine § 23 / § 22 Nr. 3
 │   ├── build_taxreport.py      Anlagen, Tarif, Verlusttöpfe, ELSTER-Mapping
 │   └── export_report.py        HTML / PDF / ELSTER
-└── tests/                      23 Dateien
+└── tests/                      24 Dateien
 ```
 
 Zwei Konstruktionsprinzipien, die den Unterschied machen:
@@ -398,7 +398,7 @@ cd plugins/steuer-de/skills/steuererklaerung
 python3 tests/run_tests.py
 ```
 
-[559 Fälle in 23 Dateien](plugins/steuer-de/skills/steuererklaerung/tests) — jede Datei ist
+[570 Fälle in 24 Dateien](plugins/steuer-de/skills/steuererklaerung/tests) — jede Datei ist
 einzeln lauffähig, wenn nur ein Bereich interessiert:
 
 | Datei | prüft |
@@ -408,6 +408,7 @@ einzeln lauffähig, wenn nur ein Bereich interessiert:
 | [`test_build_taxreport.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_build_taxreport.py) | Tarif, Soli, Abgeltungsteuer, Nachzahlung/Erstattung |
 | [`test_kap.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_kap.py) | KAP-Quellen, davon-Zeilen, Verlusttöpfe über mehrere Depots |
 | [`test_elster_zeilen.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_elster_zeilen.py) | Zeilennummern-Referenz je Jahr deckungsgleich mit `build_taxreport.py`; Zeilenerkennung aus PDF-Text |
+| [`test_checkliste_js.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_checkliste_js.py) | führt das JavaScript der ELSTER-Checkliste unter Node gegen eine DOM-Attrappe aus (Gruppierung, Fortschritt, alle drei Kopier-Pfade); ohne Node übersprungen |
 | [`test_eingabepruefung.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_eingabepruefung.py) | unbekannte Felder, `--strict`, Verlustvorträge |
 | [`test_uebertrage_verlustvortrag.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_uebertrage_verlustvortrag.py) | Verlustvortrag-Übernahme ins Folgejahr, Konfliktabbruch statt stillem Überschreiben |
 | [`test_brokerprofile.py`](plugins/steuer-de/skills/steuererklaerung/tests/test_brokerprofile.py) | Profil-Validierung, Erkennung, Summenabgleich |
