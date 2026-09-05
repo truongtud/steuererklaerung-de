@@ -352,6 +352,32 @@ footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
 
 
 # ----------------------------------------------------- Interaktive Checkliste --
+# Beträge kommen aus build_taxreport.py in Punktschreibweise ("60000.00") —
+# dieselbe Form, die die CSV über steuerlib.de_dezimal ins deutsche Format
+# bringt. Alles andere (Steuerjahr, Name, Datum, Steuer-ID) ist kein Betrag und
+# bleibt unangetastet.
+_BETRAG_MUSTER = re.compile(r"-?\d+\.\d+")
+
+
+def checklisten_wert(wert) -> tuple[str, str]:
+    """(Anzeige, Kopierwert) einer Mapping-Zeile.
+
+    Angezeigt wird die lesbare deutsche Fassung mit Tausenderpunkten und
+    Währungszeichen („60.000,00 €"), kopiert wird dagegen genau das, was in ein
+    ELSTER-Eingabefeld gehört: dieselbe Zahl mit **Dezimalkomma**, ohne
+    Tausenderpunkte und ohne € („60000,00").
+
+    Das ist kein Schönheitsdetail: Ein aus dem Report kopiertes „60000.00"
+    landet mit Dezimal**punkt** im Formular — ELSTER liest deutsche Notation,
+    und je nach Feld wird der Punkt als Tausendertrennzeichen gedeutet oder die
+    Eingabe abgelehnt. Aus 60000.00 € würden dann 6.000.000 €.
+    """
+    s = _s(wert)
+    if _BETRAG_MUSTER.fullmatch(s):
+        return fmt_eur(s), de_dezimal(s)
+    return s, s
+
+
 def render_checkliste(report: dict) -> str:
     """Dieselben Zeilen wie das ELSTER-Mapping, aber zum Abhaken statt Abtippen.
 
@@ -366,6 +392,16 @@ def render_checkliste(report: dict) -> str:
     einem erneuten Export (z. B. weil eine Eingabe korrigiert wurde), ist die
     Zeile automatisch wieder offen — ein alter Haken auf einem inzwischen
     anderen Betrag wäre die gefährlichste Art dieser Datei, falsch zu liegen.
+
+    Angezeigt wird der Betrag lesbar deutsch („60.000,00 €"), **kopiert** wird
+    dagegen die Fassung fürs Formularfeld („60000,00", siehe checklisten_wert).
+    Die Zeilen sind nach Anlage gruppiert — in der Reihenfolge, in der man die
+    Formulare tatsächlich ausfüllt —, jede Gruppe zählt ihren eigenen
+    Fortschritt, und „nur offene anzeigen" blendet Erledigtes aus. Ein Klick
+    irgendwo in die Zeile setzt den Haken; die Kopieren-Schaltfläche meldet in
+    jedem Fall zurück, ob sie Erfolg hatte, und markiert den Betrag zum
+    manuellen Kopieren, wenn der Browser die Zwischenablage verweigert
+    (auf file:// keine Selbstverständlichkeit).
     """
     report = _dict(report)
     meta = _dict(report.get("meta"))
@@ -395,9 +431,13 @@ def render_checkliste(report: dict) -> str:
     # (Fremddaten aus einer Bescheinigung oder einem Broker-Report — nichts
     # davon ist vertrauenswürdiges HTML) dürfte das eingebettete <script>-Tag
     # sonst vorzeitig schließen. < bleibt für JSON.parse ein normales "<".
+    # 'wert' bleibt der ROHWERT: er trägt den localStorage-Schlüssel, und der
+    # soll sich ändern, sobald sich der Betrag ändert — unabhängig davon, wie
+    # er gerade formatiert angezeigt wird.
     zeilen_json = json.dumps(
-        [{"anlage": _s(r.get("anlage")), "zeile": _s(r.get("zeile")),
-          "bezeichnung": _s(r.get("bezeichnung")), "wert": _s(r.get("wert"))}
+        [dict(zip(("anlage", "zeile", "bezeichnung", "wert", "anzeige", "kopie"),
+                  (_s(r.get("anlage")), _s(r.get("zeile")), _s(r.get("bezeichnung")),
+                   _s(r.get("wert")), *checklisten_wert(r.get("wert")))))
          for r in eintragen],
         ensure_ascii=False).replace("<", "\\u003c")
 
@@ -411,54 +451,90 @@ def render_checkliste(report: dict) -> str:
 :root{{color-scheme:dark light;
 --bg:#0b0f17;--panel:#131a26;--panel2:#1a2436;--line:#243044;
 --txt:#e6edf6;--mut:#8aa0bd;--acc:#4da3ff;--good:#3fd17a;--bad:#ff6b6b;--warn:#ffb454;}}
+@media (prefers-color-scheme: light){{:root{{
+--bg:#f5f7fa;--panel:#ffffff;--panel2:#eef2f7;--line:#d5dce6;
+--txt:#111823;--mut:#5c6b80;--acc:#0b62c4;--good:#137a44;--bad:#b3261e;--warn:#8a5a00;}}}}
 *{{box-sizing:border-box}}body{{margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;
 background:var(--bg);color:var(--txt);line-height:1.5}}
-.wrap{{max-width:900px;margin:0 auto;padding:28px 20px 60px}}
-header{{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:20px}}
+.wrap{{max-width:960px;margin:0 auto;padding:28px 20px 60px}}
+header{{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:4px}}
 h1{{font-size:22px;margin:0 0 4px}}
 .muted{{color:var(--mut);font-size:13px}}
-.fortschritt{{position:sticky;top:0;background:var(--bg);padding:12px 0 16px;
-z-index:5;border-bottom:1px solid var(--line);margin-bottom:16px}}
-.balken{{height:10px;border-radius:6px;background:var(--panel2);overflow:hidden;margin-bottom:8px}}
+.fortschritt{{position:sticky;top:0;background:var(--bg);padding:14px 0 14px;
+z-index:5;border-bottom:1px solid var(--line);margin-bottom:20px}}
+.balken{{height:10px;border-radius:6px;background:var(--panel2);overflow:hidden;margin-bottom:10px}}
 .balken-fuellung{{height:100%;background:var(--good);width:0%;transition:width .2s}}
 .fortschritt-zeile{{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}}
+.werkzeuge{{display:flex;align-items:center;gap:12px;flex-wrap:wrap}}
+.schalter{{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--mut);
+cursor:pointer;user-select:none}}
 button{{font:inherit;cursor:pointer;background:var(--panel2);color:var(--txt);
 border:1px solid var(--line);border-radius:8px;padding:6px 12px}}
 button:hover{{border-color:var(--acc)}}
+button:focus-visible,input:focus-visible{{outline:2px solid var(--acc);outline-offset:2px}}
+h2.gruppe{{font-size:15px;margin:22px 0 8px;display:flex;align-items:baseline;
+justify-content:space-between;gap:12px;color:var(--acc)}}
+h2.gruppe .zaehler{{font-size:12px;color:var(--mut);font-weight:400;white-space:nowrap}}
+section.fertig h2.gruppe{{color:var(--good)}}
 table{{width:100%;border-collapse:collapse;background:var(--panel);border-radius:12px;
 overflow:hidden;font-size:14px;margin-bottom:8px}}
 th,td{{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}}
 th{{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase}}
-td.wert{{white-space:nowrap;font-variant-numeric:tabular-nums}}
-tr.erledigt td{{opacity:.45;text-decoration:line-through}}
-tr.erledigt td.wert{{text-decoration:none}}
-input[type=checkbox]{{width:18px;height:18px}}
-.kopieren{{margin-left:8px;padding:2px 8px;font-size:12px}}
+tbody tr{{cursor:pointer}}
+tbody tr:hover{{background:var(--panel2)}}
+td.haken{{width:34px}}
+td.zeile{{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--mut);width:84px}}
+td.wert{{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}}
+td.wert .betrag{{margin-right:8px}}
+tr.erledigt td.bezeichnung,tr.erledigt td.zeile{{opacity:.5;text-decoration:line-through}}
+tr.erledigt td.wert{{opacity:.5}}
+input[type=checkbox]{{width:18px;height:18px;cursor:pointer}}
+.kopieren{{padding:2px 10px;font-size:12px}}
+.kopieren.ok{{border-color:var(--good);color:var(--good)}}
+.kopieren.fehler{{border-color:var(--bad);color:var(--bad)}}
+.leer{{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+padding:20px;color:var(--mut);font-size:14px}}
 details{{background:var(--panel);border:1px solid var(--line);border-radius:12px;
-padding:4px 16px;margin:20px 0}}
+padding:4px 16px;margin:24px 0}}
 summary{{cursor:pointer;padding:10px 0;color:var(--mut);font-size:13px}}
 details table{{margin:0 0 12px}}
 .note{{background:var(--panel);border-left:3px solid var(--warn);padding:12px 16px;
 border-radius:8px;margin:16px 0;font-size:13px;color:var(--mut)}}
 .note ul{{margin:6px 0 0;padding-left:18px}}
 footer{{margin-top:36px;color:var(--mut);font-size:12px;text-align:center}}
+.nur-offen tr.erledigt,.nur-offen section.fertig{{display:none}}
+@media print{{
+  :root{{--bg:#fff;--panel:#fff;--panel2:#f2f4f8;--line:#9aa4b2;--txt:#000;--mut:#333;
+  --acc:#000;--good:#065f36;--bad:#8a1414;--warn:#7a4b00;}}
+  body{{background:#fff;color:#000;font-size:11pt}}
+  .wrap{{max-width:none;padding:0}}
+  .fortschritt{{position:static;border-bottom:1px solid #000}}
+  .werkzeuge,.kopieren{{display:none !important}}
+  .nur-offen tr.erledigt{{display:table-row}}
+  .nur-offen section.fertig{{display:block}}
+  table,.note,details{{border:1px solid #9aa4b2}}
+  tbody tr{{cursor:auto}}
+  tr,li,section{{break-inside:avoid}}
+  thead{{display:table-header-group}}
+}}
 </style></head><body><div class="wrap">
 <header><h1>ELSTER-Checkliste {year}</h1>
-<div class="muted">{name} · zum Abhaken beim Abtippen in Mein ELSTER — Status bleibt nur in
-diesem Browser gespeichert (localStorage), nirgends sonst.</div></header>
+<div class="muted">{name} · zum Abhaken beim Abtippen in Mein ELSTER. Der Status bleibt nur in
+diesem Browser (localStorage), nirgends sonst. <strong>Kopieren</strong> übernimmt den Betrag
+in deutscher Schreibweise mit Dezimalkomma — genau so, wie ihn das ELSTER-Feld erwartet.</div></header>
 
 <div class="fortschritt">
   <div class="balken"><div class="balken-fuellung" id="balken-fuellung"></div></div>
   <div class="fortschritt-zeile">
     <span id="fortschritt-text" class="muted">wird geladen …</span>
-    <button type="button" id="zuruecksetzen-btn">Alle Haken zurücksetzen</button>
+    <span class="werkzeuge">
+      <label class="schalter"><input type="checkbox" id="nur-offen-box"> nur offene anzeigen</label>
+      <button type="button" id="zuruecksetzen-btn">Alle Haken zurücksetzen</button>
+    </span>
   </div>
 </div>
 
-<table>
-<thead>{row(["", "Anlage", "Zeile", "Bezeichnung", "Wert"], header=True)}</thead>
-<tbody id="zeilen-tbody"></tbody>
-</table>
+<div id="gruppen"></div>
 
 <details>
 <summary>Belege je Quelle ({len(belege)}) — NICHT eintragen, nur zur Prüfung</summary>
@@ -473,72 +549,185 @@ diesem Browser gespeichert (localStorage), nirgends sonst.</div></header>
 (function() {{
   var zeilen = JSON.parse(document.getElementById('zeilen-daten').textContent);
   var praefix = 'elster-checkliste:{storage_suffix}:';
+  var gruppenBehaelter = document.getElementById('gruppen');
 
   function lsGet(k) {{ try {{ return localStorage.getItem(k); }} catch (e) {{ return null; }} }}
   function lsSet(k, v) {{ try {{ localStorage.setItem(k, v); }} catch (e) {{}} }}
   function lsRemove(k) {{ try {{ localStorage.removeItem(k); }} catch (e) {{}} }}
 
-  function zelle(tag, text) {{
+  function zelle(tag, text, klasse) {{
     var el = document.createElement(tag);
     el.textContent = text;
+    if (klasse) el.className = klasse;
     return el;
   }}
 
-  var tbody = document.getElementById('zeilen-tbody');
+  // ---- Kopieren: Clipboard-API, Fallback, und in jedem Fall eine Rückmeldung --
+  // Ohne Rückmeldung weiß niemand, ob der Klick etwas getan hat; und auf einer
+  // lokal geöffneten Datei (file://) ist navigator.clipboard je nach Browser
+  // gar nicht verfügbar. Scheitert beides, wird der Betrag wenigstens markiert,
+  // damit Strg+C greift.
+  function rueckmeldung(btn, text, klasse) {{
+    if (!btn._standard) btn._standard = btn.textContent;
+    btn.textContent = text;
+    btn.classList.remove('ok', 'fehler');
+    if (klasse) btn.classList.add(klasse);
+    clearTimeout(btn._timer);
+    btn._timer = setTimeout(function() {{
+      btn.textContent = btn._standard;
+      btn.classList.remove('ok', 'fehler');
+    }}, 1400);
+  }}
+
+  function fallbackKopie(text) {{
+    try {{
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }} catch (e) {{ return false; }}
+  }}
+
+  function markiere(el) {{
+    try {{
+      var bereich = document.createRange();
+      bereich.selectNodeContents(el);
+      var auswahl = window.getSelection();
+      auswahl.removeAllRanges();
+      auswahl.addRange(bereich);
+    }} catch (e) {{}}
+  }}
+
+  function kopiere(text, btn, betragEl) {{
+    function gelungen() {{ rueckmeldung(btn, 'Kopiert ✓', 'ok'); }}
+    function gescheitert() {{ markiere(betragEl); rueckmeldung(btn, 'Strg+C', 'fehler'); }}
+    if (navigator.clipboard && navigator.clipboard.writeText) {{
+      navigator.clipboard.writeText(text).then(gelungen, function() {{
+        if (fallbackKopie(text)) gelungen(); else gescheitert();
+      }});
+      return;
+    }}
+    if (fallbackKopie(text)) gelungen(); else gescheitert();
+  }}
+
+  // ---- Zeilen nach Anlage gruppieren -----------------------------------------
+  // So wird die Liste in derselben Reihenfolge abgearbeitet, in der man die
+  // Formulare in ELSTER ausfüllt — und die Spalte "Anlage" muss nicht in jeder
+  // Zeile wiederholt werden.
+  var gruppen = [];
+  var nachName = {{}};
   zeilen.forEach(function(z) {{
-    // Der Schlüssel enthält den WERT: ändert er sich bei einem neuen Export
-    // (korrigierte Eingabe), ist die Zeile automatisch wieder unerledigt —
-    // ein Haken auf einem inzwischen falschen Betrag wäre die gefährlichste
-    // Art, wie diese Datei lügen könnte. JSON.stringify statt eines Hashs über
-    // mit '|' verklebten Feldern: ein '|' oder ein Zeilenumbruch in einer aus
-    // einem Broker-Report übernommenen Bezeichnung könnte sonst zwei
-    // eigentlich verschiedene Zeilen auf denselben Schlüssel abbilden.
     z._key = praefix + JSON.stringify([z.anlage, z.zeile, z.bezeichnung, z.wert]);
+    if (!nachName[z.anlage]) {{
+      nachName[z.anlage] = {{ name: z.anlage, zeilen: [] }};
+      gruppen.push(nachName[z.anlage]);
+    }}
+    nachName[z.anlage].zeilen.push(z);
+  }});
 
-    var tr = document.createElement('tr');
-    var tdBox = document.createElement('td');
-    var cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = lsGet(z._key) === '1';
-    if (cb.checked) tr.className = 'erledigt';
-    tdBox.appendChild(cb);
-    tr.appendChild(tdBox);
-    tr.appendChild(zelle('td', z.anlage));
-    tr.appendChild(zelle('td', z.zeile));
-    tr.appendChild(zelle('td', z.bezeichnung));
+  if (!zeilen.length) {{
+    var leer = document.createElement('div');
+    leer.className = 'leer';
+    leer.textContent = 'Keine einzutragenden Zeilen in diesem Report — '
+      + 'es gibt nichts abzuhaken.';
+    gruppenBehaelter.appendChild(leer);
+  }}
 
-    var tdWert = document.createElement('td');
-    tdWert.className = 'wert';
-    tdWert.appendChild(document.createTextNode(z.wert));
-    var kopierBtn = document.createElement('button');
-    kopierBtn.type = 'button';
-    kopierBtn.className = 'kopieren';
-    kopierBtn.textContent = 'Kopieren';
-    kopierBtn.addEventListener('click', function() {{
-      if (navigator.clipboard && navigator.clipboard.writeText) {{
-        navigator.clipboard.writeText(z.wert).catch(function() {{}});
-      }}
+  gruppen.forEach(function(g) {{
+    var section = document.createElement('section');
+    var h2 = document.createElement('h2');
+    h2.className = 'gruppe';
+    h2.appendChild(zelle('span', g.name));
+    g._zaehler = zelle('span', '', 'zaehler');
+    h2.appendChild(g._zaehler);
+    section.appendChild(h2);
+
+    var table = document.createElement('table');
+    var thead = document.createElement('thead');
+    var kopf = document.createElement('tr');
+    [['', 'haken'], ['Zeile', 'zeile'], ['Bezeichnung', 'bezeichnung'],
+     ['Wert', 'wert']].forEach(function(p) {{
+      kopf.appendChild(zelle('th', p[0], p[1]));
     }});
-    tdWert.appendChild(kopierBtn);
-    tr.appendChild(tdWert);
+    thead.appendChild(kopf);
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
 
-    cb.addEventListener('change', function() {{
-      if (cb.checked) {{ lsSet(z._key, '1'); tr.classList.add('erledigt'); }}
-      else {{ lsRemove(z._key); tr.classList.remove('erledigt'); }}
-      fortschrittAktualisieren();
+    g.zeilen.forEach(function(z) {{
+      var tr = document.createElement('tr');
+      var tdBox = zelle('td', '', 'haken');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = lsGet(z._key) === '1';
+      cb.setAttribute('aria-label', z.zeile + ' ' + z.bezeichnung);
+      if (cb.checked) tr.className = 'erledigt';
+      tdBox.appendChild(cb);
+      tr.appendChild(tdBox);
+      tr.appendChild(zelle('td', z.zeile, 'zeile'));
+      tr.appendChild(zelle('td', z.bezeichnung, 'bezeichnung'));
+
+      var tdWert = zelle('td', '', 'wert');
+      var betrag = zelle('span', z.anzeige, 'betrag');
+      tdWert.appendChild(betrag);
+      var kopierBtn = document.createElement('button');
+      kopierBtn.type = 'button';
+      kopierBtn.className = 'kopieren';
+      kopierBtn.textContent = 'Kopieren';
+      kopierBtn.title = 'Kopiert "' + z.kopie + '" — so, wie ELSTER es erwartet';
+      kopierBtn.addEventListener('click', function(e) {{
+        e.stopPropagation();
+        kopiere(z.kopie, kopierBtn, betrag);
+      }});
+      tdWert.appendChild(kopierBtn);
+      tr.appendChild(tdWert);
+
+      cb.addEventListener('change', function() {{
+        if (cb.checked) {{ lsSet(z._key, '1'); tr.classList.add('erledigt'); }}
+        else {{ lsRemove(z._key); tr.classList.remove('erledigt'); }}
+        fortschrittAktualisieren();
+      }});
+      // Die ganze Zeile ist die Klickfläche — bei einer langen Liste trifft man
+      // sonst ständig neben die 18-Pixel-Box.
+      tr.addEventListener('click', function(e) {{
+        if (e.target === cb || e.target.closest('button')) return;
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+      }});
+      tbody.appendChild(tr);
     }});
-    tbody.appendChild(tr);
+
+    table.appendChild(tbody);
+    section.appendChild(table);
+    g._section = section;
+    gruppenBehaelter.appendChild(section);
   }});
 
   function fortschrittAktualisieren() {{
     var gesamt = zeilen.length;
-    var erledigt = zeilen.filter(function(z) {{ return lsGet(z._key) === '1'; }}).length;
+    var erledigt = 0;
+    gruppen.forEach(function(g) {{
+      var fertig = g.zeilen.filter(function(z) {{ return lsGet(z._key) === '1'; }}).length;
+      erledigt += fertig;
+      g._zaehler.textContent = fertig + ' / ' + g.zeilen.length;
+      g._section.classList.toggle('fertig', fertig === g.zeilen.length);
+    }});
     var pct = gesamt ? Math.round(100 * erledigt / gesamt) : 100;
     document.getElementById('balken-fuellung').style.width = pct + '%';
-    document.getElementById('fortschritt-text').textContent =
-      erledigt + ' von ' + gesamt + ' erledigt (' + pct + ' %)';
+    document.getElementById('fortschritt-text').textContent = gesamt
+      ? erledigt + ' von ' + gesamt + ' erledigt (' + pct + ' %)'
+      : 'nichts einzutragen';
   }}
   fortschrittAktualisieren();
+
+  document.getElementById('nur-offen-box').addEventListener('change', function(e) {{
+    gruppenBehaelter.classList.toggle('nur-offen', e.target.checked);
+  }});
 
   document.getElementById('zuruecksetzen-btn').addEventListener('click', function() {{
     zeilen.forEach(function(z) {{ lsRemove(z._key); }});

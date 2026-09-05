@@ -487,6 +487,66 @@ def test_checkliste_disclaimer_vorhanden():
 
 
 @case
+def test_checklisten_wert_kopiert_deutsche_notation():
+    """Der kopierte Betrag geht direkt in ein ELSTER-Feld: dort gilt
+    Dezimalkomma. Ein kopiertes '60000.00' würde je nach Feld als
+    Tausendertrennung gelesen oder abgelehnt."""
+    eq(ex.checklisten_wert("60000.00"), ("60.000,00 €", "60000,00"))
+    eq(ex.checklisten_wert("-450.5"), ("-450,50 €", "-450,5"))
+
+
+@case
+def test_checklisten_wert_laesst_nicht_betraege_unangetastet():
+    """Steuerjahr, Name, Datum und Steuer-ID sind keine Beträge — aus '2025'
+    darf nie '2.025,00 €' werden."""
+    for roh in ("2025", "Max Mustermann", "2015-04-02", "00 000 000 000", ""):
+        eq(ex.checklisten_wert(roh), (roh, roh), f"{roh!r} unverändert")
+
+
+@case
+def test_checkliste_zeigt_formatiert_und_kopiert_formularfertig():
+    mapping = _mapping_mit_arten()
+    r = fixture(elster_mapping=mapping)
+    rc, outdir, _o, _e = _export(r, formats=("checkliste",))
+    eq(rc, 0)
+    h = _checkliste_text(outdir)
+    daten = json.loads(re.search(
+        r'<script id="zeilen-daten"[^>]*>(.*?)</script>', h, re.S).group(1))
+    lohn = next(d for d in daten if d["bezeichnung"] == "Bruttoarbeitslohn")
+    eq(lohn["anzeige"], "63.230,00 €", "lesbare Anzeige")
+    eq(lohn["kopie"], "63230,00", "kopiert wird die Formularfassung")
+    eq(lohn["wert"], "63230.00", "der Rohwert bleibt für den localStorage-Schlüssel erhalten")
+    contains(h, "z.kopie", "die Schaltfläche kopiert den Formularwert, nicht die Anzeige")
+
+
+@case
+def test_checkliste_kopieren_hat_fallback_und_rueckmeldung():
+    """Auf einer lokal geöffneten Datei (file://) ist navigator.clipboard nicht
+    garantiert — ohne Fallback und ohne Rückmeldung passiert beim Klick
+    scheinbar nichts."""
+    r = fixture(elster_mapping=_mapping_mit_arten())
+    rc, outdir, _o, _e = _export(r, formats=("checkliste",))
+    eq(rc, 0)
+    h = _checkliste_text(outdir)
+    contains(h, "navigator.clipboard", "bevorzugter Weg")
+    contains(h, "execCommand('copy')", "Fallback für ältere/blockierte Browser")
+    contains(h, "Kopiert ✓", "Erfolgsrückmeldung")
+    contains(h, "Strg+C", "Hinweis, wenn beides scheitert")
+
+
+@case
+def test_checkliste_gruppiert_nach_anlage_und_bietet_filter():
+    r = fixture(elster_mapping=_mapping_mit_arten())
+    rc, outdir, _o, _e = _export(r, formats=("checkliste",))
+    eq(rc, 0)
+    h = _checkliste_text(outdir)
+    contains(h, 'id="gruppen"', "Gruppen-Container statt einer flachen Tabelle")
+    contains(h, "nur-offen-box", "Filter für offene Zeilen")
+    contains(h, "prefers-color-scheme: light", "Hellmodus")
+    contains(h, "@media print", "Druck-Stylesheet wie im Dashboard")
+
+
+@case
 def test_checkliste_ohne_eintragen_zeilen_zeigt_leere_liste_statt_absturz():
     r = fixture(elster_mapping=[
         {"anlage": "—", "zeile": "—", "bezeichnung": "x", "wert": "", "art": "trenner"},

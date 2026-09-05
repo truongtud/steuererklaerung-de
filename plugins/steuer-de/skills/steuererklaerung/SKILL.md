@@ -299,9 +299,12 @@ python3 scripts/export_report.py taxreport.json --outdir out --formats html pdf 
   Semikolon und Dezimalkomma (deutsches Excel) und trägt Disclaimer und Hinweise als
   Kommentarzeilen
 - `elster_checkliste_<jahr>.html` — dieselben Zeilen interaktiv zum Abhaken statt nur
-  Abtippen; Häkchen bleiben per `localStorage` im Browser erhalten (nicht im Report) und
-  werden automatisch zurückgesetzt, sobald sich der Wert einer Zeile durch einen neuen
-  Export ändert
+  Abtippen, nach Anlage gruppiert mit eigenem Fortschritt je Anlage und einem Filter „nur
+  offene anzeigen“. Häkchen bleiben per `localStorage` im Browser erhalten (nicht im
+  Report) und werden automatisch zurückgesetzt, sobald sich der Wert einer Zeile durch
+  einen neuen Export ändert. **Die Kopieren-Schaltfläche übernimmt den Betrag in
+  deutscher Schreibweise** (`60000,00`, nicht `60000.00`) — genau so, wie ihn das
+  ELSTER-Feld erwartet; angezeigt wird daneben die lesbare Fassung (`60.000,00 €`)
 
 Nur die gewünschten Formate wählen, die Dateien anschließend an den Nutzer ausliefern
 (SendUserFile) und die Kernzahlen nennen.
